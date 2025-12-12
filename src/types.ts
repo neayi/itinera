@@ -1,0 +1,51 @@
+export interface InterventionData {
+  id: string;
+  ordre: number;
+  category: string;
+  name: string;
+  description?: string;
+  produit?: string;
+  semences?: number;
+  engrais?: number;
+  unitesMineral?: number;
+  azoteOrganique?: number;
+  oligos?: number;
+  phytos?: number;
+  eiq?: number;
+  hri1?: number;
+  mecanisation?: number;
+  irrigation?: number;
+  date: Date;
+  frequence?: number;
+  cost: number;
+  workTime: number;
+  gnr?: number;
+  ges: number;
+  charges: number;
+  prixVente?: number;
+  margeBrute?: number;
+  expanded?: boolean;
+}
+
+export interface RotationData {
+  id: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  color: string;
+  layer: number;
+}
+
+export interface SoilProperties {
+  physical: {
+    texture: string;
+    profondeur: string;
+    drainage: string;
+  };
+  chemical: {
+    ph: number;
+    matiere_organique: string;
+    azote: string;
+  };
+  classification: string;
+}
