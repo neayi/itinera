@@ -27,6 +27,7 @@ export function ItineraireTechnique({
         // Vérifier que RotationRenderer est disponible
         if (typeof (window as any).RotationRenderer !== 'undefined') {
           const chartId = containerRef.current?.id || 'rotation-chart';
+          data.options.show_transcript = false;
           rendererRef.current = new (window as any).RotationRenderer(chartId, data);
           rendererRef.current.render();
         } else {
