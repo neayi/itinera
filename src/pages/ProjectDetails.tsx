@@ -8,6 +8,7 @@ import { InterventionData, RotationData } from '../types';
 import rotationImage from 'figma:asset/27306e63853312b0a5409dab31e623a342b89acd.png';
 import rotationImageVariante from 'figma:asset/76a8820b2bbb143b9408e1bff60e1c3c5aabf95c.png';
 import { variant1Interventions } from '../data/variant1Interventions';
+import { ItineraireTechnique } from '../components/ItineraireTechnique';
 
 interface ProjectDetailsProps {
   projectId: string;
@@ -144,7 +145,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       margeBrute: 1250,
       expanded: false
     },
-    
+
     // 2 - Luzerne + trèfle violet et blanc
     {
       id: '6',
@@ -314,7 +315,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       margeBrute: 1800,
       expanded: false
     },
-    
+
     // 3 - CIVE (Triticale)
     {
       id: '13',
@@ -392,7 +393,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       margeBrute: 450,
       expanded: false
     },
-    
+
     // 4 - Quinoa
     {
       id: '16',
@@ -538,7 +539,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       margeBrute: 3200,
       expanded: false
     },
-    
+
     // 5 - Blé + féverole
     {
       id: '22',
@@ -684,7 +685,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       margeBrute: 1450,
       expanded: false
     },
-    
+
     // 6 - Colza + sarrasin
     {
       id: '28',
@@ -878,7 +879,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       margeBrute: 1650,
       expanded: false
     },
-    
+
     // 7 - Maïs grain
     {
       id: '36',
@@ -1072,7 +1073,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       margeBrute: 1950,
       expanded: false
     },
-    
+
     // 8 - Phacélie (couvert)
     {
       id: '44',
@@ -1122,7 +1123,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       margeBrute: 0,
       expanded: false
     },
-    
+
     // 9 - Méteil grain
     {
       id: '46',
@@ -1344,14 +1345,14 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-[#f5f5f0]">
       {/* TopBar en haut de tout */}
-      <TopBar 
-        variant="project" 
+      <TopBar
+        variant="project"
         onNavigateToList={onBack}
         currentVariant={currentVariant}
         onVariantChange={setCurrentVariant}
         rotationTitle="Rotation Bio 2027-2033"
       />
-      
+
       {/* Contenu principal et ChatBot côte à côte en dessous de la TopBar */}
       <div className="flex flex-1 overflow-hidden">
         {/* Main content area */}
@@ -1390,7 +1391,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
                 </span>
               </button>
               {!chatOpen && (
-                <button 
+                <button
                   onClick={() => setChatOpen(!chatOpen)}
                   className="flex items-center gap-2 px-[12px] py-[8px] bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-colors text-sm"
                   title="Ouvrir l'assistant IA"
@@ -1402,15 +1403,12 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
             </div>
           </div>
 
-          {/* Rotation Timeline Image */}
-          <section className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="w-full">
-              <img 
-                src={currentVariant === 'Originale' ? rotationImage : rotationImageVariante} 
-                alt="Timeline de la rotation culturale 2027-2033" 
-                className="w-full h-auto"
-              />
-            </div>
+          {/* Rotation Timeline - Itinéraire Technique */}
+          <section className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-6">
+            <ItineraireTechnique
+              dataUrl="/src/data/une-rotation-de-test.json"
+              className="w-full"
+            />
           </section>
 
           {/* Context Panel Section */}
@@ -1418,8 +1416,8 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
 
           {/* Interventions Table Section */}
           <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <InterventionsTable 
-              interventions={interventions} 
+            <InterventionsTable
+              interventions={interventions}
               updateIntervention={updateIntervention}
               surface={projectSurface}
               startYear={rotationStartYear}
@@ -1434,8 +1432,8 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         </main>
 
         {/* ChatBot side panel */}
-        <ChatBot 
-          interventions={interventions} 
+        <ChatBot
+          interventions={interventions}
           setInterventions={setInterventions}
           isOpen={chatOpen}
           setIsOpen={setChatOpen}
