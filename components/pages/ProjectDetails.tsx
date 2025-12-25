@@ -1200,6 +1200,23 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
   ];
 
   const [interventions, setInterventions] = useState<InterventionData[]>(originaleInterventionsData);
+  const [systemData, setSystemData] = useState<any>(null);
+
+  // Charger les données du système depuis l'API
+  useEffect(() => {
+    fetch(`/api/systems`)
+      .then(res => res.json())
+      .then(systems => {
+        // Trouver le système correspondant au projectId
+        const system = systems.find((s: any) => s.id.toString() === projectId);
+        if (system && system.json) {
+          setSystemData(system.json);
+        }
+      })
+      .catch(error => {
+        console.error('Erreur lors du chargement du système:', error);
+      });
+  }, [projectId]);
 
   const [rotationData] = useState<RotationData[]>([
     {
@@ -1406,7 +1423,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
           {/* Rotation Timeline - Itinéraire Technique */}
           <section className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-6">
             <ItineraireTechnique
-              dataUrl="/data/une-rotation-de-test.json"
+              data={systemData}
               className="w-full"
             />
           </section>          {/* Context Panel Section */}

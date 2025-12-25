@@ -1,37 +1,27 @@
 services:
-  # Next.js Application (Development)
+  # Next.js Application (Production)
   nextjs:
-    container_name: itinera-nextjs-dev
+    container_name: itinera-nextjs
+    image: ghcr.io/neayi/itinera:latest
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_USER=${DB_USER:-itinera_user}
       - DB_PASSWORD=${DB_PASSWORD:-itinera_password}
       - DB_NAME=${DB_NAME:-itinera_db}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-      - WATCHPACK_POLLING=true
     depends_on:
       mysql:
         condition: service_healthy
     networks:
       - itinera-network
     restart: unless-stopped
-    volumes:
-      # Mount source code for hot reload
-      - ./src:/app/src
-      - ./app:/app/app
-      - ./components:/app/components
-      - ./lib:/app/lib
-      - ./public:/app/public
-      # Exclude node_modules and .next from host
-      - /app/node_modules
-      - /app/.next
 
   # MySQL Database
   mysql:
