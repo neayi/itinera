@@ -137,3 +137,15 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Next.js specific
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Old Vite files
+vite.config.ts
+package.json.old
+src/
+app/pages-backup/
