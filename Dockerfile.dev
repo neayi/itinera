@@ -1,5 +1,5 @@
 # Dockerfile for development
-FROM node:20-alpine
+FROM node:22-alpine
 
 RUN apk add --no-cache libc6-compat
 
@@ -17,5 +17,5 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-# Run development server
-CMD ["npm", "run", "dev"]
+# Run development server with Turbopack
+CMD ["npm", "run", "dev", "--", "--turbopack"]

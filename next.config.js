@@ -9,13 +9,8 @@ const nextConfig = {
       },
     ],
   },
-  // Configuration pour les assets statiques
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-    };
-    return config;
-  },
+  // Configuration Turbopack (Next.js 16+)
+  turbopack: {},
   // Activer le mode standalone pour Docker
   output: 'standalone',
 };
