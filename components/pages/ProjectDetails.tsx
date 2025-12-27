@@ -1201,6 +1201,9 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
 
   const [interventions, setInterventions] = useState<InterventionData[]>(originaleInterventionsData);
   const [systemData, setSystemData] = useState<any>(null);
+  const [systemName, setSystemName] = useState<string>('Rotation Bio 2027-2033');
+  const [farmerName, setFarmerName] = useState<string>('Jean Dupont');
+  const [farmName, setFarmName] = useState<string>('EARL Dupont');
 
   // Charger les données du système depuis l'API
   useEffect(() => {
@@ -1209,8 +1212,19 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       .then(systems => {
         // Trouver le système correspondant au projectId
         const system = systems.find((s: any) => s.id.toString() === projectId);
-        if (system && system.json) {
-          setSystemData(system.json);
+        if (system) {
+          if (system.json) {
+            setSystemData(system.json);
+          }
+          if (system.name) {
+            setSystemName(system.name);
+          }
+          if (system.farmer_name) {
+            setFarmerName(system.farmer_name);
+          }
+          if (system.farm_name) {
+            setFarmName(system.farm_name);
+          }
         }
       })
       .catch(error => {
@@ -1367,7 +1381,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         onNavigateToList={onBack}
         currentVariant={currentVariant}
         onVariantChange={setCurrentVariant}
-        rotationTitle="Rotation Bio 2027-2033"
+        rotationTitle={systemName}
       />
 
       {/* Contenu principal et ChatBot côte à côte en dessous de la TopBar */}
@@ -1378,8 +1392,8 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div>
-                <h1 className="mb-2">Rotation Bio 2027-2033-{currentVariant}</h1>
-                <p className="text-gray-600">Jean Dupont • EARL Dupont • Parcelle Sud •<br />15 ha • Bio • Toulouse (31) • Sol argileux</p>
+                <h1 className="mb-2">{systemName}-{currentVariant}</h1>
+                <p className="text-gray-600">{farmerName} • {farmName} • Parcelle Sud •<br />15 ha • Bio • Toulouse (31) • Sol argileux</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
