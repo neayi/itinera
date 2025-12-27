@@ -1,6 +1,13 @@
 import { MapPin, FileText } from 'lucide-react';
 import { SoilPropertiesPanel } from './SoilPropertiesPanel';
 import { OmbrothermalChart } from './OmbrothermalChart';
+import dynamic from 'next/dynamic';
+
+// Import dynamique du composant Map pour éviter les problèmes SSR
+const Map = dynamic(() => import('./MapLeaflet').then(mod => ({ default: mod.Map })), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-gray-100 flex items-center justify-center">Chargement de la carte...</div>
+});
 
 export function ContextPanel() {
   return (
@@ -23,18 +30,8 @@ export function ContextPanel() {
         {/* Map */}
         <div className="bg-gray-100 rounded-lg overflow-hidden border border-gray-200 h-80">
           <div className="relative w-full h-full">
-            {/* Google Maps iframe */}
-            <iframe
-              src="https://maps.google.com/maps?q=47.063545,-1.326997&hl=fr&z=14&output=embed"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="rounded-lg"
-            ></iframe>
-            <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded text-xs shadow-md">
+            <Map latitude={47.063545} longitude={-1.326997} zoom={14} />
+            <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded text-xs shadow-md z-[1000]">
               Parcelles: 42.5 ha
             </div>
           </div>
