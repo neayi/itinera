@@ -1413,7 +1413,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
                   {isLoading ? 'Chargement...' : `${systemName}-${currentVariant}`}
                 </h1>
                 <p className="text-gray-600">
-                  {isLoading ? 'Chargement des informations...' : `${farmerName} • ${farmName} • Parcelle Sud •`}
+                  {isLoading ? 'Chargement des informations...' : `${farmerName} • ${farmName}`}
                   <br />15 ha • Bio • Toulouse (31) • Sol argileux
                 </p>
               </div>
