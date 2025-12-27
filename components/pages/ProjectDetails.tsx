@@ -1201,12 +1201,22 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
 
   const [interventions, setInterventions] = useState<InterventionData[]>(originaleInterventionsData);
   const [systemData, setSystemData] = useState<any>(null);
-  const [systemName, setSystemName] = useState<string>('Rotation Bio 2027-2033');
-  const [farmerName, setFarmerName] = useState<string>('Jean Dupont');
-  const [farmName, setFarmName] = useState<string>('EARL Dupont');
+  const [systemName, setSystemName] = useState<string>('');
+  const [farmerName, setFarmerName] = useState<string>('');
+  const [farmName, setFarmName] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+
+  // S'assurer que le composant est monté côté client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Charger les données du système depuis l'API
   useEffect(() => {
+    if (!isMounted) return;
+
+    setIsLoading(true);
     fetch(`/api/systems`)
       .then(res => res.json())
       .then(systems => {
@@ -1216,21 +1226,27 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
           if (system.json) {
             setSystemData(system.json);
           }
-          if (system.name) {
-            setSystemName(system.name);
-          }
-          if (system.farmer_name) {
-            setFarmerName(system.farmer_name);
-          }
-          if (system.farm_name) {
-            setFarmName(system.farm_name);
-          }
+          setSystemName(system.name || 'Rotation Bio 2027-2033');
+          setFarmerName(system.farmer_name || 'Jean Dupont');
+          setFarmName(system.farm_name || 'EARL Dupont');
+        } else {
+          // Valeurs par défaut si le système n'est pas trouvé
+          setSystemName('Rotation Bio 2027-2033');
+          setFarmerName('Jean Dupont');
+          setFarmName('EARL Dupont');
         }
       })
       .catch(error => {
         console.error('Erreur lors du chargement du système:', error);
+        // Valeurs par défaut en cas d'erreur
+        setSystemName('Rotation Bio 2027-2033');
+        setFarmerName('Jean Dupont');
+        setFarmName('EARL Dupont');
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
-  }, [projectId]);
+  }, [projectId, isMounted]);
 
   const [rotationData] = useState<RotationData[]>([
     {
@@ -1373,6 +1389,11 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     }
   }, [currentVariant]);
 
+  // Ne pas rendre le composant tant qu'il n'est pas monté côté client
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-[#f5f5f0]">
       {/* TopBar en haut de tout */}
@@ -1381,7 +1402,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         onNavigateToList={onBack}
         currentVariant={currentVariant}
         onVariantChange={setCurrentVariant}
-        rotationTitle={systemName}
+        rotationTitle={isLoading ? 'Chargement...' : systemName}
       />
 
       {/* Contenu principal et ChatBot côte à côte en dessous de la TopBar */}
@@ -1392,8 +1413,13 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div>
-                <h1 className="mb-2">{systemName}-{currentVariant}</h1>
-                <p className="text-gray-600">{farmerName} • {farmName} • Parcelle Sud •<br />15 ha • Bio • Toulouse (31) • Sol argileux</p>
+                <h1 className="mb-2">
+                  {isLoading ? 'Chargement...' : `${systemName}-${currentVariant}`}
+                </h1>
+                <p className="text-gray-600">
+                  {isLoading ? 'Chargement des informations...' : `${farmerName} • ${farmName} • Parcelle Sud •`}
+                  <br />15 ha • Bio • Toulouse (31) • Sol argileux
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
