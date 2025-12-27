@@ -1217,24 +1217,20 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     if (!isMounted) return;
 
     setIsLoading(true);
-    fetch(`/api/systems`)
-      .then(res => res.json())
-      .then(systems => {
-        // Trouver le système correspondant au projectId
-        const system = systems.find((s: any) => s.id.toString() === projectId);
-        if (system) {
-          if (system.json) {
-            setSystemData(system.json);
-          }
-          setSystemName(system.name || 'Rotation Bio 2027-2033');
-          setFarmerName(system.farmer_name || 'Jean Dupont');
-          setFarmName(system.farm_name || 'EARL Dupont');
-        } else {
-          // Valeurs par défaut si le système n'est pas trouvé
-          setSystemName('Rotation Bio 2027-2033');
-          setFarmerName('Jean Dupont');
-          setFarmName('EARL Dupont');
+    fetch(`/api/systems/${projectId}`)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('System not found');
         }
+        return res.json();
+      })
+      .then(system => {
+        if (system.json) {
+          setSystemData(system.json);
+        }
+        setSystemName(system.name || 'Rotation Bio 2027-2033');
+        setFarmerName(system.farmer_name || 'Jean Dupont');
+        setFarmName(system.farm_name || 'EARL Dupont');
       })
       .catch(error => {
         console.error('Erreur lors du chargement du système:', error);
