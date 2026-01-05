@@ -1,6 +1,8 @@
-import { User, ArrowLeft, GitBranch, ChevronDown } from 'lucide-react';
+'use client';
+
+import { User, ArrowLeft, GitBranch, ChevronDown, LogOut } from 'lucide-react';
 import LocationMapIcon from '@/components/imports/LocationMapAppStreetStreamlineMicroLine';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface TopBarProps {
   variant?: 'list' | 'project';
@@ -12,10 +14,43 @@ interface TopBarProps {
   onViewChange?: (view: 'my-systems' | 'explore') => void;
 }
 
+interface UserInfo {
+  name: string;
+  email: string;
+}
+
 export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'Originale', onVariantChange, rotationTitle = 'Rotation Bio 2027-2033', activeView = 'my-systems', onViewChange }: TopBarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState<UserInfo>({ name: 'Utilisateur', email: '' });
 
   const variants = ['Originale', 'Variante 1'];
+
+  useEffect(() => {
+    // Récupérer les informations de l'utilisateur connecté
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated && data.user) {
+          setUserInfo({
+            name: data.user.name,
+            email: data.user.email,
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching user info:', error);
+      });
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/logout.html';
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
 
   // Version simple avec logo pour la page liste
   if (variant === 'list') {
@@ -59,14 +94,34 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
             </div>
 
             {/* User Profile */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative">
               <span className="text-white text-sm">Conseiller Agronomique</span>
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full pl-3 pr-1 py-1 border border-white/20 hover:bg-white/20 transition-colors cursor-pointer">
-                <span className="text-white">Marie Dubois</span>
+              <div 
+                className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full pl-3 pr-1 py-1 border border-white/20 hover:bg-white/20 transition-colors cursor-pointer"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+              >
+                <span className="text-white">{userInfo.name}</span>
                 <div className="bg-[#f5f5f0] rounded-full size-8 flex items-center justify-center">
                   <User className="size-5 text-[#6b9571]" />
                 </div>
               </div>
+
+              {/* User Menu Dropdown */}
+              {userMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[200px] z-50">
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <p className="text-sm font-medium text-gray-900">{userInfo.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{userInfo.email}</p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-b-lg text-gray-700 flex items-center gap-2"
+                  >
+                    <LogOut className="size-4" />
+                    Se déconnecter
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -130,14 +185,34 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
           </div>
 
           {/* User Profile */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative">
             <span className="text-white text-sm">Conseiller Agronomique</span>
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full pl-3 pr-1 py-1 border border-white/20 hover:bg-white/20 transition-colors cursor-pointer">
-              <span className="text-white">Marie Dubois</span>
+            <div 
+              className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full pl-3 pr-1 py-1 border border-white/20 hover:bg-white/20 transition-colors cursor-pointer"
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+            >
+              <span className="text-white">{userInfo.name}</span>
               <div className="bg-[#f5f5f0] rounded-full size-8 flex items-center justify-center">
                 <User className="size-5 text-[#6b9571]" />
               </div>
             </div>
+
+            {/* User Menu Dropdown */}
+            {userMenuOpen && (
+              <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 min-w-[200px] z-50">
+                <div className="px-4 py-3 border-b border-gray-200">
+                  <p className="text-sm font-medium text-gray-900">{userInfo.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{userInfo.email}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-b-lg text-gray-700 flex items-center gap-2"
+                >
+                  <LogOut className="size-4" />
+                  Se déconnecter
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

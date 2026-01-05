@@ -1,7 +1,7 @@
 services:
   # Next.js Application (Production)
-  nextjs:
-    container_name: itinera-nextjs
+  itinera:
+    container_name: itinera
     image: ghcr.io/neayi/itinera:latest
     build:
       context: .

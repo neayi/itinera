@@ -1,7 +1,7 @@
 services:
   # Next.js Application (Development)
-  nextjs:
-    container_name: itinera-nextjs-dev
+  itinera:
+    container_name: itinera-dev
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -15,6 +15,9 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-itinera_password}
       - DB_NAME=${DB_NAME:-itinera_db}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - DISCOURSE_SSO_URL=${DISCOURSE_SSO_URL}
+      - DISCOURSE_SSO_SECRET=${DISCOURSE_SSO_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET:-itinera_session_secret_change_in_production}
       - WATCHPACK_POLLING=true
     depends_on:
       mysql:
@@ -29,6 +32,7 @@ services:
       - ./components:/app/components
       - ./lib:/app/lib
       - ./public:/app/public
+      - ./middleware.ts:/app/middleware.ts
       # Exclude node_modules and .next from host
       - /app/node_modules
       - /app/.next

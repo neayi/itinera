@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion requise - Itinéra</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #6b9571 0%, #5a7d60 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+        
+        .subtitle {
+            color: #6b9571;
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+        
+        .message {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+        
+        .login-button {
+            display: inline-block;
+            background: #6b9571;
+            color: white;
+            text-decoration: none;
+            padding: 16px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(107, 149, 113, 0.3);
+        }
+        
+        .login-button:hover {
+            background: #5a7d60;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(107, 149, 113, 0.4);
+        }
+        
+        .footer {
+            margin-top: 40px;
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🗺️</div>
+        <h1>Itinéra</h1>
+        <div class="subtitle">simulateur d'itinéraire technique</div>
+        
+        <div class="message">
+            <p>Pour accéder à l'application, vous devez être connecté.</p>
+        </div>
+        
+        <a href="/api/auth/login" class="login-button">
+            Se connecter
+        </a>
+        
+        <div class="footer">
+            <p>Connexion sécurisée via Discourse Connect</p>
+        </div>
+    </div>
+</body>
+</html>
