@@ -8,8 +8,6 @@ interface ExploreSystem {
   description: string;
   system_type: string;
   productions: string;
-  gps_location: string;
-  json: any;
   created_at: Date;
   updated_at: Date;
   town: string;
@@ -34,8 +32,6 @@ export async function GET(request: NextRequest) {
         s.description,
         s.system_type,
         s.productions,
-        s.gps_location,
-        s.json,
         s.created_at,
         s.updated_at,
         f.town

@@ -16,10 +16,17 @@ export async function GET(request: NextRequest) {
 
     const systems = await query<SystemWithFarm>(`
       SELECT
-        s.*,
+        s.id,
+        s.farm_id,
+        s.user_id,
+        s.name,
+        s.description,
+        s.system_type,
+        s.productions,
+        s.created_at,
+        s.updated_at,
         f.name as farm_name,
         f.farmer_name,
-        f.gps_location as farm_gps_location,
         f.town
       FROM systems s
       LEFT JOIN farms f ON s.farm_id = f.id

@@ -9,7 +9,26 @@ const Map = dynamic(() => import('./MapLeaflet').then(mod => ({ default: mod.Map
   loading: () => <div className="w-full h-full bg-gray-100 flex items-center justify-center">Chargement de la carte...</div>
 });
 
-export function ContextPanel() {
+interface ContextPanelProps {
+  gpsLocation?: string | null;
+}
+
+export function ContextPanel({ gpsLocation }: ContextPanelProps) {
+  // Parse GPS location (format: "latitude,longitude")
+  const parseGpsLocation = (gps: string | null | undefined): { lat: number; lng: number } => {
+    if (!gps) {
+      return { lat: 47.063545, lng: -1.326997 }; // Default: Nantes area
+    }
+    
+    const parts = gps.split(',').map(p => parseFloat(p.trim()));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      return { lat: parts[0], lng: parts[1] };
+    }
+    
+    return { lat: 47.063545, lng: -1.326997 }; // Default if parsing fails
+  };
+
+  const coordinates = parseGpsLocation(gpsLocation);
   return (
     <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
@@ -30,7 +49,7 @@ export function ContextPanel() {
         {/* Map */}
         <div className="bg-gray-100 rounded-lg overflow-hidden border border-gray-200 h-80">
           <div className="relative w-full h-full">
-            <Map latitude={47.063545} longitude={-1.326997} zoom={14} />
+            <Map latitude={coordinates.lat} longitude={coordinates.lng} zoom={14} />
             <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded text-xs shadow-md z-[1000]">
               Parcelles: 42.5 ha
             </div>

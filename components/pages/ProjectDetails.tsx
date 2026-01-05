@@ -1204,6 +1204,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
   const [farmName, setFarmName] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isMounted, setIsMounted] = useState<boolean>(false);
+  const [gpsLocation, setGpsLocation] = useState<string | null>(null);
 
   // S'assurer que le composant est monté côté client
   useEffect(() => {
@@ -1229,6 +1230,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         setSystemName(system.name || 'Rotation Bio 2027-2033');
         setFarmerName(system.farmer_name || 'Jean Dupont');
         setFarmName(system.farm_name || 'EARL Dupont');
+        setGpsLocation(system.gps_location || null);
       })
       .catch(error => {
         console.error('Erreur lors du chargement du système:', error);
@@ -1461,7 +1463,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
               className="w-full"
             />
           </section>          {/* Context Panel Section */}
-          <ContextPanel />
+          <ContextPanel gpsLocation={gpsLocation} />
 
           {/* Interventions Table Section */}
           <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
