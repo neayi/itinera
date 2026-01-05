@@ -37,6 +37,7 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeView, setActiveView] = useState<'my-systems' | 'explore'>('my-systems');
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
+  const [exploreItineraries, setExploreItineraries] = useState<Itinerary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +46,8 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
     const fetchSystems = async () => {
       try {
         setIsLoading(true);
+        
+        // Fetch user's own systems
         const response = await fetch('/api/systems');
         if (!response.ok) throw new Error('Failed to fetch systems');
         const systems = await response.json();
@@ -69,6 +72,33 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
         }));
 
         setItineraries(transformedData);
+
+        // Fetch other users' systems for explore view
+        const exploreResponse = await fetch('/api/systems/explore');
+        if (exploreResponse.ok) {
+          const exploreSystems = await exploreResponse.json();
+          
+          const exploreTransformedData: Itinerary[] = exploreSystems.map((system: any) => ({
+            id: system.id.toString(),
+            name: system.name || 'Système sans nom',
+            farmer: 'Agriculteur Anonyme',
+            exploitation: 'Exploitation Anonyme',
+            parcelle: system.description || '',
+            ville: system.town || '',
+            departement: '',
+            dateModification: new Date(system.updated_at),
+            margeBrute: 0,
+            eiq: 0,
+            nbAnnees: 0,
+            productions: system.productions ? system.productions.split(',').map((p: string) => p.trim()) : [],
+            cahierDesCharges: system.system_type || '',
+            description: system.description || '',
+            nbVariantes: 0
+          }));
+          
+          setExploreItineraries(exploreTransformedData);
+        }
+
         setError(null);
       } catch (err) {
         console.error('Error fetching systems:', err);
@@ -80,349 +110,6 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
 
     fetchSystems();
   }, []);
-
-  // Data for "Explorer d'autres systèmes" view
-  const [exploreItineraries] = useState<Itinerary[]>([
-    {
-      id: 'e1',
-      name: 'Rotation Longue 8 ans AB',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Exploitation AB',
-      parcelle: 'Parcelle principale',
-      ville: 'Rodez',
-      departement: '12',
-      dateModification: new Date('2024-12-10'),
-      margeBrute: 16800,
-      eiq: 0,
-      nbAnnees: 8,
-      productions: ['Blé', 'Épeautre', 'Lentilles', 'Luzerne', 'Sarrasin'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Rotation longue en agriculture biologique avec diversification maximale. Intégration de légumineuses à graines et fourragères pour autonomie azotée complète.'
-    },
-    {
-      id: 'e2',
-      name: 'Céréales-Protéagineux Bas Intrants',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Exploitation Raisonnée',
-      parcelle: 'Secteur Nord',
-      ville: 'Agen',
-      departement: '47',
-      dateModification: new Date('2024-12-07'),
-      margeBrute: 11200,
-      eiq: 16,
-      nbAnnees: 4,
-      productions: ['Blé', 'Pois', 'Féverole', 'Orge'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Système céréalier à bas niveau d\'intrants avec introduction de protéagineux. Réduction de 60% des phytosanitaires vs référence régionale.'
-    },
-    {
-      id: 'e3',
-      name: 'Maraîchage Sol Vivant',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Ferme Maraîchère',
-      parcelle: 'Tunnel 1-8',
-      ville: 'Avignon',
-      departement: '84',
-      dateModification: new Date('2024-12-06'),
-      margeBrute: 42000,
-      eiq: 0,
-      nbAnnees: 2,
-      productions: ['Tomate', 'Salade', 'Courgette', 'Aubergine'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Maraîchage sur sol vivant sans travail du sol. Paillage permanent, couverts végétaux et compostage de surface pour fertilité biologique optimale.'
-    },
-    {
-      id: 'e4',
-      name: 'Vigne HVE Agroécologique',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Domaine Viticole',
-      parcelle: 'Coteaux Sud',
-      ville: 'Bordeaux',
-      departement: '33',
-      dateModification: new Date('2024-12-04'),
-      margeBrute: 28000,
-      eiq: 20,
-      nbAnnees: 1,
-      productions: ['Vigne'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Viticulture HVE niveau 3 avec enherbement permanent, haies, nichoirs et réduction maximale des intrants. Certification en cours vers bio.'
-    },
-    {
-      id: 'e5',
-      name: 'Élevage Laitier Herbager',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'GAEC Laitier',
-      parcelle: 'Prairies permanentes',
-      ville: 'Aurillac',
-      departement: '15',
-      dateModification: new Date('2024-12-02'),
-      margeBrute: 19500,
-      eiq: 0,
-      nbAnnees: 1,
-      productions: ['Prairie'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Système herbager pâturant avec 95% d\'herbe dans la ration. Autonomie fourragère et protéique totale, valorisation optimale des prairies permanentes.'
-    },
-    {
-      id: 'e6',
-      name: 'Système Agrivoltaïque Ovin',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Ferme Ovine',
-      parcelle: 'Zone panneaux solaires',
-      ville: 'Béziers',
-      departement: '34',
-      dateModification: new Date('2024-11-30'),
-      margeBrute: 8900,
-      eiq: 0,
-      nbAnnees: 1,
-      productions: ['Prairie'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Élevage ovin sous panneaux photovoltaïques. Double valorisation énergétique et agricole, amélioration du bien-être animal par ombrage estival.'
-    },
-    {
-      id: 'e7',
-      name: 'Permaculture Maraîchère',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Jardin Permacole',
-      parcelle: 'Zone intensive',
-      ville: 'Angers',
-      departement: '49',
-      dateModification: new Date('2024-11-27'),
-      margeBrute: 52000,
-      eiq: 0,
-      nbAnnees: 1,
-      productions: ['Salade', 'Tomate', 'Luzerne'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Maraîchage diversifié sur petite surface en permaculture. 40 espèces cultivées, zéro mécanisation, micro-ferme sur 2000m² avec haute valeur ajoutée.'
-    },
-    {
-      id: 'e8',
-      name: 'Chanvre Industriel Bio',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'EARL Chanvre',
-      parcelle: 'Grande parcelle',
-      ville: 'Troyes',
-      departement: '10',
-      dateModification: new Date('2024-11-24'),
-      margeBrute: 13800,
-      eiq: 0,
-      nbAnnees: 3,
-      productions: ['Chanvre', 'Blé', 'Luzerne'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Culture de chanvre industriel en rotation avec céréales bio. Plante nettoyante, structurante et valorisation en écoconstruction et alimentation.'
-    },
-    {
-      id: 'e9',
-      name: 'Houblon-Céréales Spécialisé',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Ferme Houblon',
-      parcelle: 'Parcelle palissée',
-      ville: 'Strasbourg',
-      departement: '67',
-      dateModification: new Date('2024-11-21'),
-      margeBrute: 24500,
-      eiq: 34,
-      nbAnnees: 4,
-      productions: ['Houblon', 'Orge', 'Blé'],
-      description:
-        'Production de houblon artisanal en rotation avec orge brassicole. Filière courte brasserie locale, valorisation premium des productions.'
-    },
-    {
-      id: 'e10',
-      name: 'Grandes Cultures Conservation',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'GAEC Conservationniste',
-      parcelle: 'Plateau calcaire',
-      ville: 'Châteauroux',
-      departement: '36',
-      dateModification: new Date('2024-11-19'),
-      margeBrute: 10900,
-      eiq: 18,
-      nbAnnees: 6,
-      productions: ['Blé', 'Colza', 'Orge', 'Tournesol'],
-      cahierDesCharges: 'ACS',
-      description:
-        'Agriculture de conservation des sols avec semis direct permanent. Couverts multi-espèces systématiques, réduction travail du sol de 100%.'
-    },
-    {
-      id: 'e11',
-      name: 'PPAM Plantes Aromatiques Bio',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Ferme PPAM',
-      parcelle: 'Terrasses Sud',
-      ville: 'Digne-les-Bains',
-      departement: '04',
-      dateModification: new Date('2024-11-16'),
-      margeBrute: 31000,
-      eiq: 0,
-      nbAnnees: 3,
-      productions: ['Lavande', 'Thym', 'Romarin'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Production de plantes à parfum, aromatiques et médicinales en agriculture biologique. Valorisation directe en huiles essentielles et vente circuits courts.'
-    },
-    {
-      id: 'e12',
-      name: 'Sarrasin-Millet Anciennes Variétés',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'EARL Terroir',
-      parcelle: 'Zone sèche',
-      ville: 'Le Puy-en-Velay',
-      departement: '43',
-      dateModification: new Date('2024-11-13'),
-      margeBrute: 9200,
-      eiq: 8,
-      nbAnnees: 3,
-      productions: ['Sarrasin', 'Millet', 'Lentilles'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Cultures anciennes adaptées aux terres pauvres et sèches. Valorisation AOP/IGP locale, autonomie semencière avec variétés paysannes.'
-    },
-    {
-      id: 'e13',
-      name: 'Verger Haute-Tige Cidricole',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Cidrerie Fermière',
-      parcelle: 'Verger traditionnel',
-      ville: 'Caen',
-      departement: '14',
-      dateModification: new Date('2024-11-11'),
-      margeBrute: 18700,
-      eiq: 10,
-      nbAnnees: 1,
-      productions: ['Pommes'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Verger haute-tige en agroforesterie avec pâturage ovin. Production cidricole artisanale AOP Calvados, haute biodiversité fonctionnelle.'
-    },
-    {
-      id: 'e14',
-      name: 'Riz Camarguais Biologique',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Rizière Bio',
-      parcelle: 'Casiers inondés',
-      ville: 'Arles',
-      departement: '13',
-      dateModification: new Date('2024-11-09'),
-      margeBrute: 14300,
-      eiq: 0,
-      nbAnnees: 3,
-      productions: ['Riz', 'Blé dur'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Riziculture biologique camarguaise en rotation avec blé dur. Gestion hydraulique écologique favorable à l\'avifaune et à la biodiversité des zones humides.'
-    },
-    {
-      id: 'e15',
-      name: 'Kiwi-Noyers Système Mixte',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Verger Mixte',
-      parcelle: 'Parcelle diversifiée',
-      ville: 'Agen',
-      departement: '47',
-      dateModification: new Date('2024-11-06'),
-      margeBrute: 26400,
-      eiq: 24,
-      nbAnnees: 1,
-      productions: ['Kiwi', 'Noix'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Association fruitière kiwi-noyers pour optimisation foncière. Double récolte automnale, complémentarité des cycles et des besoins en eau.'
-    },
-    {
-      id: 'e16',
-      name: 'Colza-Tournesol HVE Oléagineux',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'SCEA Oléagineuse',
-      parcelle: 'Parcelle Nord-Est',
-      ville: 'Niort',
-      departement: '79',
-      dateModification: new Date('2024-11-04'),
-      margeBrute: 11600,
-      eiq: 30,
-      nbAnnees: 4,
-      productions: ['Colza', 'Tournesol', 'Blé', 'Orge'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Rotation oléagineuse certifiée HVE avec désherbage mécanique combiné. Bandes fleuries, haies et couverts systématiques pour biodiversité fonctionnelle.'
-    },
-    {
-      id: 'e17',
-      name: 'Élevage Caprin Fromager Bio',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Chèvrerie Bio',
-      parcelle: 'Parcours et prairies',
-      ville: 'Poitiers',
-      departement: '86',
-      dateModification: new Date('2024-11-02'),
-      margeBrute: 21300,
-      eiq: 0,
-      nbAnnees: 5,
-      productions: ['Prairie', 'Luzerne', 'Maïs'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Élevage caprin fromager bio en autonomie fourragère. Transformation fermière AOP, pâturage tournant dynamique et séchage en grange du foin.'
-    },
-    {
-      id: 'e18',
-      name: 'Safran-Maraîchage Haute Valeur',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Micro-ferme Safran',
-      parcelle: 'Parcelle intensive',
-      ville: 'Clermont-Ferrand',
-      departement: '63',
-      dateModification: new Date('2024-10-30'),
-      margeBrute: 38500,
-      eiq: 0,
-      nbAnnees: 2,
-      productions: ['Safran', 'Salade', 'Tomate'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Production de safran associée au maraîchage bio diversifié. Épice à très haute valeur ajoutée, vente directe et transformation artisanale (confitures safranées).'
-    },
-    {
-      id: 'e19',
-      name: 'Trufficulture-Vignoble',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'Domaine Trufficole',
-      parcelle: 'Coteaux calcaires',
-      ville: 'Cahors',
-      departement: '46',
-      dateModification: new Date('2024-10-26'),
-      margeBrute: 32500,
-      eiq: 18,
-      nbAnnees: 1,
-      productions: ['Vigne', 'Truffes'],
-      cahierDesCharges: 'TCS',
-      description:
-        'Association trufficulture et viticulture sur terroir calcaire. Chênes truffiers en inter-rangs de vigne, double valorisation patrimoniale et économique.'
-    },
-    {
-      id: 'e20',
-      name: 'Seigle-Triticale Semences Paysannes',
-      farmer: 'Agriculteur Anonyme',
-      exploitation: 'EARL Semences',
-      parcelle: 'Parcelle isolée',
-      ville: 'Guéret',
-      departement: '23',
-      dateModification: new Date('2024-10-23'),
-      margeBrute: 7600,
-      eiq: 0,
-      nbAnnees: 4,
-      productions: ['Seigle', 'Triticale', 'Épeautre', 'Luzerne'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Production de semences paysannes de céréales rustiques. Sélection participative, multiplication en isolement, vente réseau agriculteurs bio.'
-    }
-  ]);
 
   // Filtered and sorted itineraries
   const filteredItineraries = useMemo(() => {

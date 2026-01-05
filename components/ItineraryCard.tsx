@@ -102,7 +102,7 @@ export function ItineraryCard({
               className={anonymized ? "text-gray-700" : "text-gray-700 hover:text-[#6b9571] hover:underline"}
             >
               {name}
-              {nbVariantes && nbVariantes > 0 && (
+              {nbVariantes != undefined && nbVariantes > 0 && (
                 <span className="text-gray-500"> - {nbVariantes} variante{nbVariantes > 1 ? 's' : ''}</span>
               )}
             </button>
