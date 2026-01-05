@@ -5,8 +5,6 @@ import { ContextPanel } from '@/components/ContextPanel';
 import { InterventionsTable } from '@/components/InterventionsTable';
 import { ChatBot } from '@/components/ChatBot';
 import { InterventionData, RotationData } from '@/lib/types';
-import rotationImage from '/assets/27306e63853312b0a5409dab31e623a342b89acd.png';
-import rotationImageVariante from '/assets/76a8820b2bbb143b9408e1bff60e1c3c5aabf95c.png';
 import { variant1Interventions } from '@/lib/data/variant1Interventions';
 import { ItineraireTechnique } from '@/components/ItineraireTechnique';
 
