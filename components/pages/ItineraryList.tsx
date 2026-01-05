@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, SlidersHorizontal, Trash2, Copy, Plus, Upload, FileJson, Wheat } from 'lucide-react';
 import { TopBar } from '@/components/TopBar';
 import { ItineraryCard } from '@/components/ItineraryCard';
@@ -36,316 +36,50 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
   const [productionFilter, setProductionFilter] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activeView, setActiveView] = useState<'my-systems' | 'explore'>('my-systems');
+  const [itineraries, setItineraries] = useState<Itinerary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sample data
-  const [itineraries] = useState<Itinerary[]>([
-    {
-      id: '1',
-      name: 'Rotation Bio 2027-2033',
-      farmer: 'Jean Dupont',
-      exploitation: 'EARL Dupont',
-      parcelle: 'Parcelle Sud',
-      ville: 'Toulouse',
-      departement: '31',
-      dateModification: new Date('2024-12-08'),
-      margeBrute: 12450,
-      eiq: 18,
-      nbAnnees: 7,
-      productions: ['Blé', 'Orge', 'Luzerne', 'Quinoa', 'Colza', 'Maïs'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Rotation agroécologique sur 7 ans avec cultures associées, digestat et réduction EIQ. Objectif : transition vers AB et amélioration des marges.',
-      nbVariantes: 2
-    },
-    {
-      id: '2',
-      name: 'Système Grandes Cultures Conserv.',
-      farmer: 'Marie Martin',
-      exploitation: 'GAEC Martin',
-      parcelle: 'Plateau Est',
-      ville: 'Albi',
-      departement: '81',
-      dateModification: new Date('2024-12-05'),
-      margeBrute: 9800,
-      eiq: 22,
-      nbAnnees: 5,
-      productions: ['Blé', 'Colza', 'Orge'],
-      cahierDesCharges: 'TCS',
-      description:
-        'Système de grandes cultures en agriculture de conservation avec couverts végétaux et désherbage mécanique.',
-      nbVariantes: 1
-    },
-    {
-      id: '3',
-      name: 'Polyculture-Élevage Intégré',
-      farmer: 'Pierre Legrand',
-      exploitation: 'SCEA Legrand',
-      parcelle: 'Vallée Ouest',
-      ville: 'Castres',
-      departement: '81',
-      dateModification: new Date('2024-12-01'),
-      margeBrute: 15200,
-      eiq: 12,
-      nbAnnees: 6,
-      productions: ['Maïs', 'Luzerne', 'Prairie', 'Blé'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Système polyculture-élevage avec autonomie fourragère, valorisation des effluents et rotation longue.',
-      nbVariantes: 3
-    },
-    {
-      id: '4',
-      name: 'Maraîchage Diversifié Bio',
-      farmer: 'Sophie Bernard',
-      exploitation: 'Les Jardins de Sophie',
-      parcelle: 'Serre 1-5',
-      ville: 'Montauban',
-      departement: '82',
-      dateModification: new Date('2024-11-28'),
-      margeBrute: 28500,
-      eiq: 0,
-      nbAnnees: 3,
-      productions: ['Luzerne'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Maraîchage bio diversifié en circuit court avec engrais verts et rotations courtes intensives.',
-      nbVariantes: 2
-    },
-    {
-      id: '5',
-      name: 'Céréales + Légumineuses',
-      farmer: 'Jean Dupont',
-      exploitation: 'EARL Dupont',
-      parcelle: 'Parcelle Nord',
-      ville: 'Toulouse',
-      departement: '31',
-      dateModification: new Date('2024-11-25'),
-      margeBrute: 8900,
-      eiq: 20,
-      nbAnnees: 4,
-      productions: ['Blé', 'Orge', 'Luzerne'],
-      cahierDesCharges: 'ACS',
-      description:
-        'Rotation céréales-légumineuses pour améliorer la fertilité des sols et réduire les intrants azotés.'
-    },
-    {
-      id: '6',
-      name: 'Tournesol-Blé Conventionnel',
-      farmer: 'Marie Martin',
-      exploitation: 'GAEC Martin',
-      parcelle: 'Plateau Ouest',
-      ville: 'Albi',
-      departement: '81',
-      dateModification: new Date('2024-11-22'),
-      margeBrute: 10500,
-      eiq: 45,
-      nbAnnees: 2,
-      productions: ['Tournesol', 'Blé'],
-      description:
-        'Rotation courte tournesol-blé en système conventionnel avec désherbage chimique et fertilisation minérale.'
-    },
-    {
-      id: '7',
-      name: 'Viticulture Raisonnée',
-      farmer: 'Camille Dubois',
-      exploitation: 'Domaine Dubois',
-      parcelle: 'Coteau Sud',
-      ville: 'Gaillac',
-      departement: '81',
-      dateModification: new Date('2024-11-20'),
-      margeBrute: 22000,
-      eiq: 28,
-      nbAnnees: 1,
-      productions: ['Vigne'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Viticulture raisonnée avec enherbement inter-rangs et réduction des intrants phytosanitaires.',
-      nbVariantes: 1
-    },
-    {
-      id: '8',
-      name: 'Sorgho-Soja Irrigué',
-      farmer: 'Sophie Bernard',
-      exploitation: 'Les Jardins de Sophie',
-      parcelle: 'Parcelle Irrigable',
-      ville: 'Montauban',
-      departement: '82',
-      dateModification: new Date('2024-11-18'),
-      margeBrute: 11200,
-      eiq: 32,
-      nbAnnees: 3,
-      productions: ['Sorgho', 'Soja', 'Blé'],
-      description:
-        'Rotation avec cultures d\'été irriguées pour sécuriser les rendements en contexte de sécheresse.'
-    },
-    {
-      id: '9',
-      name: 'Arboriculture Fruitière Bio',
-      farmer: 'Emma Fournier',
-      exploitation: 'Verger du Soleil',
-      parcelle: 'Verger Principal',
-      ville: 'Cahors',
-      departement: '46',
-      dateModification: new Date('2024-11-15'),
-      margeBrute: 35000,
-      eiq: 0,
-      nbAnnees: 1,
-      productions: ['Pommes', 'Poires'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Arboriculture fruitière en agriculture biologique avec gestion des adventices par paillage et faune auxiliaire.'
-    },
-    {
-      id: '10',
-      name: 'Colza-Blé-Orge Classique',
-      farmer: 'Jean Dupont',
-      exploitation: 'EARL Dupont',
-      parcelle: 'Parcelle Est',
-      ville: 'Toulouse',
-      departement: '31',
-      dateModification: new Date('2024-11-12'),
-      margeBrute: 9500,
-      eiq: 48,
-      nbAnnees: 3,
-      productions: ['Colza', 'Blé', 'Orge'],
-      description:
-        'Rotation triennale classique en grandes cultures avec labour et protection phytosanitaire standard.'
-    },
-    {
-      id: '11',
-      name: 'Prairies Permanentes Extensives',
-      farmer: 'Pierre Legrand',
-      exploitation: 'SCEA Legrand',
-      parcelle: 'Prairies Basses',
-      ville: 'Castres',
-      departement: '81',
-      dateModification: new Date('2024-11-10'),
-      margeBrute: 4500,
-      eiq: 0,
-      nbAnnees: 1,
-      productions: ['Prairie'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Prairies permanentes extensives pour l\'élevage bovin avec zéro intrant et biodiversité préservée.'
-    },
-    {
-      id: '12',
-      name: 'Pois-Blé-Tournesol',
-      farmer: 'Alexandre Mercier',
-      exploitation: 'GAEC Mercier',
-      parcelle: 'Secteur Est',
-      ville: 'Narbonne',
-      departement: '11',
-      dateModification: new Date('2024-11-08'),
-      margeBrute: 10800,
-      eiq: 25,
-      nbAnnees: 3,
-      productions: ['Pois', 'Blé', 'Tournesol'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Rotation avec protéagineux pour fixation azotée et amélioration de la structure du sol.'
-    },
-    {
-      id: '13',
-      name: 'Maïs Semence Irrigué',
-      farmer: 'Pierre Legrand',
-      exploitation: 'SCEA Legrand',
-      parcelle: 'Parcelle Irriguée',
-      ville: 'Castres',
-      departement: '81',
-      dateModification: new Date('2024-11-05'),
-      margeBrute: 18500,
-      eiq: 38,
-      nbAnnees: 2,
-      productions: ['Maïs', 'Blé'],
-      description:
-        'Production de maïs semence sous contrat avec irrigation pilotée et fertilisation raisonnée.'
-    },
-    {
-      id: '14',
-      name: 'Féverole-Triticale Bio',
-      farmer: 'Claire Lambert',
-      exploitation: 'Les Terres de Claire',
-      parcelle: 'Parcelle Bio 2',
-      ville: 'Carcassonne',
-      departement: '11',
-      dateModification: new Date('2024-11-03'),
-      margeBrute: 7800,
-      eiq: 0,
-      nbAnnees: 4,
-      productions: ['Féverole', 'Triticale', 'Luzerne', 'Blé'],
-      cahierDesCharges: 'Bio',
-      description:
-        'Rotation bio avec légumineuses à graines et fourragères pour autonomie protéique et fertilité.'
-    },
-    {
-      id: '15',
-      name: 'Cultures Méditerranéennes',
-      farmer: 'Marc Durand',
-      exploitation: 'SCEA Durand Sud',
-      parcelle: 'Terrasses',
-      ville: 'Perpignan',
-      departement: '66',
-      dateModification: new Date('2024-11-01'),
-      margeBrute: 13500,
-      eiq: 30,
-      nbAnnees: 3,
-      productions: ['Melon', 'Salade', 'Tomate'],
-      description:
-        'Cultures maraîchères méditerranéennes en plein champ avec paillage plastique et irrigation goutte-à-goutte.'
-    },
-    {
-      id: '16',
-      name: 'Blé Dur-Pois Chiche',
-      farmer: 'Sophie Bernard',
-      exploitation: 'Les Jardins de Sophie',
-      parcelle: 'Plaine Sèche',
-      ville: 'Montauban',
-      departement: '82',
-      dateModification: new Date('2024-10-28'),
-      margeBrute: 8200,
-      eiq: 24,
-      nbAnnees: 2,
-      productions: ['Blé dur', 'Pois chiche'],
-      cahierDesCharges: 'ACS',
-      description:
-        'Rotation adaptée au climat méditerranéen sec avec cultures résistantes à la sécheresse.'
-    },
-    {
-      id: '17',
-      name: 'Agroforesterie Noyers-Céréales',
-      farmer: 'Vincent Leroy',
-      exploitation: 'Domaine Leroy',
-      parcelle: 'Parcelle Agroforestière',
-      ville: 'Périgueux',
-      departement: '24',
-      dateModification: new Date('2024-10-25'),
-      margeBrute: 14500,
-      eiq: 15,
-      nbAnnees: 5,
-      productions: ['Noix', 'Blé', 'Orge'],
-      cahierDesCharges: 'HVE',
-      description:
-        'Système agroforestier associant noyers et grandes cultures avec amélioration de la biodiversité.'
-    },
-    {
-      id: '18',
-      name: 'Lin-Blé-Colza',
-      farmer: 'Pauline Michel',
-      exploitation: 'EARL Michel',
-      parcelle: 'Grande Parcelle',
-      ville: 'Pau',
-      departement: '64',
-      dateModification: new Date('2024-10-22'),
-      margeBrute: 11800,
-      eiq: 40,
-      nbAnnees: 3,
-      productions: ['Lin', 'Blé', 'Colza'],
-      cahierDesCharges: 'TCS',
-      description:
-        'Rotation incluant culture de lin fibre sous contrat avec désherbage mécanique et chimique combiné.'
-    }
-  ]);
+  // Fetch systems from API
+  useEffect(() => {
+    const fetchSystems = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/systems');
+        if (!response.ok) throw new Error('Failed to fetch systems');
+        const systems = await response.json();
+
+        // Transform systems data to match Itinerary interface
+        const transformedData: Itinerary[] = systems.map((system: any) => ({
+          id: system.id.toString(),
+          name: system.name || 'Système sans nom',
+          farmer: system.farmer_name || 'Agriculteur inconnu',
+          exploitation: system.farm_name || 'Exploitation inconnue',
+          parcelle: system.description || '',
+          ville: system.town || '',
+          departement: '',
+          dateModification: new Date(system.updated_at),
+          margeBrute: 0,
+          eiq: 0,
+          nbAnnees: 0,
+          productions: system.productions ? system.productions.split(',').map((p: string) => p.trim()) : [],
+          cahierDesCharges: system.system_type || '',
+          description: system.description || '',
+          nbVariantes: 0
+        }));
+
+        setItineraries(transformedData);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching systems:', err);
+        setError('Erreur lors du chargement des systèmes');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSystems();
+  }, []);
 
   // Data for "Explorer d'autres systèmes" view
   const [exploreItineraries] = useState<Itinerary[]>([
@@ -786,6 +520,26 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
       />
 
       <main className="px-6 py-6">
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-[#6b9571] mb-4"></div>
+              <p className="text-gray-600">Chargement des systèmes...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && !isLoading && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
+
+        {/* Main content */}
+        {!isLoading && !error && (
+          <>
         {/* Page Title and Actions */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -975,6 +729,8 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
           <div className="text-center py-12 text-gray-500">
             <p>Aucun système de cultures trouvé</p>
           </div>
+        )}
+        </>
         )}
       </main>
 
