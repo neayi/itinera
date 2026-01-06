@@ -3,12 +3,12 @@ import { validateDiscourseSSO } from '@/lib/discourse-sso';
 import { findOrCreateUser } from '@/lib/user';
 import { SignJWT } from 'jose';
 
-async function generateToken(userId: number, email: string, name: string): Promise<string> {
+async function generateToken(userId: number, email: string, name: string, username: string): Promise<string> {
   const secret = new TextEncoder().encode(
     process.env.SESSION_SECRET || 'default_secret_change_me'
   );
 
-  const token = await new SignJWT({ userId, email, name })
+  const token = await new SignJWT({ userId, email, name, username })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     console.log('[SSO Callback] User created/updated:', { id: user.id, email: user.email, name: user.name });
 
     // Générer un token JWT
-    const token = await generateToken(user.id, user.email, user.name);
+    const token = await generateToken(user.id, user.email, user.name, user.username);
     console.log('[SSO Callback] JWT token generated, length:', token.length);
 
     // Créer la réponse avec redirection

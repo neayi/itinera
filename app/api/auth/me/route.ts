@@ -5,6 +5,7 @@ export interface AuthUser {
   userId: number;
   email: string;
   name: string;
+  username: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -42,6 +43,7 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
       userId: payload.userId as number,
       email: payload.email as string,
       name: payload.name as string,
+      username: payload.username as string,
     };
   } catch (error) {
     console.error('Error verifying token:', error);

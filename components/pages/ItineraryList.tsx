@@ -484,7 +484,7 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
                   className="w-full flex items-center gap-3 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:border-[#6b9571] hover:bg-gray-50 transition-colors"
                 >
                   <Wheat className="size-5" />
-                  <span>Mes Parcels</span>
+                  <span>MesParcelles</span>
                 </button>
               </div>
 

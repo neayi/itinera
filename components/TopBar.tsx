@@ -17,12 +17,13 @@ interface TopBarProps {
 interface UserInfo {
   name: string;
   email: string;
+  username?: string;
 }
 
 export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'Originale', onVariantChange, rotationTitle = 'Rotation Bio 2027-2033', activeView = 'my-systems', onViewChange }: TopBarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [userInfo, setUserInfo] = useState<UserInfo>({ name: 'Utilisateur', email: '' });
+  const [userInfo, setUserInfo] = useState<UserInfo>({ name: 'Utilisateur', email: '', username: undefined });
 
   const variants = ['Originale', 'Variante 1'];
 
@@ -35,6 +36,7 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
           setUserInfo({
             name: data.user.name,
             email: data.user.email,
+            username: data.user.username,
           });
         }
       })
@@ -42,6 +44,24 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
         console.error('Error fetching user info:', error);
       });
   }, []);
+
+  // Generate user initials from name
+  const getUserInitials = (name: string): string => {
+    const parts = name.split(' ').filter(p => p.length > 0);
+    if (parts.length >= 2) {
+      return parts[0][0] + parts[parts.length - 1][0];
+    }
+    return parts[0]?.[0] || 'U';
+  };
+
+  // Generate avatar URL
+  const getAvatarUrl = (username?: string, name?: string): string => {
+    if (!username) return '';
+    const initials = getUserInitials(name || 'User');
+    return `https://insights.tripleperformance.fr/api/user/discourse/avatar/${username}/${initials}/6b9571/100`;
+  };
+
+  const avatarUrl = getAvatarUrl(userInfo.username, userInfo.name);
 
   const handleLogout = async () => {
     try {
@@ -101,9 +121,17 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
                 <span className="text-white">{userInfo.name}</span>
-                <div className="bg-[#f5f5f0] rounded-full size-8 flex items-center justify-center">
-                  <User className="size-5 text-[#6b9571]" />
-                </div>
+                {avatarUrl ? (
+                  <img 
+                    src={avatarUrl} 
+                    alt={userInfo.name}
+                    className="rounded-full size-8 object-cover"
+                  />
+                ) : (
+                  <div className="bg-[#f5f5f0] rounded-full size-8 flex items-center justify-center">
+                    <User className="size-5 text-[#6b9571]" />
+                  </div>
+                )}
               </div>
 
               {/* User Menu Dropdown */}
@@ -192,9 +220,17 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
               onClick={() => setUserMenuOpen(!userMenuOpen)}
             >
               <span className="text-white">{userInfo.name}</span>
-              <div className="bg-[#f5f5f0] rounded-full size-8 flex items-center justify-center">
-                <User className="size-5 text-[#6b9571]" />
-              </div>
+              {avatarUrl ? (
+                <img 
+                  src={avatarUrl} 
+                  alt={userInfo.name}
+                  className="rounded-full size-8 object-cover"
+                />
+              ) : (
+                <div className="bg-[#f5f5f0] rounded-full size-8 flex items-center justify-center">
+                  <User className="size-5 text-[#6b9571]" />
+                </div>
+              )}
             </div>
 
             {/* User Menu Dropdown */}
