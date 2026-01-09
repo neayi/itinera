@@ -2,46 +2,16 @@
 
 import { useState, useMemo } from 'react';
 import {
-  ColumnDef,
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import './interventions-table.css';
 
-// Type pour une intervention individuelle
-interface InterventionRow {
-  id: string;
-  stepIndex: number;
-  interventionIndex: number;
-  name: string;
-  description: string;
-  produit: string;
-  date: string;
-  frequence: string;
-  unitesMineral: string;
-  azoteOrganique: string;
-  rendementTMS: string;
-  ift: string;
-  eiq: string;
-  ges: string;
-  tempsTravail: string;
-  coutsPhytos: string;
-  semences: string;
-  engrais: string;
-  mecanisation: string;
-  gnr: string;
-  irrigation: string;
-  totalCharges: string;
-  prixVente: string;
-  margeBrute: string;
-}
-
-interface InterventionsDataTableProps {
-  systemData: any;
-}
+import { InterventionRow, InterventionsDataTableProps } from './types';
+import { interventionColumns } from './columns';
+import './interventions-table.scss';
 
 export function InterventionsDataTable({ systemData }: InterventionsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -53,6 +23,37 @@ export function InterventionsDataTable({ systemData }: InterventionsDataTablePro
     const rows: InterventionRow[] = [];
     
     systemData.steps.forEach((step: any, stepIndex: number) => {
+      // Ajouter d'abord la ligne de total pour ce step
+      rows.push({
+        id: `step-total-${stepIndex}`,
+        stepIndex,
+        interventionIndex: -1, // Indicateur pour ligne de total
+        name: step.name || `Step ${stepIndex + 1}`,
+        description: '',
+        produit: '',
+        date: '',
+        frequence: '',
+        unitesMineral: '',
+        azoteOrganique: '',
+        rendementTMS: '',
+        ift: '',
+        eiq: '',
+        ges: '',
+        tempsTravail: '',
+        coutsPhytos: '',
+        semences: '',
+        engrais: '',
+        mecanisation: '',
+        gnr: '',
+        irrigation: '',
+        totalCharges: '',
+        prixVente: '',
+        margeBrute: '',
+        isStepTotal: true,
+        stepName: step.name || `Step ${stepIndex + 1}`,
+      });
+
+      // Puis ajouter les interventions
       if (step.interventions && Array.isArray(step.interventions)) {
         step.interventions.forEach((intervention: any, interventionIndex: number) => {
           // Calculer la date en ajoutant les jours à la startDate du step
@@ -93,6 +94,7 @@ export function InterventionsDataTable({ systemData }: InterventionsDataTablePro
             totalCharges: '',
             prixVente: '',
             margeBrute: '',
+            isStepTotal: false,
           });
         });
       }
@@ -101,144 +103,9 @@ export function InterventionsDataTable({ systemData }: InterventionsDataTablePro
     return rows;
   }, [systemData]);
 
-  // Définition des colonnes avec groupes
-  const columns = useMemo<ColumnDef<InterventionRow>[]>(
-    () => [
-      // Colonnes non groupées
-      {
-        accessorKey: 'name',
-        header: 'Intervention',
-        cell: (info) => info.getValue(),
-      },
-      {
-        accessorKey: 'description',
-        header: 'Description',
-        cell: (info) => info.getValue(),
-        size: 250,
-      },
-      {
-        accessorKey: 'produit',
-        header: 'Produit',
-        cell: (info) => info.getValue() || '-',
-      },
-      {
-        accessorKey: 'date',
-        header: 'Date',
-        cell: (info) => info.getValue() || '-',
-      },
-      // Groupe Agronomie
-      {
-        id: 'agronomie',
-        header: 'Agronomie',
-        columns: [
-          {
-            accessorKey: 'frequence',
-            header: 'Fréquence',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'unitesMineral',
-            header: 'Unités minéral',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'azoteOrganique',
-            header: 'Azote organique',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'rendementTMS',
-            header: 'Rendement',
-            cell: (info) => info.getValue() || '-',
-          },
-        ],
-      },
-      // Groupe Environnemental et social
-      {
-        id: 'environnemental',
-        header: 'Environnemental et social',
-        columns: [
-          {
-            accessorKey: 'ift',
-            header: 'IFT',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'eiq',
-            header: 'EIQ',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'ges',
-            header: 'GES',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'tempsTravail',
-            header: 'Temps de travail',
-            cell: (info) => info.getValue() || '-',
-          },
-        ],
-      },
-      // Groupe Économique
-      {
-        id: 'economique',
-        header: 'Économique',
-        columns: [
-          {
-            accessorKey: 'coutsPhytos',
-            header: 'Coûts phytos',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'semences',
-            header: 'Semences',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'engrais',
-            header: 'Engrais',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'mecanisation',
-            header: 'Mécanisation',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'gnr',
-            header: 'GNR',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'irrigation',
-            header: 'Irrigation',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'totalCharges',
-            header: 'Total charges',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'prixVente',
-            header: 'Prix de vente',
-            cell: (info) => info.getValue() || '-',
-          },
-          {
-            accessorKey: 'margeBrute',
-            header: 'Marge brute',
-            cell: (info) => info.getValue() || '-',
-          },
-        ],
-      },
-    ],
-    []
-  );
-
   const table = useReactTable({
     data: interventionsData,
-    columns,
+    columns: interventionColumns,
     state: {
       sorting,
     },
@@ -262,14 +129,33 @@ export function InterventionsDataTable({ systemData }: InterventionsDataTablePro
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className={headerGroup.depth === 0 ? 'group-header-row' : ''}>
-                {headerGroup.headers.map((header) => (
+                {headerGroup.headers.map((header) => {
+                  // Déterminer la classe de groupe pour les en-têtes
+                  let groupClass = 'group-header';
+                  if (header.column.id === 'agronomie' || header.column.parent?.id === 'agronomie') groupClass += ' group-agronomie';
+                  else if (header.column.id === 'environnemental' || header.column.parent?.id === 'environnemental') groupClass += ' group-environnemental';
+                  else if (header.column.id === 'economique' || header.column.parent?.id === 'economique') groupClass += ' group-economique';
+                  
+                  if (header.column.parent != undefined) {
+                    groupClass += ' sub-header';
+
+                    if (header.column.parent.columns.at(0).id === header.column.id) {
+                      groupClass += ' sub-header-start';
+                    }
+
+                    if (header.column.parent.columns.at(-1).id === header.column.id) {
+                      groupClass += ' sub-header-end';
+                    }
+                  }
+
+                  return (
                   <th 
                     key={header.id}
                     colSpan={header.colSpan}
-                    className={header.depth === 0 && header.colSpan > 1 ? 'group-header' : ''}
+                    className={groupClass}
                     style={{
-                      width: header.getSize() > 0 ? header.getSize() : 'auto'
-                      
+                      width: header.getSize() > 0 ? header.getSize() : 'auto',
+                      textAlign: (header.column.columnDef.meta as any)?.align || 'left'
                     }}
                   >
                     {header.isPlaceholder ? null : (
@@ -292,19 +178,24 @@ export function InterventionsDataTable({ systemData }: InterventionsDataTablePro
                       </div>
                     )}
                   </th>
-                ))}
+                  );
+                })}
               </tr>
             ))}
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
+              <tr 
+                key={row.id}
+                className={row.original.isStepTotal ? 'step-total-row' : ''}
+              >
                 {row.getVisibleCells().map((cell) => (
                   <td 
                     key={cell.id}
                     style={{
                       width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined,
                       maxWidth: cell.column.columnDef.maxSize,
+                      textAlign: (cell.column.columnDef.meta as any)?.align || 'left'
                     }}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

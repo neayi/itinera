@@ -1,0 +1,255 @@
+// Variables
+$color-white    : white;
+$color-gray-50  : #f9fafb;
+$color-gray-100 : #f3f4f6;
+$color-gray-200 : #e5e7eb;
+$color-gray-300 : #d1d5db;
+$color-gray-400 : #cbd5e1;
+$color-gray-500 : #94a3b8;
+$color-gray-600 : #4b5563;
+$color-gray-700 : #374151;
+$color-gray-800 : #1f2937;
+$color-green-50 : #f0fdf4;
+$color-blue-50  : #eff6ff;
+$color-yellow-50: #fffbeb;
+
+$border-radius   : 8px;
+$transition-speed: 0.15s;
+$shadow-sm       : 0 1px 3px rgba(0, 0, 0, 0.1);
+$shadow-sticky   : 2px 0 4px rgba(0, 0, 0, 0.05);
+
+// Container
+.interventions-table-container {
+    width        : 100%;
+    margin       : 2rem 0;
+    background   : $color-white;
+    border-radius: $border-radius;
+    box-shadow   : $shadow-sm;
+    overflow     : hidden;
+}
+
+.table-wrapper {
+    width     : 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 600px;
+
+    // Scrollbar styling
+    &::-webkit-scrollbar {
+        width : 8px;
+        height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background   : #f1f1f1;
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background   : $color-gray-400;
+        border-radius: 4px;
+
+        &:hover {
+            background: $color-gray-500;
+        }
+    }
+}
+
+// Table
+.interventions-table {
+    width          : 100%;
+    border-collapse: collapse;
+    font-size      : 0.875rem;
+    min-width      : 800px;
+    table-layout   : fixed;
+
+    // Header
+    thead {
+        position     : sticky;
+        top          : 0;
+        z-index      : 10;
+        background   : $color-gray-50;
+        border-bottom: 2px solid $color-gray-200;
+    }
+
+    th {
+        padding      : 0.75rem 1rem;
+        text-align   : left;
+        font-weight  : 600;
+        color        : $color-gray-700;
+        white-space  : nowrap;
+        border-bottom: 1px solid $color-gray-200;
+        background   : $color-gray-50;
+
+        &:first-child {
+            position  : sticky;
+            left      : 0;
+            z-index   : 11;
+            background: $color-gray-50;
+            box-shadow: $shadow-sticky;
+        }
+    }
+
+    // Group header styles
+    .group-header-row {
+        background: $color-gray-200;
+    }
+
+    th.group-header {
+        background : #f9fafb;
+        text-align : center;
+        font-weight: 700;
+        color      : $color-gray-800;
+
+        &.group-agronomie, &.group-environnemental, &.group-economique {
+            border-right: 1px solid #d1d5db;
+            border-left : 1px solid #d1d5db;
+            border-bottom: 1px solid #d1d5db;
+            border-top: 1px solid #d1d5db;
+
+        }
+        
+        &.sub-header {
+            border-right: none;
+            border-left : none;
+        }
+
+        &.sub-header-start {
+            border-left : 1px solid #d1d5db !important;
+        }
+
+        &.sub-header-end {
+            border-right: 1px solid #d1d5db !important;
+        }
+
+        font-size     : 0.9rem;
+        letter-spacing: 0.025em;
+
+        // Group colors
+        &.group-agronomie {
+            background  : $color-green-50;
+        }
+
+        &.group-environnemental {
+            background: $color-blue-50;
+        }
+
+        &.group-economique {
+            background: $color-yellow-50;
+        }
+    }
+
+    // Sortable header
+    .sortable-header {
+        cursor     : pointer;
+        user-select: none;
+        display    : inline-flex;
+        align-items: center;
+        gap        : 0.25rem;
+
+        &:hover {
+            color: $color-gray-800;
+        }
+    }
+
+    // Body
+    tbody {
+        tr {
+            border-bottom: 1px solid $color-gray-200;
+            transition   : background-color $transition-speed ease;
+
+            &:hover {
+                background-color: $color-gray-50;
+
+                td:first-child {
+                    background-color: $color-gray-50;
+                }
+            }
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+
+        // Step total rows
+        .step-total-row {
+            background-color: $color-gray-100;
+            font-weight     : 600;
+            border-top      : 2px solid $color-gray-300;
+            border-bottom   : 2px solid $color-gray-300;
+
+            td {
+                font-weight: 600;
+                color      : $color-gray-800;
+
+                &:first-child {
+                    background-color: $color-gray-100;
+                }
+            }
+
+            &:hover {
+                background-color: $color-gray-200;
+
+                td:first-child {
+                    background-color: $color-gray-200;
+                }
+            }
+        }
+    }
+
+    // Cells
+    td {
+        padding: 0.75rem 1rem;
+        color  : $color-gray-600;
+
+        // Text wrapping for cells with max-width
+        &[style*="max-width"] {
+            white-space  : normal;
+            word-wrap    : break-word;
+            overflow-wrap: break-word;
+        }
+
+        // No wrap by default
+        &:not([style*="max-width"]) {
+            white-space: nowrap;
+        }
+
+        &:first-child {
+            position   : sticky;
+            left       : 0;
+            background : $color-white;
+            font-weight: 500;
+            color      : $color-gray-800;
+            box-shadow : $shadow-sticky;
+            z-index    : 1;
+        }
+    }
+}
+
+// No data message
+.no-data {
+    padding   : 2rem;
+    text-align: center;
+    color     : $color-gray-600;
+    font-style: italic;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+    .interventions-table-container {
+        margin: 1rem 0;
+    }
+
+    .table-wrapper {
+        max-height: 400px;
+    }
+
+    .interventions-table {
+        font-size: 0.75rem;
+
+        th,
+        td {
+            padding: 0.5rem 0.75rem;
+        }
+    }
+}
