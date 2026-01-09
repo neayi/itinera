@@ -1,0 +1,1 @@
+export { InterventionsDataTable } from './InterventionsDataTable';

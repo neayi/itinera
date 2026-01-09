@@ -7,6 +7,7 @@ import { ChatBot } from '@/components/ChatBot';
 import { InterventionData, RotationData } from '@/lib/types';
 import { variant1Interventions } from '@/lib/data/variant1Interventions';
 import { ItineraireTechnique } from '@/components/ItineraireTechnique';
+import { InterventionsDataTable } from '@/components/interventions-table';
 
 interface ProjectDetailsProps {
   projectId: string;
@@ -1480,6 +1481,12 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
               onCellChange={handleCellChange}
             />
           </section>
+
+          {/* Table des interventions basée sur systemData */}
+          <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <InterventionsDataTable systemData={systemData} />
+          </section>
+              
         </main>
 
         {/* ChatBot side panel */}
