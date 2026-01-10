@@ -158,7 +158,6 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
                     className={groupClass}
                     style={{
                       width: header.getSize() > 0 ? header.getSize() : 'auto',
-                      textAlign: (header.column.columnDef.meta as any)?.align || 'left'
                     }}
                   >
                     {header.isPlaceholder ? null : (
