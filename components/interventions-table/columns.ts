@@ -9,12 +9,14 @@ export const interventionColumns: ColumnDef<InterventionRow>[] = [
     header: 'Intervention',
     cell: (info) => info.getValue(),
     size: 250,
+    meta: { editable: true },
   },
   {
     accessorKey: 'description',
     header: 'Description',
     cell: (info) => info.getValue(),
     size: 250,
+    meta: { editable: true, multiline: true },
   },
   {
     accessorKey: 'produit',
@@ -25,7 +27,7 @@ export const interventionColumns: ColumnDef<InterventionRow>[] = [
     accessorKey: 'date',
     header: 'Date',
     cell: (info) => info.getValue() || '-',
-    meta: { align: 'center' },
+    meta: { align: 'center', editable: true },
   },
   // Groupe Agronomie
   {

@@ -1216,6 +1216,17 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
   useEffect(() => {
     if (!isMounted) return;
 
+    fetchSystemData();
+  }, [projectId, isMounted]);
+
+  const fetchSystemData = (updatedData?: any) => {
+    if (updatedData) {
+      // Si on reçoit les données mises à jour directement
+      setSystemData(updatedData);
+      return;
+    }
+    
+    // Sinon, recharger depuis l'API
     setIsLoading(true);
     fetch(`/api/systems/${projectId}`)
       .then(res => {
@@ -1243,7 +1254,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       .finally(() => {
         setIsLoading(false);
       });
-  }, [projectId, isMounted]);
+  };
 
   const [rotationData] = useState<RotationData[]>([
     {
@@ -1484,7 +1495,11 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
 
           {/* Table des interventions basée sur systemData */}
           <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <InterventionsDataTable systemData={systemData} />
+            <InterventionsDataTable 
+              systemData={systemData} 
+              systemId={projectId}
+              onUpdate={fetchSystemData}
+            />
           </section>
               
         </main>

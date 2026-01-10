@@ -30,4 +30,6 @@ export interface InterventionRow {
 
 export interface InterventionsDataTableProps {
   systemData: any;
+  systemId: string;
+  onUpdate?: (updatedSystemData: any) => void;
 }

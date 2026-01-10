@@ -11,9 +11,12 @@ import {
 
 import { InterventionRow, InterventionsDataTableProps } from './types';
 import { interventionColumns } from './columns';
+import { EditableDateCell } from './EditableDateCell';
+import { EditableTextCell } from './EditableTextCell';
+import { EditableTextAreaCell } from './EditableTextAreaCell';
 import './interventions-table.scss';
 
-export function InterventionsDataTable({ systemData }: InterventionsDataTableProps) {
+export function InterventionsDataTable({ systemData, systemId, onUpdate }: InterventionsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   // Extraire les interventions de systemData
@@ -198,7 +201,41 @@ export function InterventionsDataTable({ systemData }: InterventionsDataTablePro
                       textAlign: (cell.column.columnDef.meta as any)?.align || 'left'
                     }}
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    {(cell.column.columnDef.meta as any)?.editable && !row.original.isStepTotal ? (
+                      cell.column.id === 'date' ? (
+                        <EditableDateCell
+                          value={cell.getValue() as string}
+                          stepIndex={row.original.stepIndex}
+                          interventionIndex={row.original.interventionIndex}
+                          systemId={systemId}
+                          systemData={systemData}
+                          onUpdate={onUpdate}
+                        />
+                      ) : cell.column.id === 'description' ? (
+                        <EditableTextAreaCell
+                          value={cell.getValue() as string}
+                          stepIndex={row.original.stepIndex}
+                          interventionIndex={row.original.interventionIndex}
+                          systemId={systemId}
+                          systemData={systemData}
+                          onUpdate={onUpdate}
+                        />
+                      ) : cell.column.id === 'name' ? (
+                        <EditableTextCell
+                          value={cell.getValue() as string}
+                          stepIndex={row.original.stepIndex}
+                          interventionIndex={row.original.interventionIndex}
+                          systemId={systemId}
+                          systemData={systemData}
+                          fieldName="name"
+                          onUpdate={onUpdate}
+                        />
+                      ) : (
+                        flexRender(cell.column.columnDef.cell, cell.getContext())
+                      )
+                    ) : (
+                      flexRender(cell.column.columnDef.cell, cell.getContext())
+                    )}
                   </td>
                 ))}
               </tr>

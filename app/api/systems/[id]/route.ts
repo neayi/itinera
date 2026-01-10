@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { queryOne } from '@/lib/db';
+import { query, queryOne } from '@/lib/db';
 import { SystemWithFarm } from '@/lib/types';
 
 export async function GET(
@@ -42,6 +42,32 @@ export async function GET(
     console.error('Error fetching system:', error);
     return NextResponse.json(
       { error: 'Failed to fetch system' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    // Mise à jour du champ JSON
+    if (body.json) {
+      await query(
+        'UPDATE systems SET json = ?, updated_at = NOW() WHERE id = ?',
+        [JSON.stringify(body.json), id]
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error updating system:', error);
+    return NextResponse.json(
+      { error: 'Failed to update system' },
       { status: 500 }
     );
   }
