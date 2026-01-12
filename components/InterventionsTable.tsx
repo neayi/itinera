@@ -17,7 +17,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [focusedCell, setFocusedCell] = useState<{ interventionId: string; columnName: string; initialValue: any } | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    new Set(['intervention', 'description', 'produit', 'date', 'frequence', 'semences', 'engrais', 'unitesMineral', 'azoteOrganique', 'oligos', 'phytos', 'ift', 'hri1', 'mecanisation', 'irrigation', 'workTime', 'gnr', 'ges', 'charges', 'prixVente', 'margeBrute'])
+    new Set(['intervention', 'description', 'produit', 'date', 'frequence', 'semences', 'engrais', 'azoteMineral', 'azoteOrganique', 'oligos', 'phytos', 'ift', 'hri1', 'mecanisation', 'irrigation', 'workTime', 'gnr', 'ges', 'charges', 'prixVente', 'margeBrute'])
   );
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const columnSelectorRef = useRef<HTMLDivElement>(null);
@@ -77,7 +77,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
   };
 
   const showAgronomicColumns = () => {
-    setVisibleColumns(new Set(['intervention', 'description', 'produit', 'date', 'frequence', 'unitesMineral', 'azoteOrganique', 'oligos']));
+    setVisibleColumns(new Set(['intervention', 'description', 'produit', 'date', 'frequence', 'azoteMineral', 'azoteOrganique', 'oligos']));
   };
 
   const showEnvironmentalColumns = () => {
@@ -95,7 +95,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
     { key: 'frequence', label: 'Fréquence' },
     { key: 'semences', label: 'Semences' },
     { key: 'engrais', label: 'Engrais' },
-    { key: 'unitesMineral', label: 'U. minéral (N)' },
+    { key: 'azoteMineral', label: 'U. minéral (N)' },
     { key: 'azoteOrganique', label: 'Azote organique' },
     { key: 'oligos', label: 'Oligos' },
     { key: 'phytos', label: 'Phytos' },
@@ -165,7 +165,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
         charges: acc.charges + (item.charges || 0),
         semences: acc.semences + (item.semences || 0),
         engrais: acc.engrais + (item.engrais || 0),
-        unitesMineral: acc.unitesMineral + (item.unitesMineral || 0),
+        azoteMineral: acc.azoteMineral + (item.azoteMineral || 0),
         azoteOrganique: acc.azoteOrganique + (item.azoteOrganique || 0),
         oligos: acc.oligos + (item.oligos || 0),
         phytos: acc.phytos + (item.phytos || 0),
@@ -177,7 +177,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
         prixVente: acc.prixVente + (item.prixVente || 0),
         margeBrute: acc.margeBrute + (item.margeBrute || 0),
       }),
-      { cost: 0, workTime: 0, ges: 0, charges: 0, semences: 0, engrais: 0, unitesMineral: 0, azoteOrganique: 0, oligos: 0, phytos: 0, ift: 0, hri1: 0, mecanisation: 0, irrigation: 0, gnr: 0, prixVente: 0, margeBrute: 0 }
+      { cost: 0, workTime: 0, ges: 0, charges: 0, semences: 0, engrais: 0, azoteMineral: 0, azoteOrganique: 0, oligos: 0, phytos: 0, ift: 0, hri1: 0, mecanisation: 0, irrigation: 0, gnr: 0, prixVente: 0, margeBrute: 0 }
     );
   };
 
@@ -190,7 +190,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
       charges: acc.charges + (item.charges || 0),
       semences: acc.semences + (item.semences || 0),
       engrais: acc.engrais + (item.engrais || 0),
-      unitesMineral: acc.unitesMineral + (item.unitesMineral || 0),
+      azoteMineral: acc.azoteMineral + (item.azoteMineral || 0),
       azoteOrganique: acc.azoteOrganique + (item.azoteOrganique || 0),
       oligos: acc.oligos + (item.oligos || 0),
       phytos: acc.phytos + (item.phytos || 0),
@@ -202,7 +202,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
       prixVente: acc.prixVente + (item.prixVente || 0),
       margeBrute: acc.margeBrute + (item.margeBrute || 0),
     }),
-    { cost: 0, workTime: 0, ges: 0, charges: 0, semences: 0, engrais: 0, unitesMineral: 0, azoteOrganique: 0, oligos: 0, phytos: 0, ift: 0, hri1: 0, mecanisation: 0, irrigation: 0, gnr: 0, prixVente: 0, margeBrute: 0 }
+    { cost: 0, workTime: 0, ges: 0, charges: 0, semences: 0, engrais: 0, azoteMineral: 0, azoteOrganique: 0, oligos: 0, phytos: 0, ift: 0, hri1: 0, mecanisation: 0, irrigation: 0, gnr: 0, prixVente: 0, margeBrute: 0 }
   );
 
   // Calculate marge brute per hectare per year
@@ -217,7 +217,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
   const iftMoyenParAn = grandTotals.ift / nbYears;
 
   // Calculate NPK total par hectare par an (N = azote minéral + azote organique)
-  const azoteTotalParHaParAn = (grandTotals.unitesMineral + grandTotals.azoteOrganique) / (surface * nbYears);
+  const azoteTotalParHaParAn = (grandTotals.azoteMineral + grandTotals.azoteOrganique) / (surface * nbYears);
 
   // Mock data for Variante 1 (slightly different values for comparison)
   const variante1Totals = {
@@ -539,13 +539,13 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
                 {visibleColumns.has('description') && <th className="px-4 py-2 text-left min-w-[200px] bg-gray-50"></th>}
                 {visibleColumns.has('produit') && <th className="px-4 py-2 text-left min-w-[180px] bg-gray-50"></th>}
                 {/* Agronomique group */}
-                {(visibleColumns.has('date') || visibleColumns.has('frequence') || visibleColumns.has('unitesMineral') || visibleColumns.has('azoteOrganique') || visibleColumns.has('oligos')) && (
+                {(visibleColumns.has('date') || visibleColumns.has('frequence') || visibleColumns.has('azoteMineral') || visibleColumns.has('azoteOrganique') || visibleColumns.has('oligos')) && (
                   <th
                     className="px-4 py-2 text-center bg-green-50 border-l border-gray-300"
                     colSpan={
                       (visibleColumns.has('date') ? 1 : 0) +
                       (visibleColumns.has('frequence') ? 1 : 0) +
-                      (visibleColumns.has('unitesMineral') ? 1 : 0) +
+                      (visibleColumns.has('azoteMineral') ? 1 : 0) +
                       (visibleColumns.has('azoteOrganique') ? 1 : 0) +
                       (visibleColumns.has('oligos') ? 1 : 0)
                     }
@@ -596,7 +596,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
                 {/* Agronomique columns */}
                 {visibleColumns.has('date') && <th className="px-4 py-3 text-left bg-green-50 border-l border-gray-300">Date</th>}
                 {visibleColumns.has('frequence') && <th className="px-4 py-3 text-right bg-green-50">Fréquence</th>}
-                {visibleColumns.has('unitesMineral') && <th className="px-4 py-3 text-right bg-green-50">Unités minéral (azote)</th>}
+                {visibleColumns.has('azoteMineral') && <th className="px-4 py-3 text-right bg-green-50">Unités minéral (azote)</th>}
                 {visibleColumns.has('azoteOrganique') && <th className="px-4 py-3 text-right bg-green-50">Azote organique</th>}
                 {visibleColumns.has('oligos') && <th className="px-4 py-3 text-right bg-green-50">Rendement (TMS)</th>}
                 {/* Environnemental et social columns */}
@@ -666,7 +666,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
                       </td>
                       {visibleColumns.has('date') && <td className="px-4 py-3"></td>}
                       {visibleColumns.has('frequence') && <td className="px-4 py-3"></td>}
-                      {visibleColumns.has('unitesMineral') && <td className="px-4 py-3 text-right">{totals.unitesMineral > 0 ? totals.unitesMineral.toFixed(0) : ''}</td>}
+                      {visibleColumns.has('azoteMineral') && <td className="px-4 py-3 text-right">{totals.azoteMineral > 0 ? totals.azoteMineral.toFixed(0) : ''}</td>}
                       {visibleColumns.has('azoteOrganique') && <td className="px-4 py-3 text-right">{totals.azoteOrganique > 0 ? totals.azoteOrganique.toFixed(0) : ''}</td>}
                       {visibleColumns.has('oligos') && <td className="px-4 py-3 text-right">{totals.oligos > 0 ? totals.oligos.toFixed(0) : ''}</td>}
                       {visibleColumns.has('phytos') && <td className="px-4 py-3 text-right">{totals.phytos > 0 ? totals.phytos.toFixed(0) : ''}</td>}
@@ -753,16 +753,16 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
                               />
                             </td>
                           )}
-                          {visibleColumns.has('unitesMineral') && (
+                          {visibleColumns.has('azoteMineral') && (
                             <td className="px-0 py-0 border border-[#ebebeb] bg-[#ebf7ff] h-[48px]">
                               <input
                                 type="number"
-                                value={intervention.unitesMineral || ''}
+                                value={intervention.azoteMineral || ''}
                                 onChange={(e) =>
-                                  updateIntervention(intervention.id, 'unitesMineral', parseFloat(e.target.value) || 0)
+                                  updateIntervention(intervention.id, 'azoteMineral', parseFloat(e.target.value) || 0)
                                 }
-                                className={`w-full h-[48px] px-4 ${getInputBgClass(intervention.id, 'unitesMineral')} border-none text-[14px] text-[#212121] leading-[24px] text-right focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#4a6ad4]`}
-                                onFocus={() => handleCellFocus(intervention.id, intervention.name, 'unitesMineral')}
+                                className={`w-full h-[48px] px-4 ${getInputBgClass(intervention.id, 'azoteMineral')} border-none text-[14px] text-[#212121] leading-[24px] text-right focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#4a6ad4]`}
+                                onFocus={() => handleCellFocus(intervention.id, intervention.name, 'azoteMineral')}
                                 onBlur={() => handleCellBlur()}
                               />
                             </td>
@@ -1009,7 +1009,7 @@ export function InterventionsTable({ interventions, updateIntervention, surface 
                 {visibleColumns.has('produit') && <td className="px-4 py-3 bg-gray-100"></td>}
                 {visibleColumns.has('date') && <td className="px-4 py-3 bg-gray-100"></td>}
                 {visibleColumns.has('frequence') && <td className="px-4 py-3 bg-gray-100"></td>}
-                {visibleColumns.has('unitesMineral') && <td className="px-4 py-3 text-right bg-gray-100">{grandTotals.unitesMineral > 0 ? grandTotals.unitesMineral.toFixed(0) : ''}</td>}
+                {visibleColumns.has('azoteMineral') && <td className="px-4 py-3 text-right bg-gray-100">{grandTotals.azoteMineral > 0 ? grandTotals.azoteMineral.toFixed(0) : ''}</td>}
                 {visibleColumns.has('azoteOrganique') && <td className="px-4 py-3 text-right bg-gray-100">{grandTotals.azoteOrganique > 0 ? grandTotals.azoteOrganique.toFixed(0) : ''}</td>}
                 {visibleColumns.has('oligos') && <td className="px-4 py-3 text-right bg-gray-100">{grandTotals.oligos > 0 ? grandTotals.oligos.toFixed(0) : ''}</td>}
                 {visibleColumns.has('phytos') && <td className="px-4 py-3 text-right bg-gray-100">{grandTotals.phytos > 0 ? grandTotals.phytos.toFixed(0) : ''}</td>}

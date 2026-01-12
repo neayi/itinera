@@ -158,7 +158,7 @@ export function ChatBot({ interventions, setInterventions, isOpen, setIsOpen, fo
       frequence: 'Fréquence',
       semences: 'Semences',
       engrais: 'Engrais',
-      unitesMineral: 'Unités minéral (azote)',
+      azoteMineral: 'Unités minéral (azote)',
       azoteOrganique: 'Azote organique',
       oligos: 'Rendement (TMS)',
       phytos: 'Phytos',

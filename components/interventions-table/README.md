@@ -30,7 +30,7 @@ Le composant organise les colonnes en groupes pour une meilleure lisibilité:
 
 ### Groupe Agronomie
 - **Fréquence**: (vide pour le moment)
-- **Unités minéral**: (vide pour le moment)
+- **Azote minéral**: (vide pour le moment)
 - **Azote organique**: (vide pour le moment)
 - **Rendement**: (vide pour le moment)
 

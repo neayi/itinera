@@ -66,7 +66,7 @@ export interface InterventionData {
   produit?: string;
   semences?: number;
   engrais?: number;
-  unitesMineral?: number;
+  azoteMineral?: number;
   azoteOrganique?: number;
   oligos?: number;
   phytos?: number;

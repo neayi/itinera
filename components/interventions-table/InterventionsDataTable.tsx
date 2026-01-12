@@ -14,10 +14,18 @@ import { interventionColumns } from './columns';
 import { EditableDateCell } from './EditableDateCell';
 import { EditableTextCell } from './EditableTextCell';
 import { EditableTextAreaCell } from './EditableTextAreaCell';
+import { EditableNumberCell } from './EditableNumberCell';
 import './interventions-table.scss';
 
 export function InterventionsDataTable({ systemData, systemId, onUpdate }: InterventionsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
+
+  // Fonction utilitaire pour extraire une valeur du tableau values
+  const getValueFromArray = (intervention: any, key: string): number => {
+    if (!intervention.values || !Array.isArray(intervention.values)) return 0;
+    const item = intervention.values.find((v: any) => v.key === key);
+    return item ? (typeof item.value === 'number' ? item.value : 0) : 0;
+  };
 
   // Extraire les interventions de systemData
   const interventionsData = useMemo(() => {
@@ -35,23 +43,23 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
         description: '',
         produit: '',
         date: '',
-        frequence: '',
-        unitesMineral: '',
-        azoteOrganique: '',
-        rendementTMS: '',
-        ift: '',
-        eiq: '',
-        ges: '',
-        tempsTravail: '',
-        coutsPhytos: '',
-        semences: '',
-        engrais: '',
-        mecanisation: '',
-        gnr: '',
-        irrigation: '',
-        totalCharges: '',
-        prixVente: '',
-        margeBrute: '',
+        frequence: 0,
+        azoteMineral: 0,
+        azoteOrganique: 0,
+        rendementTMS: 0,
+        ift: 0,
+        eiq: 0,
+        ges: 0,
+        tempsTravail: 0,
+        coutsPhytos: 0,
+        semences: 0,
+        engrais: 0,
+        mecanisation: 0,
+        gnr: 0,
+        irrigation: 0,
+        totalCharges: 0,
+        prixVente: 0,
+        margeBrute: 0,
         isStepTotal: true,
         stepName: step.name || `Step ${stepIndex + 1}`,
       });
@@ -80,23 +88,23 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
             description: intervention.description || '',
             produit: '',
             date: dateStr,
-            frequence: '',
-            unitesMineral: '',
-            azoteOrganique: '',
-            rendementTMS: '',
-            ift: '',
-            eiq: '',
-            ges: '',
-            tempsTravail: '',
-            coutsPhytos: '',
-            semences: '',
-            engrais: '',
-            mecanisation: '',
-            gnr: '',
-            irrigation: '',
-            totalCharges: '',
-            prixVente: '',
-            margeBrute: '',
+            frequence: getValueFromArray(intervention, 'frequence'),
+            azoteMineral: getValueFromArray(intervention, 'azoteMineral'),
+            azoteOrganique: getValueFromArray(intervention, 'azoteOrganique'),
+            rendementTMS: getValueFromArray(intervention, 'rendementTMS'),
+            ift: getValueFromArray(intervention, 'ift'),
+            eiq: getValueFromArray(intervention, 'eiq'),
+            ges: getValueFromArray(intervention, 'ges'),
+            tempsTravail: getValueFromArray(intervention, 'tempsTravail'),
+            coutsPhytos: getValueFromArray(intervention, 'coutsPhytos'),
+            semences: getValueFromArray(intervention, 'semences'),
+            engrais: getValueFromArray(intervention, 'engrais'),
+            mecanisation: getValueFromArray(intervention, 'mecanisation'),
+            gnr: getValueFromArray(intervention, 'gnr'),
+            irrigation: getValueFromArray(intervention, 'irrigation'),
+            totalCharges: getValueFromArray(intervention, 'totalCharges'),
+            prixVente: getValueFromArray(intervention, 'prixVente'),
+            margeBrute: getValueFromArray(intervention, 'margeBrute'),
             isStepTotal: false,
           });
         });
@@ -201,7 +209,17 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
                     }}
                   >
                     {(cell.column.columnDef.meta as any)?.editable && !row.original.isStepTotal ? (
-                      cell.column.id === 'date' ? (
+                      (cell.column.columnDef.meta as any)?.fieldType === 'number' ? (
+                        <EditableNumberCell
+                          value={cell.getValue() as number}
+                          stepIndex={row.original.stepIndex}
+                          interventionIndex={row.original.interventionIndex}
+                          systemId={systemId}
+                          systemData={systemData}
+                          fieldKey={cell.column.id}
+                          onUpdate={onUpdate}
+                        />
+                      ) : cell.column.id === 'date' ? (
                         <EditableDateCell
                           value={cell.getValue() as string}
                           stepIndex={row.original.stepIndex}
