@@ -10,6 +10,7 @@ interface EditableNumberCellProps {
   systemId: string;
   systemData: any;
   fieldKey: FieldKey;
+  reviewed?: boolean | 'n/a';
   onUpdate?: (updatedSystemData: any) => void;
 }
 
@@ -20,6 +21,7 @@ export function EditableNumberCell({
   systemId,
   systemData,
   fieldKey,
+  reviewed,
   onUpdate 
 }: EditableNumberCellProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -56,10 +58,8 @@ export function EditableNumberCell({
 
     const finalValue = editValue === '' ? 0 : numValue;
 
-    if (finalValue === value) {
-      setIsEditing(false);
-      return;
-    }
+    // Même si la valeur n'a pas changé, on doit sauvegarder pour mettre reviewed = true
+    const valueChanged = finalValue !== value;
 
     setIsSaving(true);
     try {
@@ -79,9 +79,10 @@ export function EditableNumberCell({
       if (existingIndex >= 0) {
         // Mettre à jour la valeur existante
         intervention.values[existingIndex].value = finalValue;
+        intervention.values[existingIndex].reviewed = true;
       } else {
         // Ajouter une nouvelle entrée
-        intervention.values.push({ key: fieldKey, value: finalValue });
+        intervention.values.push({ key: fieldKey, value: finalValue, reviewed: true });
       }
 
       // Envoyer la mise à jour à l'API
@@ -185,6 +186,9 @@ export function EditableNumberCell({
     );
   }
 
+  // Déterminer si la cellule doit avoir un fond jaune
+  const needsReview = reviewed !== true && reviewed !== 'n/a';
+
   return (
     <span
       onClick={handleClick}
@@ -193,8 +197,10 @@ export function EditableNumberCell({
         display: 'block',
         padding: '0.25rem 0',
         minHeight: '1.5rem',
+        borderRadius: '0.25rem',
       }}
-      title="Cliquer pour éditer"
+      className={needsReview ? 'needsReview' : ''}
+      title={needsReview ? "Valeur à vérifier (cliquer pour éditer)" : "Cliquer pour éditer"}
     >
       {formatValue(value, fieldKey)}
     </span>

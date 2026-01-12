@@ -123,7 +123,6 @@ $shadow-sticky   : 2px 0 4px rgba(0, 0, 0, 0.05);
             border-right: 1px solid #d1d5db !important;
         }
 
-
         // Group colors
         &.group-agronomie {
             background  : $color-green-50;
@@ -138,6 +137,13 @@ $shadow-sticky   : 2px 0 4px rgba(0, 0, 0, 0.05);
         }
     }
 
+    td {
+        // TD that contains spans with a class needsReview should have a pale yellow background
+        &:has(.needsReview) {
+            background-color: #fef9c3; 
+        }
+    }
+    
     // Sortable header
     .sortable-header {
         cursor     : pointer;

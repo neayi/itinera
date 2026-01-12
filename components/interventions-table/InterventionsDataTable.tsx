@@ -27,6 +27,13 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
     return item ? (typeof item.value === 'number' ? item.value : 0) : 0;
   };
 
+  // Fonction utilitaire pour récupérer le statut reviewed
+  const getReviewedStatus = (intervention: any, key: string): boolean | 'n/a' | undefined => {
+    if (!intervention.values || !Array.isArray(intervention.values)) return undefined;
+    const item = intervention.values.find((v: any) => v.key === key);
+    return item?.reviewed;
+  };
+
   // Extraire les interventions de systemData
   const interventionsData = useMemo(() => {
     if (!systemData?.steps) return [];
@@ -228,7 +235,17 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
                 key={row.id}
                 className={row.original.isStepTotal ? 'step-total-row' : ''}
               >
-                {row.getVisibleCells().map((cell) => (
+                {row.getVisibleCells().map((cell) => {
+                  // Récupérer le statut reviewed pour les cellules numériques éditables
+                  let reviewedStatus: boolean | 'n/a' | undefined = undefined;
+                  if ((cell.column.columnDef.meta as any)?.fieldType === 'number' && !row.original.isStepTotal) {
+                    const intervention = systemData.steps[row.original.stepIndex]?.interventions[row.original.interventionIndex];
+                    if (intervention) {
+                      reviewedStatus = getReviewedStatus(intervention, cell.column.id);
+                    }
+                  }
+
+                  return (
                   <td 
                     key={cell.id}
                     style={{
@@ -246,6 +263,7 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
                           systemId={systemId}
                           systemData={systemData}
                           fieldKey={cell.column.id as any}
+                          reviewed={reviewedStatus}
                           onUpdate={onUpdate}
                         />
                       ) : cell.column.id === 'date' ? (
@@ -283,7 +301,8 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
                       flexRender(cell.column.columnDef.cell, cell.getContext())
                     )}
                   </td>
-                ))}
+                  );
+                })}
               </tr>
             ))}
           </tbody>
