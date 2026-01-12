@@ -34,16 +34,8 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
     const rows: InterventionRow[] = [];
     
     systemData.steps.forEach((step: any, stepIndex: number) => {
-      // Ajouter d'abord la ligne de total pour ce step
-      rows.push({
-        id: `step-total-${stepIndex}`,
-        stepIndex,
-        interventionIndex: -1, // Indicateur pour ligne de total
-        name: step.name || `Step ${stepIndex + 1}`,
-        description: '',
-        produit: '',
-        date: '',
-        frequence: 0,
+      // Calculer les totaux pour ce step
+      const stepTotals = {
         azoteMineral: 0,
         azoteOrganique: 0,
         rendementTMS: 0,
@@ -60,6 +52,43 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
         totalCharges: 0,
         prixVente: 0,
         margeBrute: 0,
+      };
+
+      // Calculer les totaux pondérés par la fréquence
+      if (step.interventions && Array.isArray(step.interventions)) {
+        step.interventions.forEach((intervention: any) => {
+          const freq = getValueFromArray(intervention, 'frequence') || 1; // Fréquence par défaut = 1
+          
+          stepTotals.azoteMineral += getValueFromArray(intervention, 'azoteMineral') * freq;
+          stepTotals.azoteOrganique += getValueFromArray(intervention, 'azoteOrganique') * freq;
+          stepTotals.rendementTMS += getValueFromArray(intervention, 'rendementTMS') * freq;
+          stepTotals.ift += getValueFromArray(intervention, 'ift') * freq;
+          stepTotals.eiq += getValueFromArray(intervention, 'eiq') * freq;
+          stepTotals.ges += getValueFromArray(intervention, 'ges') * freq;
+          stepTotals.tempsTravail += getValueFromArray(intervention, 'tempsTravail') * freq;
+          stepTotals.coutsPhytos += getValueFromArray(intervention, 'coutsPhytos') * freq;
+          stepTotals.semences += getValueFromArray(intervention, 'semences') * freq;
+          stepTotals.engrais += getValueFromArray(intervention, 'engrais') * freq;
+          stepTotals.mecanisation += getValueFromArray(intervention, 'mecanisation') * freq;
+          stepTotals.gnr += getValueFromArray(intervention, 'gnr') * freq;
+          stepTotals.irrigation += getValueFromArray(intervention, 'irrigation') * freq;
+          stepTotals.totalCharges += getValueFromArray(intervention, 'totalCharges') * freq;
+          stepTotals.prixVente += getValueFromArray(intervention, 'prixVente') * freq;
+          stepTotals.margeBrute += getValueFromArray(intervention, 'margeBrute') * freq;
+        });
+      }
+
+      // Ajouter la ligne de total pour ce step avec les valeurs calculées
+      rows.push({
+        id: `step-total-${stepIndex}`,
+        stepIndex,
+        interventionIndex: -1, // Indicateur pour ligne de total
+        name: step.name || `Step ${stepIndex + 1}`,
+        description: '',
+        produit: '',
+        date: '',
+        frequence: 0, // Pas de total de fréquence
+        ...stepTotals,
         isStepTotal: true,
         stepName: step.name || `Step ${stepIndex + 1}`,
       });
@@ -88,7 +117,7 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
             description: intervention.description || '',
             produit: '',
             date: dateStr,
-            frequence: getValueFromArray(intervention, 'frequence'),
+            frequence: getValueFromArray(intervention, 'frequence') || 1, // Fréquence par défaut = 1
             azoteMineral: getValueFromArray(intervention, 'azoteMineral'),
             azoteOrganique: getValueFromArray(intervention, 'azoteOrganique'),
             rendementTMS: getValueFromArray(intervention, 'rendementTMS'),
@@ -216,7 +245,7 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
                           interventionIndex={row.original.interventionIndex}
                           systemId={systemId}
                           systemData={systemData}
-                          fieldKey={cell.column.id}
+                          fieldKey={cell.column.id as any}
                           onUpdate={onUpdate}
                         />
                       ) : cell.column.id === 'date' ? (
