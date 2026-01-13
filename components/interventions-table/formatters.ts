@@ -15,6 +15,7 @@ export type FieldKey =
   | 'mecanisation'
   | 'gnr'
   | 'irrigation'
+  | 'totalProduits'
   | 'totalCharges'
   | 'prixVente'
   | 'margeBrute';
@@ -33,10 +34,10 @@ export function formatValue(value: number | string | null | undefined, fieldKey:
     case 'ift':
       return numValue.toFixed(1);
 
-    // Arrondi avec max 1 chiffre après la virgule, unité : kg
+    // Arrondi avec max 1 chiffre après la virgule, unité : uN
     case 'azoteMineral':
     case 'azoteOrganique':
-      return `${numValue % 1 === 0 ? numValue.toFixed(0) : numValue.toFixed(1)} kg`;
+      return `${numValue % 1 === 0 ? numValue.toFixed(0) : numValue.toFixed(1)} uN`;
 
     // Arrondi sans chiffre après la virgule, unité : qtx
     case 'rendementTMS':
@@ -61,6 +62,7 @@ export function formatValue(value: number | string | null | undefined, fieldKey:
     case 'mecanisation':
     case 'gnr':
     case 'irrigation':
+    case 'totalProduits':
     case 'totalCharges':
     case 'prixVente':
     case 'margeBrute':

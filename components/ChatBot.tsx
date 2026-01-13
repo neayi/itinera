@@ -5,8 +5,6 @@ import svgPaths from '@/components/imports/svg-abbk4gof4j';
 import svgPathsBreadcrumb from '@/components/imports/svg-cr1okqcvbh';
 
 interface ChatBotProps {
-  interventions: InterventionData[];
-  setInterventions: React.Dispatch<React.SetStateAction<InterventionData[]>>;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   focusedCell?: {
@@ -24,7 +22,7 @@ interface Message {
   timestamp: Date;
 }
 
-export function ChatBot({ interventions, setInterventions, isOpen, setIsOpen, focusedCell, contextualMessages = [], onAddContextualMessage }: ChatBotProps) {
+export function ChatBot({ isOpen, setIsOpen, focusedCell, contextualMessages = [], onAddContextualMessage }: ChatBotProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -103,14 +101,7 @@ export function ChatBot({ interventions, setInterventions, isOpen, setIsOpen, fo
       return {
         message: 'J\'ai analysé votre itinéraire. Voici une simulation pour réduire les coûts de 15% :\n\n✓ Remplacement du labour par un travail superficiel du sol (-40€)\n✓ Optimisation des passages de binage (regroupement) (-25€)\n✓ Substitution d\'engrais minéral par du digestat (-30€)\n\nRéduction totale estimée : ~250€ sur la rotation\nImpact GES : -12% d\'émissions\n\nVoulez-vous que j\'applique ces modifications au tableau ?',
         action: () => {
-          setInterventions(prev =>
-            prev.map(item => ({
-              ...item,
-              cost: (item.cost || 0) * 0.85,
-              charges: item.charges * 0.85,
-              ges: item.ges * 0.88
-            }))
-          );
+
         }
       };
     }
@@ -153,7 +144,6 @@ export function ChatBot({ interventions, setInterventions, isOpen, setIsOpen, fo
   const getColumnLabel = (columnName: string): string => {
     const labels: Record<string, string> = {
       description: 'Description',
-      produit: 'Produit',
       date: 'Date',
       frequence: 'Fréquence',
       semences: 'Semences',

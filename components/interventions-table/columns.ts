@@ -20,11 +20,6 @@ export const interventionColumns: ColumnDef<InterventionRow>[] = [
     meta: { editable: true, multiline: true },
   },
   {
-    accessorKey: 'produit',
-    header: 'Produit',
-    cell: (info) => info.getValue() || '-',
-  },
-  {
     accessorKey: 'date',
     header: 'Date',
     cell: (info) => info.getValue() || '-',
@@ -51,12 +46,6 @@ export const interventionColumns: ColumnDef<InterventionRow>[] = [
         accessorKey: 'azoteOrganique',
         header: 'Azote organique',
         cell: (info) => formatValue(info.getValue() as number, 'azoteOrganique'),
-        meta: { align: 'center', editable: true, fieldType: 'number' },
-      },
-      {
-        accessorKey: 'rendementTMS',
-        header: 'Rendement',
-        cell: (info) => formatValue(info.getValue() as number, 'rendementTMS'),
         meta: { align: 'center', editable: true, fieldType: 'number' },
       },
     ],
@@ -140,9 +129,21 @@ export const interventionColumns: ColumnDef<InterventionRow>[] = [
         meta: { align: 'center', editable: true, fieldType: 'number' },
       },
       {
+        accessorKey: 'rendementTMS',
+        header: 'Rendement',
+        cell: (info) => formatValue(info.getValue() as number, 'rendementTMS'),
+        meta: { align: 'center', editable: true, fieldType: 'number' },
+      },
+      {
         accessorKey: 'prixVente',
         header: 'Prix de vente',
         cell: (info) => formatValue(info.getValue() as number, 'prixVente'),
+        meta: { align: 'center', editable: true, fieldType: 'number' },
+      },
+      {
+        accessorKey: 'totalProduits',
+        header: 'Total produits',
+        cell: (info) => formatValue(info.getValue() as number, 'totalProduits'),
         meta: { align: 'center', editable: true, fieldType: 'number' },
       },
       {

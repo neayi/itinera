@@ -15,6 +15,7 @@ import { EditableDateCell } from './EditableDateCell';
 import { EditableTextCell } from './EditableTextCell';
 import { EditableTextAreaCell } from './EditableTextAreaCell';
 import { EditableNumberCell } from './EditableNumberCell';
+import { EditableStepValueCell } from './EditableStepValueCell';
 import './interventions-table.scss';
 
 export function InterventionsDataTable({ systemData, systemId, onUpdate }: InterventionsDataTableProps) {
@@ -33,6 +34,16 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
     const item = intervention.values.find((v: any) => v.key === key);
     return item?.reviewed;
   };
+
+  // Fonction utilitaire pour récupérer une valeur au niveau de l'étape
+  const getStepLevelValue = (step: any, key: string): number | undefined => {
+    if (!step.stepValues || !Array.isArray(step.stepValues)) return undefined;
+    const item = step.stepValues.find((v: any) => v.key === key);
+    return item ? (typeof item.value === 'number' ? item.value : undefined) : undefined;
+  };
+
+  // Liste des indicateurs éditables au niveau de l'étape
+  const stepLevelEditableFields = ['irrigation', 'rendementTMS', 'prixVente', 'totalProduits'];
 
   // Extraire les interventions de systemData
   const interventionsData = useMemo(() => {
@@ -56,19 +67,28 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
         mecanisation: 0,
         gnr: 0,
         irrigation: 0,
+        totalProduits: 0,
         totalCharges: 0,
         prixVente: 0,
         margeBrute: 0,
       };
 
-      // Calculer les totaux pondérés par la fréquence
+      // Pour chaque indicateur, vérifier d'abord s'il existe une valeur au niveau de l'étape
+      // Si oui, utiliser cette valeur. Sinon, calculer la somme pondérée.
+      stepLevelEditableFields.forEach((field) => {
+        const stepValue = getStepLevelValue(step, field);
+        if (stepValue !== undefined) {
+          (stepTotals as any)[field] = stepValue;
+        }
+      });
+
+      // Calculer les totaux pondérés par la fréquence (seulement pour les champs sans valeur d'étape)
       if (step.interventions && Array.isArray(step.interventions)) {
         step.interventions.forEach((intervention: any) => {
           const freq = getValueFromArray(intervention, 'frequence') || 1; // Fréquence par défaut = 1
           
           stepTotals.azoteMineral += getValueFromArray(intervention, 'azoteMineral') * freq;
           stepTotals.azoteOrganique += getValueFromArray(intervention, 'azoteOrganique') * freq;
-          stepTotals.rendementTMS += getValueFromArray(intervention, 'rendementTMS') * freq;
           stepTotals.ift += getValueFromArray(intervention, 'ift') * freq;
           stepTotals.eiq += getValueFromArray(intervention, 'eiq') * freq;
           stepTotals.ges += getValueFromArray(intervention, 'ges') * freq;
@@ -78,11 +98,39 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
           stepTotals.engrais += getValueFromArray(intervention, 'engrais') * freq;
           stepTotals.mecanisation += getValueFromArray(intervention, 'mecanisation') * freq;
           stepTotals.gnr += getValueFromArray(intervention, 'gnr') * freq;
-          stepTotals.irrigation += getValueFromArray(intervention, 'irrigation') * freq;
-          stepTotals.totalCharges += getValueFromArray(intervention, 'totalCharges') * freq;
-          stepTotals.prixVente += getValueFromArray(intervention, 'prixVente') * freq;
           stepTotals.margeBrute += getValueFromArray(intervention, 'margeBrute') * freq;
+          
+          // Calculer uniquement si pas de valeur au niveau de l'étape
+          if (getStepLevelValue(step, 'irrigation') === undefined) {
+            stepTotals.irrigation += getValueFromArray(intervention, 'irrigation') * freq;
+          }
+          if (getStepLevelValue(step, 'rendementTMS') === undefined) {
+            stepTotals.rendementTMS += getValueFromArray(intervention, 'rendementTMS') * freq;
+          }
+          if (getStepLevelValue(step, 'prixVente') === undefined) {
+            stepTotals.prixVente += getValueFromArray(intervention, 'prixVente') * freq;
+          }
         });
+      }
+
+      // Recalculer totalCharges en fonction des composants
+      // (car si irrigation est au niveau de l'étape, totalCharges doit être recalculé)
+      stepTotals.totalCharges = 
+        stepTotals.coutsPhytos +
+        stepTotals.semences +
+        stepTotals.engrais +
+        stepTotals.mecanisation +
+        stepTotals.gnr +
+        stepTotals.irrigation;
+
+      // Calculer totalProduits : si une valeur est forcée au niveau de l'étape, l'utiliser, sinon calculer
+      const forcedTotalProduits = getStepLevelValue(step, 'totalProduits');
+      if (forcedTotalProduits !== undefined && forcedTotalProduits !== 0) {
+        // Valeur forcée non nulle : utiliser cette valeur
+        stepTotals.totalProduits = forcedTotalProduits;
+      } else {
+        // Pas de valeur forcée ou valeur forcée à 0 : calculer rendementTMS * prixVente
+        stepTotals.totalProduits = stepTotals.rendementTMS * stepTotals.prixVente;
       }
 
       // Ajouter la ligne de total pour ce step avec les valeurs calculées
@@ -92,7 +140,6 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
         interventionIndex: -1, // Indicateur pour ligne de total
         name: step.name || `Step ${stepIndex + 1}`,
         description: '',
-        produit: '',
         date: '',
         frequence: 0, // Pas de total de fréquence
         ...stepTotals,
@@ -122,7 +169,6 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
             interventionIndex,
             name: intervention.name || '',
             description: intervention.description || '',
-            produit: '',
             date: dateStr,
             frequence: getValueFromArray(intervention, 'frequence') || 1, // Fréquence par défaut = 1
             azoteMineral: getValueFromArray(intervention, 'azoteMineral'),
@@ -138,6 +184,7 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
             mecanisation: getValueFromArray(intervention, 'mecanisation'),
             gnr: getValueFromArray(intervention, 'gnr'),
             irrigation: getValueFromArray(intervention, 'irrigation'),
+            totalProduits: 0, // totalProduits n'existe qu'au niveau de l'étape
             totalCharges: getValueFromArray(intervention, 'totalCharges'),
             prixVente: getValueFromArray(intervention, 'prixVente'),
             margeBrute: getValueFromArray(intervention, 'margeBrute'),
@@ -186,11 +233,11 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
                   if (header.column.parent != undefined) {
                     groupClass += ' sub-header';
 
-                    if (header.column.parent.columns.at(0).id === header.column.id) {
+                    if (header.column.parent.columns.at(0)?.id === header.column.id) {
                       groupClass += ' sub-header-start';
                     }
 
-                    if (header.column.parent.columns.at(-1).id === header.column.id) {
+                    if (header.column.parent.columns.at(-1)?.id === header.column.id) {
                       groupClass += ' sub-header-end';
                     }
                   }
@@ -254,7 +301,17 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
                       textAlign: (cell.column.columnDef.meta as any)?.align || 'left'
                     }}
                   >
-                    {(cell.column.columnDef.meta as any)?.editable && !row.original.isStepTotal ? (
+                    {row.original.isStepTotal && stepLevelEditableFields.includes(cell.column.id) ? (
+                      // Pour les lignes de totaux, utiliser EditableStepValueCell pour les champs éditables au niveau étape
+                      <EditableStepValueCell
+                        value={cell.getValue() as number}
+                        stepIndex={row.original.stepIndex}
+                        systemId={systemId}
+                        systemData={systemData}
+                        fieldKey={cell.column.id as any}
+                        onUpdate={onUpdate}
+                      />
+                    ) : (cell.column.columnDef.meta as any)?.editable && !row.original.isStepTotal ? (
                       (cell.column.columnDef.meta as any)?.fieldType === 'number' ? (
                         <EditableNumberCell
                           value={cell.getValue() as number}

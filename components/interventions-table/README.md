@@ -25,7 +25,6 @@ Le composant organise les colonnes en groupes pour une meilleure lisibilité:
 ### Colonnes non groupées
 - **Intervention**: Nom de l'intervention (`steps[].interventions[].name`)
 - **Description**: Description de l'intervention (`steps[].interventions[].description`)
-- **Produit**: (vide pour le moment)
 - **Date**: Date calculée (`steps[].startDate + steps[].interventions[].day`)
 
 ### Groupe Agronomie

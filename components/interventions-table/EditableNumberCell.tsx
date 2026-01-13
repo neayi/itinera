@@ -67,22 +67,58 @@ export function EditableNumberCell({
       const updatedSystemData = JSON.parse(JSON.stringify(systemData));
       
       const intervention = updatedSystemData.steps[stepIndex].interventions[interventionIndex];
+      const step = updatedSystemData.steps[stepIndex];
       
       // S'assurer que le tableau values existe
       if (!intervention.values) {
         intervention.values = [];
       }
       
-      // Chercher si la clé existe déjà
-      const existingIndex = intervention.values.findIndex((v: any) => v.key === fieldKey);
+      // Fonction utilitaire pour récupérer une valeur
+      const getValue = (key: string): number => {
+        const item = intervention.values.find((v: any) => v.key === key);
+        return item ? (typeof item.value === 'number' ? item.value : 0) : 0;
+      };
       
-      if (existingIndex >= 0) {
-        // Mettre à jour la valeur existante
-        intervention.values[existingIndex].value = finalValue;
-        intervention.values[existingIndex].reviewed = true;
-      } else {
-        // Ajouter une nouvelle entrée
-        intervention.values.push({ key: fieldKey, value: finalValue, reviewed: true });
+      // Fonction utilitaire pour mettre à jour ou ajouter une valeur
+      const setValue = (key: string, value: number, reviewed: boolean = true) => {
+        const idx = intervention.values.findIndex((v: any) => v.key === key);
+        if (idx >= 0) {
+          intervention.values[idx].value = value;
+          intervention.values[idx].reviewed = reviewed;
+        } else {
+          intervention.values.push({ key, value, reviewed });
+        }
+      };
+      
+      // Mettre à jour la valeur modifiée
+      setValue(fieldKey, finalValue, true);
+      
+      // Si on modifie un des composants de totalCharges, recalculer totalCharges
+      const totalChargesComponents = ['coutsPhytos', 'semences', 'engrais', 'mecanisation', 'gnr', 'irrigation'];
+      if (totalChargesComponents.includes(fieldKey)) {
+        const newTotalCharges = 
+          getValue('coutsPhytos') +
+          getValue('semences') +
+          getValue('engrais') +
+          getValue('mecanisation') +
+          getValue('gnr') +
+          getValue('irrigation');
+        
+        setValue('totalCharges', newTotalCharges, false);
+      }
+
+      // Si ce champ est éditable au niveau de l'étape (irrigation, rendementTMS, prixVente),
+      // supprimer la valeur au niveau de l'étape pour restaurer le calcul par somme pondérée
+      const stepLevelEditableFields = ['irrigation', 'rendementTMS', 'prixVente'];
+      if (stepLevelEditableFields.includes(fieldKey)) {
+        if (step.stepValues && Array.isArray(step.stepValues)) {
+          const stepValueIndex = step.stepValues.findIndex((v: any) => v.key === fieldKey);
+          if (stepValueIndex >= 0) {
+            // Supprimer la valeur au niveau de l'étape
+            step.stepValues.splice(stepValueIndex, 1);
+          }
+        }
       }
 
       // Envoyer la mise à jour à l'API

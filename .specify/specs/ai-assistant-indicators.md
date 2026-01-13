@@ -14,35 +14,86 @@ Un assistant IA contextuel qui aide les utilisateurs à calculer et affiner les 
 
 ## Architecture de données
 
+### Hiérarchie des hypothèses (assumptions)
+
+Les hypothèses sont stockées en **texte libre Markdown** à **trois niveaux** pour refléter la structure hiérarchique du système de culture.
+
+**Format** : Chaque champ `assumptions` est une string contenant du markdown structuré.
+
+#### 1. Niveau Système (racine)
+Hypothèses globales qui s'appliquent à toute la rotation. Exemples :
+```markdown
+## Caractéristiques du système
+
+- **Agriculture biologique** : Système conduit en AB, certifié Ecocert
+- **Irrigation** : Goutte-à-goutte disponible, 3 tours max/an
+- **Aire de captage** : Parcelles en zone vulnérable, restrictions phytos
+- **Contrat** : Sous contrat Bonduelle pour petits pois
+- **Label** : Zero-résidus-de-pesticides sur blé
+- **ACS** : Agriculture de Conservation des Sols, TCS uniquement
+```
+
+#### 2. Niveau Step (production/étape)
+Hypothèses spécifiques à une étape de la rotation. Exemples :
+```markdown
+## Orge + Lupin
+
+- **Semences fermières** pour le lupin (plante compagne)
+- **Export des pailles** à la récolte (vente)
+- **Semis en ligne** avec semoir classique 3m
+```
+
+```markdown
+## Sorgho dérobée
+
+- **Broyage** du sorgho fin octobre, laissé au sol comme mulch
+- **Semis à la volée** après moisson du blé
+- **Pas d'irrigation** sur cette culture
+```
+
+#### 3. Niveau Intervention
+Hypothèses spécifiques à une intervention. Exemples :
+```markdown
+## Désherbage blé
+
+- **Fosbury à 5L/ha** en post-levée précoce (2-3 feuilles)
+- Tracteur 120 CV + pulvérisateur 24m
+```
+
+```markdown
+## Épandage digestat
+
+- **Sans-tonne 12m³** (pas de pendillard)
+- 30 m³/ha de digestat bovin
+- Incorporation sous 4h (obligation réglementaire)
+```
+
+**Principe de cascade** : L'assistant IA doit :
+1. **Lire** les assumptions des 3 niveaux (système → step → intervention) pour comprendre le contexte
+2. **Compléter** le texte markdown au niveau approprié avec les nouvelles informations découvertes
+3. **Maintenir** la cohérence entre niveaux (ex: bio au niveau système → pas de produits interdits en bio)
+4. **Structurer** le texte de manière lisible (titres ##, listes à puces, **gras** pour les termes clés)
+5. **Éviter les doublons** : ne pas répéter dans intervention ce qui est déjà au niveau système/step
+
 ### Extension de la structure JSON existante
 
 ```json
 {
+  "assumptions": "## Caractéristiques du système\n\n- **Agriculture biologique** : Le système est conduit en AB (confirmé par l'utilisateur)\n- **Non irrigué** : Pas d'irrigation disponible sur les parcelles\n- **Hors aire de captage** : Parcelles non situées en zone de captage d'eau potable\n- **Pas d'ACS** : Labour classique, pas d'Agriculture de Conservation des Sols\n",
+  "updatedAt": "2026-01-12T09:00:00Z",
   "steps": [{
+    "id": "step1",
+    "name": "Orge + Lupin",
+    "startDate": "2026-03-01T00:00:00.000Z",
+    "endDate": "2026-07-20T00:00:00.000Z",
+    "assumptions": "## Caractéristiques de l'étape Orge + Lupin\n\n- **Semences fermières** pour le lupin (plante compagne) - confirmé utilisateur\n- **Export des pailles** à la récolte\n- **Semis en ligne** avec semoir classique (pas de semis à la volée)\n",
+    "updatedAt": "2026-01-12T09:30:00Z",
     "interventions": [{
       "id": "uuid",
       "name": "Labour",
       "description": "...",
-      "assumptions": {
-        "machine": {
-          "type": "Tracteur + charrue 5 corps",
-          "largeur": 2.5,
-          "puissance": 150,
-          "source": "user_confirmed",
-          "timestamp": "2026-01-12T10:30:00Z"
-        },
-        "engrais": {
-          "type": "18-46",
-          "formulation": "DAP",
-          "source": "ai_inferred",
-          "timestamp": "2026-01-12T10:31:00Z"
-        },
-        "context": {
-          "pedologie": "limon argileux",
-          "climat": "océanique dégradé",
-          "bio": true
-        }
-      },
+      "assumptions": "## Hypothèses de calcul - Labour\n\n- **Matériel** : Tracteur 150 CV + combiné 5m (confirmé utilisateur)\n- **Travail du sol** : Combiné déchaumeur-herse rotative, largeur 5m\n- **Vitesse moyenne** : 8 km/h\n- **Consommation GNR** : ~12 L/ha\n",
+      "updatedAt": "2026-01-12T10:30:00Z",
       "values": [
         {
           "key": "frequence",
@@ -148,7 +199,8 @@ interface CalculationContext {
 interface CalculationResult {
   value: number | string;
   conversation: ConversationMessage[];
-  assumptions: string[];
+  assumptionsMarkdown: string;  // Markdown à ajouter aux assumptions
+  assumptionsLevel: 'system' | 'step' | 'intervention';  // Niveau cible
   sources: string[];
   calculationSteps?: string[];
 }
@@ -184,6 +236,16 @@ Chaque prompt inclut :
 - Format de sortie attendu
 - Sources de données à utiliser
 - Exemples de calculs
+- **Contexte hiérarchique** :
+  - Lire le markdown `system.assumptions` (bio, irrigué, labels, etc.)
+  - Lire le markdown `step.assumptions` (semences, export, techniques, etc.)
+  - Lire le markdown `intervention.assumptions` (produits, équipement, doses, etc.)
+  - Parser les informations pertinentes pour le calcul
+- **Instructions de maintenance** :
+  - Enrichir le markdown au bon niveau avec nouvelles hypothèses
+  - Format : `- **Terme clé** : Description détaillée (source)\n`
+  - Détecter les incohérences en analysant le markdown des 3 niveaux
+  - Ne pas dupliquer : vérifier si l'info existe déjà dans un niveau supérieur
 
 ### 3. Assistant IA (remplace ChatBot) : `/components/ai-assistant/`
 
@@ -192,7 +254,7 @@ Chaque prompt inclut :
 components/ai-assistant/
 ├── AIAssistant.tsx              # Composant principal (remplace ChatBot.tsx)
 ├── ConversationHistory.tsx      # Affichage historique messages
-├── AssumptionsPanel.tsx         # Panneau hypothèses partagées
+├── AssumptionsPanel.tsx         # Panneau hypothèses 3 niveaux (système/step/intervention)
 ├── CalculationProgress.tsx      # Indicateur progression calculs
 ├── MessageInput.tsx             # Saisie messages utilisateur
 ├── ai-assistant.scss            # Styles
@@ -302,14 +364,14 @@ Response: {
 - **N/A si** : Intervention n'est pas récolte/moisson/fauche
 
 ### IFT
-- **Source** : Colonne produit, base Ephy
+- **Source** : Base Ephy
 - **Calcul** : Σ(quantité appliquée / dose max d'emploi)
 - **API externe** : Base Ephy (https://ephy.anses.fr/)
 - **Hypothèses partagées** : Liste produits, doses
 - **N/A si** : Pas de produits phytos
 
 ### EIQ
-- **Source** : Colonne produit, base Ephy, table EIQ
+- **Source** : Base Ephy, table EIQ
 - **Calcul** : 
   1. Identifier matières actives (Ephy)
   2. Calculer quantité MA
@@ -328,7 +390,7 @@ Response: {
 - **Hypothèses partagées** : Machine (largeur, vitesse)
 
 ### Coûts phytos
-- **Source** : Colonne produit, base prix actuels
+- **Source** : Base prix actuels
 - **Calcul** : Σ(quantité × prix unitaire)
 - **API externe** : Prix agricoles (Arvalis, Terre-net)
 - **Hypothèses partagées** : Liste produits, doses
@@ -414,6 +476,31 @@ Response: {
 3. Propose : "Recalculer mécanisation, GNR, temps travail, GES ?"
 4. Si oui : Recalcul automatique, conversations mises à jour
 
+### Scénario 5 : Maintenance des assumptions hiérarchiques
+
+1. **Lors du calcul d'un indicateur**, l'IA :
+   - Lit les assumptions système (bio, irrigué, etc.)
+   - Lit les assumptions step (semences fermières, export paille, etc.)
+   - Lit les assumptions intervention existantes
+   - Utilise ces informations pour le calcul
+   - Complète les assumptions manquantes détectées durant le calcul
+   - Stocke les nouvelles assumptions au bon niveau
+
+2. **Détection du niveau approprié** :
+   - Si l'hypothèse concerne toute la rotation → niveau système
+   - Si l'hypothèse concerne une étape entière → niveau step  
+   - Si l'hypothèse est spécifique à cette intervention → niveau intervention
+
+3. **Exemple concret** :
+   - Utilisateur : "Je suis en bio"
+   - IA détecte : hypothèse système
+   - IA stocke : `system.assumptions.bio = { value: true, source: "user_confirmed" }`
+   - IA propage : impact sur tous les calculs (prix semences, produits autorisés, etc.)
+
+4. **Cohérence** :
+   - Si conflit détecté (ex: produit interdit en bio alors que système.assumptions.bio = true)
+   - IA signale l'incohérence et propose correction
+
 ## Sources de données externes
 
 ### Base Ephy (ANSES)
@@ -484,7 +571,7 @@ PRIX_AGRICOLES_CACHE_TTL=3600  # 1h
 ## Plan de développement
 
 ### Phase 1 : Infrastructure (2-3 jours)
-- [ ] Étendre structure JSON (assumptions, conversation)
+- [ ] Étendre structure JSON (assumptions en texte libre markdown aux 3 niveaux : système/step/intervention, conversation)
 - [ ] Service IndicatorCalculator de base avec OpenAI
 - [ ] Configuration `.env` (OPENAI_API_KEY)
 - [ ] Créer structure `/components/ai-assistant/`
@@ -492,7 +579,7 @@ PRIX_AGRICOLES_CACHE_TTL=3600  # 1h
 - [ ] API endpoints CRUD pour conversations
 - [ ] Migration données existantes
 
-### PhSous-composants AIAssistant (ConversationHistory, MessageInput)
+### Phase 2 : Sous-composants AIAssistant (ConversationHistory, MessageInput)
 - [ ] Intégration AIAssistant avec ProjectDetails.tsx(3-4 jours)
 - [ ] Prompts pour fréquence, temps travail
 - [ ] Calcul GES basique (via GNR)
@@ -505,7 +592,7 @@ PRIX_AGRICOLES_CACHE_TTL=3600  # 1h
 - [ ] Calculs coûts (semences, engrais, phytos)
 - [ ] Prix de vente (API prix)
 
-### PhAssumptionsPanel pour hypothèses partagées
+### Phase 4 : AssumptionsPanel pour hypothèses partagées
 - [ ] CalculationProgress pour calculs multiples
 - [ ] Interface affinage valeurs
 - [ ] Calcul multiple avec progression

@@ -5,7 +5,6 @@ export interface InterventionRow {
   interventionIndex: number;
   name: string;
   description: string;
-  produit: string;
   date: string;
   frequence: number;
   azoteMineral: number;
@@ -21,6 +20,7 @@ export interface InterventionRow {
   mecanisation: number;
   gnr: number;
   irrigation: number;
+  totalProduits: number;
   totalCharges: number;
   prixVente: number;
   margeBrute: number;
