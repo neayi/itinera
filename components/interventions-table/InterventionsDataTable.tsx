@@ -133,6 +133,9 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
         stepTotals.totalProduits = stepTotals.rendementTMS * stepTotals.prixVente;
       }
 
+      // Calculer margeBrute : totalProduits - totalCharges
+      stepTotals.margeBrute = stepTotals.totalProduits - stepTotals.totalCharges;
+
       // Ajouter la ligne de total pour ce step avec les valeurs calculées
       rows.push({
         id: `step-total-${stepIndex}`,

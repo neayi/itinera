@@ -150,7 +150,7 @@ export const interventionColumns: ColumnDef<InterventionRow>[] = [
         accessorKey: 'margeBrute',
         header: 'Marge brute',
         cell: (info) => formatValue(info.getValue() as number, 'margeBrute'),
-        meta: { align: 'center', editable: true, fieldType: 'number' },
+        meta: { align: 'center', editable: false, fieldType: 'number' },
       },
     ],
   },
