@@ -17,5 +17,7 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-# Run development server with Turbopack
-CMD ["npm", "run", "dev", "--", "--turbopack"]
+# Run development server without Turbopack (better Docker file watching with Webpack)
+# Use standard "next dev" which defaults to Webpack in Next.js 15+
+# Note: Webpack's polling (configured in next.config.js) works better in Docker
+CMD ["npm", "run", "dev"]

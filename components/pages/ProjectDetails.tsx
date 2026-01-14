@@ -293,17 +293,6 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
 
           {/* Interventions Table Section */}
           <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <InterventionsTable
-              surface={projectSurface}
-              startYear={rotationStartYear}
-              endYear={rotationEndYear}
-              onCellFocus={(interventionId, interventionName, columnName) => {
-                setFocusedCell({ interventionName, columnName });
-              }}
-              onCellBlur={() => setFocusedCell(null)}
-              onCellChange={handleCellChange}
-            />
-
             {/* Table des interventions basée sur systemData */}
             <InterventionsDataTable 
               systemData={systemData} 

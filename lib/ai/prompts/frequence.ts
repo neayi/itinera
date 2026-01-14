@@ -32,7 +32,7 @@ Réponds UNIQUEMENT en JSON valide suivant ce format :
 {
   "value": <nombre entier>,
   "confidence": "high" | "medium" | "low",
-  "reasoning": "Explication détaillée du raisonnement en français",
+  "reasoning": "Explication détaillée du raisonnement en français. COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai calculé une fréquence de X. Voici pourquoi : ...'",
   "assumptions": ["Liste des hypothèses utilisées"],
   "calculation_steps": ["Étapes du raisonnement"],
   "sources": ["Sources de données : description, nom, contexte, etc."],

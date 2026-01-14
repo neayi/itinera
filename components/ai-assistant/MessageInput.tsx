@@ -33,14 +33,14 @@ export default function MessageInput({ onSend, disabled }: MessageInputProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
+    <form onSubmit={handleSubmit} className="form">
       <input
         type="text"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Posez une question..."
         disabled={isSending || disabled}
-        className="flex-1 px-4 py-2 h-[38px] border border-[#d1d5dc] rounded-[10px] text-[14px] tracking-[-0.1504px] text-[rgba(10,10,10,0.5)] placeholder:text-[rgba(10,10,10,0.5)] focus:outline-none focus:ring-2 focus:ring-[#6b9571]"
+        className="field"
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
@@ -51,10 +51,10 @@ export default function MessageInput({ onSend, disabled }: MessageInputProps) {
       <button
         type="submit"
         disabled={!message.trim() || isSending || disabled}
-        className="bg-[#6b9571] text-white rounded-[10px] w-[48px] h-[38px] flex items-center justify-center hover:bg-[#5a8560] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="button"
       >
         {isSending ? (
-          <span className="text-white">...</span>
+          <span>...</span>
         ) : (
           <Send />
         )}

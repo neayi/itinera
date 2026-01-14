@@ -2,6 +2,11 @@
 import { callGPT } from './openai-client';
 import { CalculationContext, CalculationResult, ConversationMessage, ConfidenceLevel } from './types';
 import { buildFrequencePrompt, FREQUENCE_SYSTEM_PROMPT } from './prompts/frequence';
+import { buildTempsTravailPrompt, TEMPS_TRAVAIL_SYSTEM_PROMPT } from './prompts/temps-travail';
+import { buildGesPrompt, GES_SYSTEM_PROMPT } from './prompts/ges';
+import { buildAzoteMineralPrompt, AZOTE_MINERAL_SYSTEM_PROMPT } from './prompts/azote-mineral';
+import { buildAzoteOrganiquePrompt, AZOTE_ORGANIQUE_SYSTEM_PROMPT } from './prompts/azote-organique';
+import { buildRendementPrompt, RENDEMENT_SYSTEM_PROMPT } from './prompts/rendement';
 
 /**
  * Clean JSON response from OpenAI (remove markdown code blocks)
@@ -136,7 +141,7 @@ export class IndicatorCalculator {
     // Add user's refinement request
     messages.push({
       role: 'user',
-      content: `Demande de raffinement : ${userMessage}\n\nVeuillez recalculer la valeur si nécessaire et répondre en JSON avec : { "value": number, "confidence": "high"|"medium"|"low", "reasoning": string, "assumptions": string[], "calculation_steps": string[], "sources": string[], "caveats": string[] }`,
+      content: `Demande de raffinement : ${userMessage}\n\nVeuillez recalculer la valeur si nécessaire et répondre en JSON avec : { "value": number, "confidence": "high"|"medium"|"low", "reasoning": string, "assumptions": string[], "calculation_steps": string[], "sources": string[], "caveats": string[] }\n\n**IMPORTANT** : Dans le "reasoning", commencez TOUJOURS par annoncer la nouvelle valeur calculée. Par exemple : "J'ai calculé une nouvelle valeur de 150 pour cet indicateur. Voici pourquoi : ..."`,
     });
 
     try {
@@ -215,11 +220,35 @@ export class IndicatorCalculator {
       case 'frequence':
         return buildFrequencePrompt(context);
       
+      case 'tempsTravail':
+        return buildTempsTravailPrompt(context);
+      
+      case 'ges':
+        return buildGesPrompt(context);
+      
+      case 'azoteMineral':
+        return buildAzoteMineralPrompt(context);
+      
+      case 'azoteOrganique':
+        return buildAzoteOrganiquePrompt(context);
+      
+      case 'rendementTMS':
+      case 'rendement':
+        return buildRendementPrompt(context);
+      
       // Add more indicators as they are implemented
       default:
         // Fallback to generic prompt
         const { intervention, step, systemData, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
 
+        // Determine if this indicator should be per hectare
+        const perHectareIndicators = [
+          'azoteMineral', 'azoteOrganique', 'ges', 'tempsTravail',
+          'coutsPhytos', 'semences', 'engrais', 'mecanisation', 'gnr', 'irrigation',
+          'ift', 'eiq', 'rendementTMS', 'prixVente', 'margeBrute', 'totalCharges', 'totalProduits'
+        ];
+        const isPerHectare = perHectareIndicators.includes(indicatorKey);
+        
         return `
 # Contexte du système
 
@@ -240,6 +269,7 @@ ${interventionAssumptions ? `## Caractéristiques de l'intervention\n${intervent
 
 Calculer l'indicateur **"${indicatorKey}"** pour cette intervention.
 
+${isPerHectare ? `\n**⚠️ IMPORTANT - CALCUL PAR HECTARE** : L'indicateur "${indicatorKey}" doit être exprimé **PAR HECTARE**. Toutes les valeurs doivent être ramenées à l'hectare (€/ha, kg/ha, h/ha, TeqCO2/ha, etc.). Si tu disposes de valeurs totales ou par surface différente, divise par la surface pour obtenir la valeur par hectare.\n` : ''}
 # Format de réponse
 
 Réponds en JSON valide avec cette structure :
@@ -247,7 +277,7 @@ Réponds en JSON valide avec cette structure :
 {
   "value": <nombre ou "N/A">,
   "confidence": "high" | "medium" | "low",
-  "reasoning": "Explication détaillée du calcul en français",
+  "reasoning": "Explication détaillée du calcul en français. COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai calculé une valeur de X${isPerHectare ? ' €/ha' : ''}. Voici pourquoi : ...'",
   "assumptions": ["Liste des hypothèses prises"],
   "calculation_steps": ["Étapes du calcul"],
   "sources": ["Sources de données utilisées"],
@@ -270,9 +300,48 @@ Réponds en JSON valide avec cette structure :
       case 'frequence':
         return FREQUENCE_SYSTEM_PROMPT;
       
+      case 'tempsTravail':
+        return TEMPS_TRAVAIL_SYSTEM_PROMPT;
+      
+      case 'ges':
+        return GES_SYSTEM_PROMPT;
+      
+      case 'azoteMineral':
+        return AZOTE_MINERAL_SYSTEM_PROMPT;
+      
+      case 'azoteOrganique':
+        return AZOTE_ORGANIQUE_SYSTEM_PROMPT;
+      
+      case 'rendementTMS':
+      case 'rendement':
+        return RENDEMENT_SYSTEM_PROMPT;
+      
       // Add more indicators as they are implemented
       default:
-        return `Tu es un assistant expert en agronomie française. Tu dois analyser les données agricoles et calculer des indicateurs avec précision. Réponds toujours en JSON valide.`;
+        // Determine if this indicator should be per hectare
+        const perHectareIndicators = [
+          'azoteMineral', 'azoteOrganique', 'ges', 'tempsTravail',
+          'coutsPhytos', 'semences', 'engrais', 'mecanisation', 'gnr', 'irrigation',
+          'ift', 'eiq', 'rendementTMS', 'prixVente', 'margeBrute', 'totalCharges', 'totalProduits'
+        ];
+        const isPerHectare = perHectareIndicators.includes(indicatorKey);
+        
+        return `Tu es un assistant expert en agronomie française. Tu dois analyser les données agricoles et calculer des indicateurs avec précision.
+
+${isPerHectare ? `**⚠️ RÈGLE CRITIQUE - CALCUL PAR HECTARE** : L'indicateur "${indicatorKey}" doit TOUJOURS être exprimé **PAR HECTARE**. Peu importe les données sources (totales, par parcelle, etc.), tu dois RAMENER le résultat final à l'hectare. Les unités attendues sont : €/ha, kg/ha, h/ha, TeqCO2/ha, uN/ha, qtx/ha selon l'indicateur.
+
+Si tu disposes de :
+- Valeurs totales pour une surface S : divise par S pour obtenir /ha
+- Valeurs par parcelle de X ha : divise par X
+- Valeurs en /100m² : multiplie par 100
+- Valeurs en /are : multiplie par 100
+
+Exemples :
+- Coût total de semences 180 € pour 15 ha → 180/15 = 12 €/ha ✓
+- Temps de travail 8h pour 20 ha → 8/20 = 0.4 h/ha ✓
+- GES 150 kg pour 10 ha → 150/10 = 15 kg/ha = 0.015 TeqCO2/ha ✓
+
+` : ''}Réponds toujours en JSON valide.`;
     }
   }
 }

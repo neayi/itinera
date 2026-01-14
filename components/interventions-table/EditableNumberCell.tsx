@@ -41,6 +41,13 @@ export function EditableNumberCell({
     }
   }, [isEditing]);
 
+  // Update editValue when value changes from AI calculation (while editing)
+  useEffect(() => {
+    if (isEditing && value !== undefined && value !== null) {
+      setEditValue(value.toString());
+    }
+  }, [value, isEditing]);
+
   const handleClick = () => {
     if (interventionIndex === -1) return; // Pas d'édition pour les lignes de totaux
     

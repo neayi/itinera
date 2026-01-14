@@ -110,14 +110,14 @@
 
 ### Implementation for User Story 4
 
-- [ ] T029 [P] [US4] Create AssumptionsPanel component in `components/ai-assistant/AssumptionsPanel.tsx` with 3 collapsible sections (System/Step/Intervention)
-- [ ] T030 [P] [US4] Add markdown parser utility in `lib/ai/assumptions-parser.ts` to read and extract assumptions from markdown text
-- [ ] T031 [US4] Update all prompts in `lib/ai/prompts/` to include system assumptions, step assumptions, intervention assumptions in context section
-- [ ] T032 [US4] Modify calculateIndicator and refineValue in `lib/ai/indicator-calculator.ts` to read 3-level assumptions hierarchy before calculation
-- [ ] T033 [US4] Add assumption level detection logic to IndicatorCalculator to determine appropriate storage level (system/step/intervention)
-- [ ] T034 [US4] Update PATCH endpoint in `/app/api/systems/[id]/route.ts` to handle assumptions markdown updates at all 3 levels
-- [ ] T035 [US4] Integrate AssumptionsPanel into AIAssistant component showing current assumptions context for focused cell
-- [ ] T036 [US4] Add conflict detection in IndicatorCalculator to identify contradictions between assumption levels and warn user
+- [X] T029 [P] [US4] Create AssumptionsPanel component in `components/ai-assistant/AssumptionsPanel.tsx` with 3 collapsible sections (System/Step/Intervention)
+- [X] T030 [P] [US4] Add markdown parser utility in `lib/ai/assumptions-parser.ts` to read and extract assumptions from markdown text
+- [X] T031 [US4] Update all prompts in `lib/ai/prompts/` to include system assumptions, step assumptions, intervention assumptions in context section
+- [X] T032 [US4] Modify calculateIndicator and refineValue in `lib/ai/indicator-calculator.ts` to read 3-level assumptions hierarchy before calculation
+- [X] T033 [US4] Add assumption level detection logic to IndicatorCalculator to determine appropriate storage level (system/step/intervention)
+- [X] T034 [US4] Update PATCH endpoint in `/app/api/systems/[id]/route.ts` to handle assumptions markdown updates at all 3 levels
+- [X] T035 [US4] Integrate AssumptionsPanel into AIAssistant component showing current assumptions context for focused cell
+- [X] T036 [US4] Add conflict detection in IndicatorCalculator to identify contradictions between assumption levels and warn user
 
 **Checkpoint**: Assumptions management working - AI uses hierarchical context and updates markdown appropriately
 
@@ -131,13 +131,13 @@
 
 ### Implementation for User Story 5
 
-- [ ] T037 [P] [US5] Create temps-travail prompt in `lib/ai/prompts/temps-travail.ts` with machine assumptions and calculation formula
-- [ ] T038 [P] [US5] Create ges prompt in `lib/ai/prompts/ges.ts` using GNR × 3.15 kg CO2e/L formula
-- [ ] T039 [P] [US5] Create azote-mineral prompt in `lib/ai/prompts/azote-mineral.ts` with fertilizer type detection and quantity calculation
-- [ ] T040 [P] [US5] Create azote-organique prompt in `lib/ai/prompts/azote-organique.ts` with organic fertilizer detection
-- [ ] T041 [P] [US5] Create rendement prompt in `lib/ai/prompts/rendement.ts` with crop type, bio/conventional context, regional averages
-- [ ] T042 [US5] Extend calculateIndicator in `lib/ai/indicator-calculator.ts` to route these 5 new indicator types to appropriate prompts
-- [ ] T043 [US5] Add indicator-specific validation rules to each prompt (N/A conditions, value ranges, unit handling)
+- [X] T037 [P] [US5] Create temps-travail prompt in `lib/ai/prompts/temps-travail.ts` with machine assumptions and calculation formula
+- [X] T038 [P] [US5] Create ges prompt in `lib/ai/prompts/ges.ts` using GNR × 3.15 kg CO2e/L formula
+- [X] T039 [P] [US5] Create azote-mineral prompt in `lib/ai/prompts/azote-mineral.ts` with fertilizer type detection and quantity calculation
+- [X] T040 [P] [US5] Create azote-organique prompt in `lib/ai/prompts/azote-organique.ts` with organic fertilizer detection
+- [X] T041 [P] [US5] Create rendement prompt in `lib/ai/prompts/rendement.ts` with crop type, bio/conventional context, regional averages
+- [X] T042 [US5] Extend calculateIndicator in `lib/ai/indicator-calculator.ts` to route these 5 new indicator types to appropriate prompts
+- [X] T043 [US5] Add indicator-specific validation rules to each prompt (N/A conditions, value ranges, unit handling)
 
 **Checkpoint**: Six indicators now calculable (frequence + 5 new) with full conversation support
 

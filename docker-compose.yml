@@ -19,6 +19,10 @@ services:
       - DISCOURSE_SSO_SECRET=${DISCOURSE_SSO_SECRET}
       - SESSION_SECRET=${SESSION_SECRET:-itinera_session_secret_change_in_production}
       - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1000
+      # Force Turbopack to use polling for file watching in Docker
+      - TURBOPACK_USE_POLLING=true
       # OpenAI Configuration
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
