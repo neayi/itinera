@@ -172,12 +172,12 @@
 
 ### Implementation for User Story 7
 
-- [ ] T052 [P] [US7] Create ift prompt in `lib/ai/prompts/ift.ts` with product identification, dose analysis, IFT estimation from AI knowledge
-- [ ] T053 [P] [US7] Create eiq prompt in `lib/ai/prompts/eiq.ts` with active ingredient extraction, EIQ calculation logic
-- [ ] T054 [P] [US7] Create prix-vente prompt in `lib/ai/prompts/prix-vente.ts` with crop type, quality factors, bio premium, market averages
-- [ ] T055 [US7] Extend calculateIndicator routing for IFT, EIQ, prix-vente indicators
-- [ ] T056 [US7] Add special N/A handling for prix-vente (only for harvest/moisson/fauche interventions) in indicator-calculator.ts
-- [ ] T057 [US7] Add validation for IFT/EIQ to mark low confidence when product details are vague
+- [X] T052 [P] [US7] Create ift prompt in `lib/ai/prompts/ift.ts` with product identification, dose analysis, IFT estimation from AI knowledge
+- [X] T053 [P] [US7] Create eiq prompt in `lib/ai/prompts/eiq.ts` with active ingredient extraction, EIQ calculation logic
+- [X] T054 [P] [US7] Create prix-vente prompt in `lib/ai/prompts/prix-vente.ts` with crop type, quality factors, bio premium, market averages
+- [X] T055 [US7] Extend calculateIndicator routing for IFT, EIQ, prix-vente indicators
+- [X] T056 [US7] Add special N/A handling for prix-vente (only for harvest/moisson/fauche interventions) in indicator-calculator.ts
+- [X] T057 [US7] Add validation for IFT/EIQ to mark low confidence when product details are vague
 
 **Checkpoint**: All 15 indicators now supported - feature complete for individual calculations
 

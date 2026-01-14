@@ -13,6 +13,9 @@ import { ENGRAIS_PROMPT } from './prompts/engrais';
 import { MECANISATION_PROMPT } from './prompts/mecanisation';
 import { GNR_PROMPT } from './prompts/gnr';
 import { IRRIGATION_PROMPT } from './prompts/irrigation';
+import { IFT_PROMPT } from './prompts/ift';
+import { EIQ_PROMPT } from './prompts/eiq';
+import { PRIX_VENTE_PROMPT } from './prompts/prix-vente';
 
 /**
  * Clean JSON response from OpenAI (remove markdown code blocks)
@@ -260,6 +263,34 @@ export class IndicatorCalculator {
       case 'irrigation':
         return this.buildContextualPrompt(IRRIGATION_PROMPT, context);
       
+      case 'ift':
+        return this.buildContextualPrompt(IFT_PROMPT, context);
+      
+      case 'eiq':
+        return this.buildContextualPrompt(EIQ_PROMPT, context);
+      
+      case 'prixVente':
+        // Special handling for prixVente: only applicable to harvest/moisson/fauche interventions
+        const interventionName = context.intervention.name?.toLowerCase() || '';
+        const interventionDesc = context.intervention.description?.toLowerCase() || '';
+        const isHarvestRelated = 
+          interventionName.includes('moisson') ||
+          interventionName.includes('récolte') ||
+          interventionName.includes('récolté') ||
+          interventionName.includes('fauche') ||
+          interventionName.includes('vendange') ||
+          interventionDesc.includes('moisson') ||
+          interventionDesc.includes('récolte') ||
+          interventionDesc.includes('fauche') ||
+          interventionDesc.includes('vendange');
+        
+        if (!isHarvestRelated) {
+          // Return early with N/A result for non-harvest interventions
+          return `Cette intervention n'est pas une récolte/moisson/fauche. Le prix de vente n'est applicable que pour les interventions de récolte. Réponds en JSON: {"value": "N/A", "confidence": "high", "assumptions": ["Intervention de type ${context.intervention.type}", "Pas de production à vendre"], "calculation_steps": ["Identification: intervention '${context.intervention.name}'", "Type: ${context.intervention.type}", "Conclusion: pas de récolte → prix de vente N/A"], "sources": [], "caveats": ["Le prix de vente ne s'applique qu'aux interventions de récolte/moisson/fauche"]}`;
+        }
+        
+        return this.buildContextualPrompt(PRIX_VENTE_PROMPT, context);
+      
       // Add more indicators as they are implemented
       default:
         // Fallback to generic prompt
@@ -347,6 +378,15 @@ Réponds en JSON valide avec cette structure :
       case 'gnr':
       case 'irrigation':
         return `Tu es un expert en économie agricole française et en analyse des coûts de production. Réponds toujours en JSON valide.`;
+      
+      case 'ift':
+        return `Tu es un expert en protection des cultures et en réglementation phytosanitaire française. Réponds toujours en JSON valide.`;
+      
+      case 'eiq':
+        return `Tu es un expert en écotoxicologie agricole et en évaluation de l'impact environnemental des pesticides. Réponds toujours en JSON valide.`;
+      
+      case 'prixVente':
+        return `Tu es un expert en économie agricole et en marchés des produits agricoles français. Réponds toujours en JSON valide.`;
       
       // Add more indicators as they are implemented
       default:
