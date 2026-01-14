@@ -191,13 +191,13 @@
 
 ### Implementation for User Story 8
 
-- [ ] T058 [P] [US8] Create CalculationProgress component in `components/ai-assistant/CalculationProgress.tsx` with progress bar, current/total, cancel button
-- [ ] T059 [US8] Implement calculateAllMissing method in `lib/ai/indicator-calculator.ts` with parallel batch logic (5 concurrent max), reviewed=false detection
-- [ ] T060 [US8] Create POST `/app/api/ai/calculate-all-missing/route.ts` endpoint with systemId, returns calculatedCount, summary array
-- [ ] T061 [US8] Add "Calculate All Missing" button to ProjectDetails toolbar calling calculate-all-missing endpoint
-- [ ] T062 [US8] Integrate CalculationProgress component into AIAssistant to show batch progress with WebSocket or polling
-- [ ] T063 [US8] Add summary display after batch completion showing which indicators calculated, confidence levels, any failures
-- [ ] T064 [US8] Implement cancellation logic to abort in-progress batch calculation
+- [X] T058 [P] [US8] Create CalculationProgress component in `components/ai-assistant/CalculationProgress.tsx` with progress bar, current/total, cancel button
+- [X] T059 [US8] Implement calculateAllMissing method in `lib/ai/indicator-calculator.ts` with parallel batch logic (5 concurrent max), reviewed=false detection
+- [X] T060 [US8] Create POST `/app/api/ai/calculate-all-missing/route.ts` endpoint with systemId, returns calculatedCount, summary array
+- [X] T061 [US8] Add "Calculate All Missing" button to ProjectDetails toolbar calling calculate-all-missing endpoint
+- [X] T062 [US8] Integrate CalculationProgress component into AIAssistant to show batch progress with WebSocket or polling
+- [X] T063 [US8] Add summary display after batch completion showing which indicators calculated, confidence levels, any failures
+- [X] T064 [US8] Implement cancellation logic to abort in-progress batch calculation
 
 **Checkpoint**: Batch calculation working - users can fill entire rotations quickly
 

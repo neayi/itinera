@@ -6,8 +6,9 @@ import { getIndicatorLabel } from '@/lib/indicator-labels';
 import ConversationHistory from './ConversationHistory';
 import MessageInput from './MessageInput';
 import AssumptionsPanel from './AssumptionsPanel';
-import svgPaths from '@/components/imports/svg-abbk4gof4j';
+import CalculationProgress from './CalculationProgress';
 import './ai-assistant.scss';
+import { Sparkles, ChevronRight } from 'lucide-react';
 
 interface AIAssistantProps {
   isOpen: boolean;
@@ -21,6 +22,13 @@ interface AIAssistantProps {
   onClose: () => void;
   onValueUpdate?: (updatedSystemData: any) => void;
   onCalculate?: () => Promise<void>;
+  batchProgress?: {
+    current: number;
+    total: number;
+    currentIndicator: string;
+  };
+  isBatchCalculating?: boolean;
+  onCancelBatch?: () => void;
 }
 
 export default function AIAssistant({
@@ -31,6 +39,9 @@ export default function AIAssistant({
   onClose,
   onValueUpdate,
   onCalculate,
+  batchProgress,
+  isBatchCalculating = false,
+  onCancelBatch,
 }: AIAssistantProps) {
   const [isRefining, setIsRefining] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -97,20 +108,7 @@ export default function AIAssistant({
         <div className="header-content">
           {/* Sparkle icon */}
           <div className="icon">
-            <svg fill="none" preserveAspectRatio="none" viewBox="0 0 20 20">
-              <g clipPath="url(#clip0_8002_1184)">
-                <path d={svgPaths.pb04d200} stroke="#212121" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-                <path d="M16.6667 2.5V5.83333" stroke="#212121" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-                <path d="M18.3333 4.16667H15" stroke="#212121" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-                <path d="M3.33333 14.1667V15.8333" stroke="#212121" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-                <path d="M4.16667 15H2.5" stroke="#212121" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-              </g>
-              <defs>
-                <clipPath id="clip0_8002_1184">
-                  <rect fill="white" height="20" width="20" />
-                </clipPath>
-              </defs>
-            </svg>
+            <Sparkles className="size-4" />
           </div>
           <h3 className="title">
             {focusedCell ? `Assistant IA - ${getIndicatorLabel(focusedCell.indicatorKey)}` : 'Assistant de simulation'}
@@ -121,9 +119,7 @@ export default function AIAssistant({
           className="close-btn"
           title="Replier le panneau"
         >
-          <svg fill="none" preserveAspectRatio="none" viewBox="0 0 20 20">
-            <path d={svgPaths.p324d0480} stroke="#707070" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.66667" />
-          </svg>
+          <ChevronRight />
         </button>
       </div>
 
@@ -144,7 +140,19 @@ export default function AIAssistant({
 
       {/* Messages */}
       <div className="messages">
-        {focusedCell && conversation && conversation.length > 0 ? (
+        {isBatchCalculating && batchProgress ? (
+          <div className="messages-container">
+            <CalculationProgress
+              current={batchProgress.current}
+              total={batchProgress.total}
+              currentIndicator={batchProgress.currentIndicator}
+              stepName={batchProgress.stepName}
+              interventionName={batchProgress.interventionName}
+              isComplete={batchProgress.current === batchProgress.total && batchProgress.total > 0}
+              onCancel={onCancelBatch}
+            />
+          </div>
+        ) : focusedCell && conversation && conversation.length > 0 ? (
           <div className="messages-container">
             {/* Show assumptions context */}
             <AssumptionsPanel

@@ -1,75 +1,168 @@
 // AI Assistant Panel Styles
 
 .ai-assistant {
-  width: 420px;
-  display: flex;
+  width           : 420px;
+  display         : flex;
   background-color: white;
-  box-shadow: 0px 25px 16px -12px rgba(180, 180, 180, 0.25);
-  border-left: 1px solid #e5e7eb;
-  flex-direction: column;
-  flex-shrink: 0;
+  box-shadow      : 0px 25px 16px -12px rgba(180, 180, 180, 0.25);
+  border-left     : 1px solid #e5e7eb;
+  flex-direction  : column;
+  flex-shrink     : 0;
 
   // Header
   .header {
     background-color: #f5f5f0;
-    height: 64px;
-    border-bottom: 1px solid #ebebeb;
-    padding: 0 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    height          : 64px;
+    border-bottom   : 1px solid #ebebeb;
+    padding         : 0 1.5rem;
+    display         : flex;
+    align-items     : center;
+    justify-content : space-between;
 
     .header-content {
-      display: flex;
+      display    : flex;
       align-items: center;
-      gap: 0.5rem;
+      gap        : 0.5rem;
     }
   }
 
   .icon {
-    position: relative;
+    position   : relative;
     flex-shrink: 0;
-    width: 20px;
-    height: 20px;
+    width      : 20px;
+    height     : 20px;
 
     svg {
       display: block;
-      width: 100%;
-      height: 100%;
+      width  : 100%;
+      height : 100%;
     }
   }
 
   .title {
-    font-weight: 400;
-    font-size: 16px;
-    line-height: 24px;
+    font-weight   : 400;
+    font-size     : 16px;
+    line-height   : 24px;
     letter-spacing: -0.3125px;
-    color: #212121;
-    margin: 0;
+    color         : #212121;
+    margin        : 0;
+  }
+
+  // Calculation Progress
+  .calculation-progress {
+    .progress-header {
+      margin-bottom: 1rem;
+
+      .progress-title {
+        font-size    : 1.125rem;
+        font-weight  : 600;
+        margin-bottom: 0.5rem;
+        color        : #1f2937;
+      }
+
+      .progress-stats {
+        font-size: 0.875rem;
+        color    : #6b7280;
+      }
+    }
+
+    .current-indicator {
+      margin-bottom: 1rem;
+      font-size    : 0.875rem;
+      color        : #374151;
+
+      strong {
+        font-weight: 600;
+        color      : #1f2937;
+      }
+    }
+
+    .progress-bar-container {
+      width           : 100%;
+      height          : 0.5rem;
+      background-color: #e5e7eb;
+      border-radius   : 0.25rem;
+      overflow        : hidden;
+      margin-bottom   : 0.5rem;
+
+      .progress-bar-fill {
+        height    : 100%;
+        transition: width 0.3s ease-in-out;
+      }
+    }
+
+    .progress-percentage {
+      font-size    : 0.875rem;
+      color        : #6b7280;
+      margin-bottom: 1rem;
+    }
+
+    .completion-summary {
+      margin-top      : 1.5rem;
+      padding         : 1rem;
+      background-color: #f0fdf4;
+      border-radius   : 0.5rem;
+      border          : 1px solid #86efac;
+
+      p {
+        margin: 0;
+
+        &:first-child {
+          font-size    : 0.875rem;
+          color        : #166534;
+          margin-bottom: 0.5rem;
+        }
+
+        &:last-child {
+          font-size: 0.75rem;
+          color    : #16a34a;
+        }
+      }
+    }
+
+    .cancel-button {
+      margin-top      : 1rem;
+      padding         : 0.5rem 1rem;
+      background-color: #ef4444;
+      color           : white;
+      border          : none;
+      border-radius   : 0.375rem;
+      cursor          : pointer;
+      font-size       : 0.875rem;
+      font-weight     : 500;
+      transition      : background-color 0.2s;
+
+      &:hover {
+        background-color: #dc2626;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor : not-allowed;
+      }
+    }
   }
 
   .close-btn {
     background-color: #edf0f2;
-    border-radius: 4px;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    padding-top: 6px;
-    padding-right: 0;
-    padding-bottom: 0;
-    padding-left: 12px;
+    border-radius   : 4px;
+    width           : 32px;
+    height          : 32px;
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+    border          : none;
+    cursor          : pointer;
+    transition      : background-color 0.2s;
+    padding         : 6px;
+    color           : #707070;
 
     &:hover {
       background-color: #d1d5db;
     }
 
     svg {
-      width: 20px;
+      width : 20px;
       height: 20px;
     }
   }
@@ -77,14 +170,14 @@
   // Context Banner
   .context-banner {
     background-color: #ebf7ff;
-    border-bottom: 1px solid #ebebeb;
-    padding: 0.75rem 1.5rem;
+    border-bottom   : 1px solid #ebebeb;
+    padding         : 0.75rem 1.5rem;
 
     .context-title {
-      font-size: 13px;
-      line-height: 20px;
+      font-size     : 13px;
+      line-height   : 20px;
       letter-spacing: -0.3008px;
-      color: #101828;
+      color         : #101828;
     }
 
     .context-name {
@@ -96,48 +189,48 @@
     }
 
     .context-step {
-      font-size: 12px;
+      font-size  : 12px;
       line-height: 16px;
-      color: #6a7282;
-      margin-top: 0.25rem;
+      color      : #6a7282;
+      margin-top : 0.25rem;
     }
   }
 
   // Messages Container
   .messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1.5rem;
-    padding-top: 1.5rem;
+    flex            : 1;
+    overflow-y      : auto;
+    padding         : 1.5rem;
+    padding-top     : 1.5rem;
     background-color: #f5f5f0;
 
     .messages-container {
-      display: flex;
+      display       : flex;
       flex-direction: column;
-      gap: 1rem;
+      gap           : 1rem;
     }
   }
 
   // Loading indicator
   .loading {
     background-color: white;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);
-    padding: 0.75rem 1rem;
-    display: inline-block;
+    border-radius   : 10px;
+    border          : 1px solid #e5e7eb;
+    box-shadow      : 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);
+    padding         : 0.75rem 1rem;
+    display         : inline-block;
 
     .loading-dots {
       display: flex;
-      gap: 0.5rem;
+      gap    : 0.5rem;
     }
 
     .loading-dot {
-      width: 0.5rem;
-      height: 0.5rem;
+      width           : 0.5rem;
+      height          : 0.5rem;
       background-color: #6b9571;
-      border-radius: 50%;
-      animation: bounce 1.4s infinite ease-in-out;
+      border-radius   : 50%;
+      animation       : bounce 1.4s infinite ease-in-out;
 
       &:nth-child(2) {
         animation-delay: 0.2s;
@@ -152,16 +245,16 @@
   // Empty state card
   .empty-card {
     background-color: white;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);
-    padding: 18px;
+    border-radius   : 10px;
+    border          : 1px solid #e5e7eb;
+    box-shadow      : 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);
+    padding         : 18px;
 
     .empty-content {
-      font-size: 14px;
-      line-height: 20px;
+      font-size     : 14px;
+      line-height   : 20px;
       letter-spacing: -0.3008px;
-      color: #101828;
+      color         : #101828;
 
       p {
         margin-bottom: 1rem;
@@ -173,8 +266,8 @@
 
       ul {
         list-style-type: disc;
-        margin-left: 1.25rem;
-        margin-top: 0.5rem;
+        margin-left    : 1.25rem;
+        margin-top     : 0.5rem;
 
         li {
           margin-top: 0.25rem;
@@ -185,9 +278,13 @@
 }
 
 @keyframes bounce {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     transform: translateY(0);
   }
+
   40% {
     transform: translateY(-10px);
   }
@@ -195,41 +292,41 @@
 
 .message {
   border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);   
+  border       : 1px solid #e5e7eb;
+  box-shadow   : 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
 // Conversation Messages
 .message-assistant {
   background-color: white;
-  padding: 18px;
+  padding         : 18px;
 
   .content {
-    font-size: 14px;
-    line-height: 20px;
+    font-size     : 14px;
+    line-height   : 20px;
     letter-spacing: -0.3008px;
-    color: #101828;
-    white-space: pre-line;
+    color         : #101828;
+    white-space   : pre-line;
   }
 
   .metadata {
-    margin-top: 1rem;
+    margin-top : 1rem;
     padding-top: 1rem;
-    border-top: 1px dashed #d1d5db;
+    border-top : 1px dashed #d1d5db;
 
     .metadata-title {
-      display: block;
+      display      : block;
       margin-bottom: 0.5rem;
-      font-size: 13px;
-      color: #374151;
-      font-weight: 600;
+      font-size    : 13px;
+      color        : #374151;
+      font-weight  : 600;
     }
 
     .metadata-list {
       list-style-type: disc;
-      margin-left: 1.25rem;
-      font-size: 13px;
-      color: #6b7280;
+      margin-left    : 1.25rem;
+      font-size      : 13px;
+      color          : #6b7280;
 
       li {
         margin-top: 0.25rem;
@@ -242,56 +339,56 @@
   }
 
   .confidence {
-    font-size: 13px;
-    color: #374151;
+    font-size  : 13px;
+    color      : #374151;
     font-weight: 600;
   }
 
   .confidence-badge {
-    display: inline-block;
-    margin-left: 0.5rem;
-    padding: 0.25rem 0.5rem;
+    display      : inline-block;
+    margin-left  : 0.5rem;
+    padding      : 0.25rem 0.5rem;
     border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
+    font-size    : 12px;
+    font-weight  : 500;
 
     &.confidence-badge--high {
       background-color: #d1fae5;
-      color: #065f46;
+      color           : #065f46;
     }
 
     &.confidence-badge--medium {
       background-color: #fef3c7;
-      color: #92400e;
+      color           : #92400e;
     }
 
     &.confidence-badge--low {
       background-color: #fee2e2;
-      color: #991b1b;
+      color           : #991b1b;
     }
   }
 
   .caveats {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-left: 4px solid #f59e0b;
+    margin-top      : 1rem;
+    padding-top     : 1rem;
+    border-left     : 4px solid #f59e0b;
     background-color: #fef3c7;
-    border-radius: 4px;
-    padding: 0.5rem 0.75rem;
+    border-radius   : 4px;
+    padding         : 0.5rem 0.75rem;
 
     .caveats-title {
-      display: block;
+      display      : block;
       margin-bottom: 0.5rem;
-      font-size: 13px;
-      color: #92400e;
-      font-weight: 600;
+      font-size    : 13px;
+      color        : #92400e;
+      font-weight  : 600;
     }
 
     .caveats-list {
       list-style-type: disc;
-      margin-left: 1.25rem;
-      font-size: 13px;
-      color: #78350f;
+      margin-left    : 1.25rem;
+      font-size      : 13px;
+      color          : #78350f;
 
       li {
         margin-top: 0.25rem;
@@ -301,75 +398,75 @@
 
   .timestamp {
     font-family: 'Inter', sans-serif;
-    font-size: 12px;
+    font-size  : 12px;
     line-height: 16px;
-    color: #6a7282;
-    margin-top: 1rem;
+    color      : #6a7282;
+    margin-top : 1rem;
   }
 }
 
 // User message
 .message-user-wrapper {
-  display: flex;
+  display        : flex;
   justify-content: flex-end;
 }
 
 .message-user {
   background-color: #6b9571;
 
-  padding: 0.75rem 1rem;
+  padding  : 0.75rem 1rem;
   max-width: 80%;
 
   .content {
-    font-size: 14px;
+    font-size  : 14px;
     line-height: 20px;
-    color: white;
+    color      : white;
     white-space: pre-line;
-    margin: 0;
+    margin     : 0;
   }
 
   .timestamp {
-    font-size: 12px;
+    font-size  : 12px;
     line-height: 16px;
-    color: #d1fae5;
-    margin-top: 0.25rem;
+    color      : #d1fae5;
+    margin-top : 0.25rem;
   }
 }
 
 // Assumptions Panel
 .assumptions {
-  display: flex;
+  display       : flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap           : 0.75rem;
 
   background-color: #f9fafb;
-  border-radius: 8px;
-  padding: 1rem;
-  font-size: 14px;
-  color: #6b7280;
+  border-radius   : 8px;
+  padding         : 1rem;
+  font-size       : 14px;
+  color           : #6b7280;
 
   .conflicts {
     background-color: #fef3c7;
-    border-left: 4px solid #f59e0b;
-    padding: 0.75rem;
-    border-radius: 4px;
+    border-left     : 4px solid #f59e0b;
+    padding         : 0.75rem;
+    border-radius   : 4px;
 
     .conflicts-header {
-      display: flex;
+      display    : flex;
       align-items: flex-start;
     }
 
     .conflicts-title {
-      color: #92400e;
-      font-size: 14px;
+      color      : #92400e;
+      font-size  : 14px;
       font-weight: 500;
     }
 
     .conflicts-list {
-      margin-top: 0.5rem;
-      font-size: 12px;
-      color: #78350f;
-      list-style: none;
+      margin-top  : 0.5rem;
+      font-size   : 12px;
+      color       : #78350f;
+      list-style  : none;
       padding-left: 0;
 
       li {
@@ -379,24 +476,24 @@
   }
 
   .section {
-    border: 1px solid #e5e7eb;
+    border       : 1px solid #e5e7eb;
     border-radius: 8px;
-    overflow: hidden;
+    overflow     : hidden;
 
     .section-header {
-      width: 100%;
-      padding: 0.5rem 1rem;
-      display: flex;
-      align-items: center;
+      width          : 100%;
+      padding        : 0.5rem 1rem;
+      display        : flex;
+      align-items    : center;
       justify-content: space-between;
-      border: none;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      text-align: left;
+      border         : none;
+      cursor         : pointer;
+      transition     : background-color 0.2s;
+      text-align     : left;
 
       &.section-header--system {
         background-color: #eff6ff;
-        
+
         &:hover {
           background-color: #dbeafe;
         }
@@ -404,7 +501,7 @@
 
       &.section-header--step {
         background-color: #f0fdf4;
-        
+
         &:hover {
           background-color: #dcfce7;
         }
@@ -412,7 +509,7 @@
 
       &.section-header--intervention {
         background-color: #faf5ff;
-        
+
         &:hover {
           background-color: #f3e8ff;
         }
@@ -421,7 +518,7 @@
 
     .section-title {
       font-weight: 500;
-      font-size: 14px;
+      font-size  : 14px;
 
       &.section-title--system {
         color: #1e3a8a;
@@ -451,26 +548,26 @@
     }
 
     .section-content {
-      padding: 1rem;
+      padding         : 1rem;
       background-color: white;
     }
   }
 
   .list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
+    list-style    : none;
+    padding       : 0;
+    margin        : 0;
+    display       : flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap           : 0.5rem;
   }
 
   .item {
-    display: flex;
+    display    : flex;
     align-items: flex-start;
-    gap: 0.5rem;
-    font-size: 14px;
-    color: #374151;
+    gap        : 0.5rem;
+    font-size  : 14px;
+    color      : #374151;
   }
 
   .bullet {
@@ -492,54 +589,54 @@
 
 // Message Input
 .message-input {
-  border-top: 1px solid #e5e7eb;
+  border-top      : 1px solid #e5e7eb;
   background-color: white;
-  padding: 1.5rem 1.5rem 1.5rem;
-  padding-top: 25px;
-  padding-bottom: 1.5rem;
+  padding         : 1.5rem 1.5rem 1.5rem;
+  padding-top     : 25px;
+  padding-bottom  : 1.5rem;
 
   .form {
     display: flex;
-    gap: 0.5rem;
+    gap    : 0.5rem;
   }
 
   .field {
-    flex: 1;
-    padding: 0.5rem 1rem;
-    height: 38px;
-    border: 1px solid #d1d5dc;
-    border-radius: 10px;
-    font-size: 14px;
+    flex          : 1;
+    padding       : 0.5rem 1rem;
+    height        : 38px;
+    border        : 1px solid #d1d5dc;
+    border-radius : 10px;
+    font-size     : 14px;
     letter-spacing: -0.1504px;
-    color: rgba(10, 10, 10, 0.5);
+    color         : rgba(10, 10, 10, 0.5);
 
     &::placeholder {
       color: rgba(10, 10, 10, 0.5);
     }
 
     &:focus {
-      outline: none;
+      outline   : none;
       box-shadow: 0 0 0 2px #6b9571;
     }
 
     &:disabled {
       opacity: 0.5;
-      cursor: not-allowed;
+      cursor : not-allowed;
     }
   }
 
   .button {
     background-color: #6b9571;
-    color: white;
-    border-radius: 10px;
-    width: 48px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
+    color           : white;
+    border-radius   : 10px;
+    width           : 48px;
+    height          : 38px;
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+    border          : none;
+    cursor          : pointer;
+    transition      : background-color 0.2s;
 
     &:hover:not(:disabled) {
       background-color: #5a8560;
@@ -547,9 +644,7 @@
 
     &:disabled {
       opacity: 0.5;
-      cursor: not-allowed;
+      cursor : not-allowed;
     }
   }
 }
-
-

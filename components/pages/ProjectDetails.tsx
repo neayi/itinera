@@ -5,6 +5,7 @@ import { ContextPanel } from '@/components/ContextPanel';
 import { InterventionsTable } from '@/components/InterventionsTable';
 import { ChatBot } from '@/components/ChatBot';
 import { AIAssistant } from '@/components/ai-assistant';
+import CalculationAlert from '@/components/ai-assistant/CalculationAlert';
 import { InterventionData, RotationData } from '@/lib/types';
 import { variant1Interventions } from '@/lib/data/variant1Interventions';
 import { ItineraireTechnique, ItineraireTechniqueRef } from '@/components/ItineraireTechnique';
@@ -29,6 +30,10 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [gpsLocation, setGpsLocation] = useState<string | null>(null);
+  const [isBatchCalculating, setIsBatchCalculating] = useState<boolean>(false);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, currentIndicator: '', stepName: '', interventionName: '' });
+  const [batchAbortController, setBatchAbortController] = useState<AbortController | null>(null);
+  const [calculationAlert, setCalculationAlert] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
 
   // S'assurer que le composant est monté côté client
   useEffect(() => {
@@ -264,6 +269,143 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     }
   };
 
+  const handleCalculateAllMissing = async () => {
+    console.log('[handleCalculateAllMissing] Starting batch calculation with SSE...');
+    
+    setIsBatchCalculating(true);
+    setIsAIAssistantOpen(true);
+    setBatchProgress({ current: 0, total: 0, currentIndicator: '', stepName: '', interventionName: '' });
+
+    try {
+      // Use POST request to initiate SSE stream
+      const response = await fetch('/api/ai/calculate-all-missing-stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          systemId: projectId,
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error('Failed to start calculation stream');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      // Create abort controller for cancellation
+      const abortController = new AbortController();
+      setBatchAbortController(abortController);
+
+      // Listen for abort
+      abortController.signal.addEventListener('abort', () => {
+        reader.cancel();
+        console.log('[handleCalculateAllMissing] Stream cancelled by user');
+      });
+
+      // Read stream
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done || abortController.signal.aborted) {
+          break;
+        }
+
+        // Append to buffer
+        buffer += decoder.decode(value, { stream: true });
+
+        // Process complete messages (SSE format: "data: {...}\n\n")
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || ''; // Keep incomplete message in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.substring(6));
+
+              if (data.type === 'progress') {
+                console.log(`[handleCalculateAllMissing] Progress: ${data.current}/${data.total} - ${data.stepName} / ${data.interventionName} / ${data.currentIndicator}`);
+                setBatchProgress({
+                  current: data.current,
+                  total: data.total,
+                  currentIndicator: data.currentIndicator,
+                  stepName: data.stepName,
+                  interventionName: data.interventionName
+                });
+              } else if (data.type === 'complete') {
+                console.log('[handleCalculateAllMissing] Calculation complete:', data);
+                
+                // Update final progress
+                setBatchProgress({
+                  current: data.calculatedCount,
+                  total: data.total,
+                  currentIndicator: '',
+                  stepName: '',
+                  interventionName: ''
+                });
+
+                // Reload system data
+                fetchSystemData();
+
+                // Show completion alert
+                if (!abortController.signal.aborted) {
+                  setCalculationAlert({
+                    type: 'success',
+                    title: 'Calcul terminé !',
+                    message: `${data.calculatedCount} indicateurs calculés sur ${data.total}.`,
+                  });
+                }
+              } else if (data.type === 'error') {
+                console.error('[handleCalculateAllMissing] Error from server:', data.message);
+                setCalculationAlert({
+                  type: 'error',
+                  title: 'Erreur',
+                  message: `Erreur lors du calcul : ${data.message}`,
+                });
+              }
+            } catch (error) {
+              console.error('[handleCalculateAllMissing] Error parsing SSE data:', error);
+            }
+          }
+        }
+      }
+
+    } catch (error: any) {
+      console.error('[handleCalculateAllMissing] Error:', error);
+      if (error.name === 'AbortError') {
+        console.log('Batch calculation cancelled by user');
+        setCalculationAlert({
+          type: 'info',
+          title: 'Calcul interrompu',
+          message: 'Le calcul en lot a été interrompu.',
+        });
+      } else {
+        setCalculationAlert({
+          type: 'error',
+          title: 'Erreur',
+          message: `Erreur lors du calcul en lot: ${error.message}`,
+        });
+      }
+    } finally {
+      setIsBatchCalculating(false);
+      setBatchAbortController(null);
+    }
+  };
+
+  const handleCancelBatchCalculation = () => {
+    if (batchAbortController) {
+      batchAbortController.abort();
+      setCalculationAlert({
+        type: 'info',
+        title: 'Calcul interrompu',
+        message: 'Le calcul en lot a été interrompu.',
+      });
+    }
+  };
+
   // Ne pas rendre le composant tant qu'il n'est pas monté côté client
   if (!isMounted) {
     return null;
@@ -347,15 +489,21 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
 
           {/* Interventions Table Section */}
           <section className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            {/* Table des interventions basée sur systemData */}
-            <InterventionsDataTable 
-              systemData={systemData} 
+            <InterventionsTable
+              surface={projectSurface}
+              startYear={rotationStartYear}
+              endYear={rotationEndYear}
+              onCellBlur={() => setFocusedCell(null)}
+              onCellChange={handleCellChange}
+              systemData={systemData}
               systemId={projectId}
               onUpdate={fetchSystemData}
-              onCellFocus={(stepIndex, interventionIndex, indicatorKey) => {
+              onCellFocusAI={(stepIndex, interventionIndex, indicatorKey) => {
                 setAIAssistantFocusedCell({ stepIndex, interventionIndex, indicatorKey });
                 setIsAIAssistantOpen(true);
               }}
+              onCalculateAllMissing={handleCalculateAllMissing}
+              isBatchCalculating={isBatchCalculating}
             />            
           </section>
 
@@ -384,8 +532,21 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
           }}
           onValueUpdate={fetchSystemData}
           onCalculate={handleCalculateIndicator}
+          batchProgress={batchProgress}
+          isBatchCalculating={isBatchCalculating}
+          onCancelBatch={handleCancelBatchCalculation}
         />
       </div>
+
+      {/* Calculation Alert */}
+      {calculationAlert && (
+        <CalculationAlert
+          type={calculationAlert.type}
+          title={calculationAlert.title}
+          message={calculationAlert.message}
+          onClose={() => setCalculationAlert(null)}
+        />
+      )}
     </div>
   );
 }

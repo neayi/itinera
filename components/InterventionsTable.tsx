@@ -1,19 +1,41 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Columns, Plus, BarChart3, Settings, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Columns, Plus, BarChart3, Settings, RefreshCw, Sparkles } from 'lucide-react';
 import { InterventionData } from '@/lib/types';
+import { InterventionsDataTable } from '@/components/interventions-table';
 
 interface InterventionsTableProps {
-  interventions: InterventionData[];
-  updateIntervention: (id: string, field: string, value: any) => void;
+  interventions?: InterventionData[];
+  updateIntervention?: (id: string, field: string, value: any) => void;
   surface?: number; // en hectares
   startYear?: number;
   endYear?: number;
   onCellFocus?: (interventionId: string, interventionName: string, columnName: string) => void;
   onCellBlur?: () => void;
   onCellChange?: (interventionName: string, columnName: string, oldValue: any, newValue: any) => void;
+  // New props for InterventionsDataTable
+  systemData?: any;
+  systemId?: string;
+  onUpdate?: (updatedData?: any) => void;
+  onCellFocusAI?: (stepIndex: number, interventionIndex: number, indicatorKey: string) => void;
+  // Props for batch calculation
+  onCalculateAllMissing?: () => void;
+  isBatchCalculating?: boolean;
 }
 
-export function InterventionsTable({ surface = 15, startYear = 2027, endYear = 2033, onCellFocus, onCellBlur, onCellChange }: InterventionsTableProps) {
+export function InterventionsTable({ 
+  surface = 15, 
+  startYear = 2027, 
+  endYear = 2033, 
+  onCellFocus, 
+  onCellBlur, 
+  onCellChange,
+  systemData,
+  systemId,
+  onUpdate,
+  onCellFocusAI,
+  onCalculateAllMissing,
+  isBatchCalculating = false,
+}: InterventionsTableProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [focusedCell, setFocusedCell] = useState<{ interventionId: string; columnName: string; initialValue: any } | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
@@ -213,13 +235,17 @@ export function InterventionsTable({ surface = 15, startYear = 2027, endYear = 2
             </button>
           </div>
 
-          <button
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-colors text-sm"
-            onClick={() => alert('Ajout d\'une ligne en cours de développement')}
-          >
-            <Plus className="size-4" />
-            Ajouter une ligne
-          </button>
+          {onCalculateAllMissing && (
+            <button
+              onClick={onCalculateAllMissing}
+              disabled={isBatchCalculating}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Calculer tous les indicateurs manquants"
+            >
+              <Sparkles className="size-5" />
+              {isBatchCalculating ? 'Calcul en cours...' : 'Calculer tout'}
+            </button>
+          )}
 
           <div className="relative">
             <button
@@ -446,6 +472,15 @@ export function InterventionsTable({ surface = 15, startYear = 2027, endYear = 2
         );
       })()}
 
+      {/* Table des interventions basée sur systemData */}
+      {systemData && systemId && onUpdate && onCellFocusAI && (
+        <InterventionsDataTable 
+          systemData={systemData} 
+          systemId={systemId}
+          onUpdate={onUpdate}
+          onCellFocus={onCellFocusAI}
+        />
+      )}
     </div>
   );
 }

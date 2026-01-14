@@ -192,11 +192,12 @@ export class IndicatorCalculator {
   }
 
   /**
-   * Calculate all missing indicators in a system
+   * Calculate all missing indicators in a system (stub for backward compatibility)
+   * Use the overloaded version with options parameter instead
    * @param systemData - Full system data
    * @returns Summary of calculations
    */
-  async calculateAllMissing(systemData: any): Promise<{
+  async calculateAllMissingLegacy(systemData: any): Promise<{
     calculatedCount: number;
     summary: Array<{ stepIndex: number; interventionIndex: number; indicatorKey: string; value: any }>;
   }> {
@@ -459,6 +460,182 @@ Exemples :
 
     // Replace {context} placeholder
     return template.replace('{context}', contextString);
+  }
+
+  /**
+   * Calculate all missing indicators in batch with parallel execution
+   * @param systemData - Complete system data
+   * @param maxParallel - Maximum concurrent calculations (default: 5)
+   * @param onProgress - Callback for progress updates
+   * @returns Summary of calculations performed
+   */
+  async calculateAllMissing(
+    systemData: any,
+    options: {
+      maxParallel?: number;
+      onProgress?: (current: number, total: number, currentIndicator?: string, stepName?: string, interventionName?: string) => void;
+      abortSignal?: AbortSignal;
+    } = {}
+  ): Promise<{
+    systemData: any;
+    calculatedCount: number;
+    summary: Array<{
+      stepIndex: number;
+      interventionIndex: number;
+      indicatorKey: string;
+      value: number | null;
+      confidence: ConfidenceLevel;
+      error?: string;
+    }>;
+  }> {
+    const { maxParallel = 5, onProgress, abortSignal } = options;
+    
+    // Find all missing indicators (null or undefined, reviewed=false)
+    const missingIndicators: Array<{
+      stepIndex: number;
+      interventionIndex: number;
+      indicatorKey: string;
+    }> = [];
+
+    const indicatorKeys = [
+      'frequence', 'azoteMineral', 'azoteOrganique', 'ift', 'eiq', 'ges',
+      'tempsTravail', 'coutsPhytos', 'semences', 'engrais', 'mecanisation',
+      'gnr', 'irrigation', 'rendementTMS', 'prixVente'
+    ];
+
+    console.log('[calculateAllMissing] Starting detection...');
+    console.log('[calculateAllMissing] systemData.steps:', systemData.steps?.length || 0, 'steps');
+
+    systemData.steps?.forEach((step: any, stepIndex: number) => {
+      console.log(`[calculateAllMissing] Step ${stepIndex}: ${step.interventions?.length || 0} interventions`);
+      step.interventions?.forEach((intervention: any, interventionIndex: number) => {
+        console.log(`[calculateAllMissing] Intervention ${stepIndex}-${interventionIndex}: ${intervention.name}`);
+        console.log(`[calculateAllMissing] Values:`, intervention.values);
+        
+        indicatorKeys.forEach((indicatorKey) => {
+          const valueEntry = intervention.values?.find((v: any) => v.key === indicatorKey);
+          
+          // Should calculate if:
+          // - No value entry exists, OR
+          // - Value is null/undefined, OR
+          // - reviewed is not true and not "n/a"
+          const needsCalculation = !valueEntry || 
+            valueEntry.value === null || 
+            valueEntry.value === undefined ||
+            (valueEntry.reviewed !== true && valueEntry.reviewed !== "n/a");
+          
+          if (needsCalculation) {
+            console.log(`[calculateAllMissing] ✓ Need to calculate ${indicatorKey}:`, {
+              exists: !!valueEntry,
+              value: valueEntry?.value,
+              reviewed: valueEntry?.reviewed
+            });
+            missingIndicators.push({ stepIndex, interventionIndex, indicatorKey });
+          }
+        });
+      });
+    });
+
+    console.log('[calculateAllMissing] Total missing indicators:', missingIndicators.length);
+
+    const total = missingIndicators.length;
+    const summary: Array<any> = [];
+    let current = 0;
+
+    console.log('[calculateAllMissing] Total to calculate:', total);
+    console.log('[calculateAllMissing] Starting batch processing with maxParallel:', maxParallel);
+
+    // Clone system data to avoid mutations
+    const updatedSystemData = JSON.parse(JSON.stringify(systemData));
+
+    // Process in batches
+    for (let i = 0; i < missingIndicators.length; i += maxParallel) {
+      // Check for abort
+      if (abortSignal?.aborted) {
+        console.log('[calculateAllMissing] Aborted by user');
+        break;
+      }
+
+      const batch = missingIndicators.slice(i, i + maxParallel);
+      console.log(`[calculateAllMissing] Processing batch ${Math.floor(i / maxParallel) + 1}/${Math.ceil(total / maxParallel)}: ${batch.length} indicators`);
+      
+      const batchPromises = batch.map(async ({ stepIndex, interventionIndex, indicatorKey }, batchIdx) => {
+        try {
+          // Get step and intervention names for progress display
+          const stepName = updatedSystemData.steps[stepIndex]?.name || `Étape ${stepIndex + 1}`;
+          const interventionName = updatedSystemData.steps[stepIndex]?.interventions[interventionIndex]?.name || `Intervention ${interventionIndex + 1}`;
+
+          // Calculate current index for this item
+          const itemCurrent = i + batchIdx + 1;
+
+          // Report progress BEFORE starting calculation
+          if (onProgress) {
+            onProgress(itemCurrent, total, indicatorKey, stepName, interventionName);
+          }
+
+          const result = await this.calculateIndicator({
+            systemData: updatedSystemData,
+            stepIndex,
+            interventionIndex,
+            indicatorKey,
+          });
+
+          // Update system data
+          const step = updatedSystemData.steps[stepIndex];
+          const intervention = step.interventions[interventionIndex];
+          
+          if (!intervention.values) {
+            intervention.values = [];
+          }
+
+          const existingIndex = intervention.values.findIndex((v: any) => v.key === indicatorKey);
+          
+          const valueEntry = {
+            key: indicatorKey,
+            value: result.value,
+            confidence: result.confidence,
+            reviewed: false,
+            conversation: result.conversation,
+          };
+
+          if (existingIndex >= 0) {
+            intervention.values[existingIndex] = valueEntry;
+          } else {
+            intervention.values.push(valueEntry);
+          }
+
+          current++;
+
+          return {
+            stepIndex,
+            interventionIndex,
+            indicatorKey,
+            value: result.value,
+            confidence: result.confidence,
+          };
+        } catch (error: any) {
+          current++;
+
+          return {
+            stepIndex,
+            interventionIndex,
+            indicatorKey,
+            value: null,
+            confidence: 'low' as ConfidenceLevel,
+            error: error.message || 'Calculation failed',
+          };
+        }
+      });
+
+      const batchResults = await Promise.all(batchPromises);
+      summary.push(...batchResults);
+    }
+
+    return {
+      systemData: updatedSystemData,
+      calculatedCount: summary.filter(s => !s.error).length,
+      summary,
+    };
   }
 }
 
