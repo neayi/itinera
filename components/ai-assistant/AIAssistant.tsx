@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ConversationMessage } from '@/lib/types';
+import { getIndicatorLabel } from '@/lib/indicator-labels';
 import ConversationHistory from './ConversationHistory';
 import MessageInput from './MessageInput';
 import AssumptionsPanel from './AssumptionsPanel';
@@ -112,7 +113,7 @@ export default function AIAssistant({
             </svg>
           </div>
           <h3 className="title">
-            {focusedCell ? `Assistant IA - ${focusedCell.indicatorKey}` : 'Assistant de simulation'}
+            {focusedCell ? `Assistant IA - ${getIndicatorLabel(focusedCell.indicatorKey)}` : 'Assistant de simulation'}
           </h3>
         </div>
         <button
