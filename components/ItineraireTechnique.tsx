@@ -1,4 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+
+export interface ItineraireTechniqueRef {
+  resize: () => void;
+}
 
 interface ItineraireTechniqueProps {
   data?: any;
@@ -6,13 +10,22 @@ interface ItineraireTechniqueProps {
   className?: string;
 }
 
-export function ItineraireTechnique({
+export const ItineraireTechnique = forwardRef<ItineraireTechniqueRef, ItineraireTechniqueProps>(({
   data,
   dataUrl,
   className = ''
-}: ItineraireTechniqueProps) {
+}, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<any>(null);
+
+  // Exposer la méthode resize pour le parent
+  useImperativeHandle(ref, () => ({
+    resize: () => {
+      if (rendererRef.current && typeof rendererRef.current.resize === 'function') {
+        rendererRef.current.resize();
+      }
+    }
+  }));
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -66,4 +79,6 @@ export function ItineraireTechnique({
       style={{ minHeight: '400px', width: '100%' }}
     />
   );
-}
+});
+
+ItineraireTechnique.displayName = 'ItineraireTechnique';

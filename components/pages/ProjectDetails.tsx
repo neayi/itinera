@@ -7,7 +7,7 @@ import { ChatBot } from '@/components/ChatBot';
 import { AIAssistant } from '@/components/ai-assistant';
 import { InterventionData, RotationData } from '@/lib/types';
 import { variant1Interventions } from '@/lib/data/variant1Interventions';
-import { ItineraireTechnique } from '@/components/ItineraireTechnique';
+import { ItineraireTechnique, ItineraireTechniqueRef } from '@/components/ItineraireTechnique';
 import { InterventionsDataTable } from '@/components/interventions-table';
 
 interface ProjectDetailsProps {
@@ -173,6 +173,21 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     interventionIndex: number;
     indicatorKey: string;
   } | undefined>(undefined);
+  
+  // Ref pour le graphique ItineraireTechnique
+  const itineraireTechniqueRef = useRef<ItineraireTechniqueRef>(null);
+
+  // Redimensionner le graphique quand l'assistant IA change d'état
+  useEffect(() => {
+    // Timeout pour laisser le temps au DOM de se mettre à jour
+    const timeoutId = setTimeout(() => {
+      if (itineraireTechniqueRef.current) {
+        itineraireTechniqueRef.current.resize();
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [isAIAssistantOpen]);
 
   const variants = ['Originale', 'Variante 1'];
 
@@ -323,6 +338,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
           {/* Rotation Timeline - Itinéraire Technique */}
           <section className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-6">
             <ItineraireTechnique
+              ref={itineraireTechniqueRef}
               data={systemData}
               className="w-full"
             />

@@ -117,6 +117,10 @@ class RotationRenderer {
         }
     }
 
+    resize() {
+        this.chart.resize();
+    }
+    
     getElementID(element) {
         return element.classList.values().find(item => item.match(/Intervention_[0-9]+_[0-9]+|Step_[0-9]+/));
     }
@@ -220,7 +224,8 @@ class RotationRenderer {
 
             grid: {
                 height: self.barHeight * 3,
-                right: 6
+                right: 6,
+                left: 6
             },
 
             xAxis: {
