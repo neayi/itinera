@@ -151,14 +151,14 @@
 
 ### Implementation for User Story 6
 
-- [ ] T044 [P] [US6] Create couts-phytos prompt in `lib/ai/prompts/couts-phytos.ts` with product identification and average price estimation
-- [ ] T045 [P] [US6] Create semences prompt in `lib/ai/prompts/semences.ts` with crop variety, density, bio factor, average price
-- [ ] T046 [P] [US6] Create engrais prompt in `lib/ai/prompts/engrais.ts` with fertilizer type, formulation, quantity, average price
-- [ ] T047 [P] [US6] Create mecanisation prompt in `lib/ai/prompts/mecanisation.ts` with operation type, machine size, amortization calculation
-- [ ] T048 [P] [US6] Create gnr prompt in `lib/ai/prompts/gnr.ts` with fuel consumption calculation and price (default 1.10 €/L)
-- [ ] T049 [P] [US6] Create irrigation prompt in `lib/ai/prompts/irrigation.ts` with water volume, system type, cost/m³
-- [ ] T050 [US6] Extend calculateIndicator routing to handle all 6 cost indicator types
-- [ ] T051 [US6] Add cost-specific formatting to `components/interventions-table/formatters.ts` for euro values with confidence badges
+- [X] T044 [P] [US6] Create couts-phytos prompt in `lib/ai/prompts/couts-phytos.ts` with product identification and average price estimation
+- [X] T045 [P] [US6] Create semences prompt in `lib/ai/prompts/semences.ts` with crop variety, density, bio factor, average price
+- [X] T046 [P] [US6] Create engrais prompt in `lib/ai/prompts/engrais.ts` with fertilizer type, formulation, quantity, average price
+- [X] T047 [P] [US6] Create mecanisation prompt in `lib/ai/prompts/mecanisation.ts` with operation type, machine size, amortization calculation
+- [X] T048 [P] [US6] Create gnr prompt in `lib/ai/prompts/gnr.ts` with fuel consumption calculation and price (default 1.10 €/L)
+- [X] T049 [P] [US6] Create irrigation prompt in `lib/ai/prompts/irrigation.ts` with water volume, system type, cost/m³
+- [X] T050 [US6] Extend calculateIndicator routing to handle all 6 cost indicator types
+- [X] T051 [US6] Add cost-specific formatting to `components/interventions-table/formatters.ts` for euro values with confidence badges
 
 **Checkpoint**: All cost indicators calculable with AI-estimated average prices refinable via dialogue
 

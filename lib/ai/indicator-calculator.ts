@@ -7,6 +7,12 @@ import { buildGesPrompt, GES_SYSTEM_PROMPT } from './prompts/ges';
 import { buildAzoteMineralPrompt, AZOTE_MINERAL_SYSTEM_PROMPT } from './prompts/azote-mineral';
 import { buildAzoteOrganiquePrompt, AZOTE_ORGANIQUE_SYSTEM_PROMPT } from './prompts/azote-organique';
 import { buildRendementPrompt, RENDEMENT_SYSTEM_PROMPT } from './prompts/rendement';
+import { COUTS_PHYTOS_PROMPT } from './prompts/couts-phytos';
+import { SEMENCES_PROMPT } from './prompts/semences';
+import { ENGRAIS_PROMPT } from './prompts/engrais';
+import { MECANISATION_PROMPT } from './prompts/mecanisation';
+import { GNR_PROMPT } from './prompts/gnr';
+import { IRRIGATION_PROMPT } from './prompts/irrigation';
 
 /**
  * Clean JSON response from OpenAI (remove markdown code blocks)
@@ -236,6 +242,24 @@ export class IndicatorCalculator {
       case 'rendement':
         return buildRendementPrompt(context);
       
+      case 'coutsPhytos':
+        return this.buildContextualPrompt(COUTS_PHYTOS_PROMPT, context);
+      
+      case 'semences':
+        return this.buildContextualPrompt(SEMENCES_PROMPT, context);
+      
+      case 'engrais':
+        return this.buildContextualPrompt(ENGRAIS_PROMPT, context);
+      
+      case 'mecanisation':
+        return this.buildContextualPrompt(MECANISATION_PROMPT, context);
+      
+      case 'gnr':
+        return this.buildContextualPrompt(GNR_PROMPT, context);
+      
+      case 'irrigation':
+        return this.buildContextualPrompt(IRRIGATION_PROMPT, context);
+      
       // Add more indicators as they are implemented
       default:
         // Fallback to generic prompt
@@ -316,6 +340,14 @@ Réponds en JSON valide avec cette structure :
       case 'rendement':
         return RENDEMENT_SYSTEM_PROMPT;
       
+      case 'coutsPhytos':
+      case 'semences':
+      case 'engrais':
+      case 'mecanisation':
+      case 'gnr':
+      case 'irrigation':
+        return `Tu es un expert en économie agricole française et en analyse des coûts de production. Réponds toujours en JSON valide.`;
+      
       // Add more indicators as they are implemented
       default:
         // Determine if this indicator should be per hectare
@@ -343,6 +375,50 @@ Exemples :
 
 ` : ''}Réponds toujours en JSON valide.`;
     }
+  }
+
+  /**
+   * Build a contextual prompt by injecting context into a template
+   * @param template - Prompt template with {context} placeholder
+   * @param context - Context information
+   * @returns Formatted prompt with context injected
+   */
+  private buildContextualPrompt(
+    template: string,
+    context: {
+      intervention: any;
+      step: any;
+      systemData: any;
+      systemAssumptions: string;
+      stepAssumptions: string;
+      interventionAssumptions: string;
+    }
+  ): string {
+    const { intervention, step, systemData, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+
+    // Build context string
+    let contextString = '';
+    
+    if (systemAssumptions) {
+      contextString += `## 🌾 Caractéristiques du système de culture\n\n${systemAssumptions}\n\n`;
+    }
+    
+    if (stepAssumptions) {
+      contextString += `## 📅 Caractéristiques de l'étape "${step.name}"\n\n${stepAssumptions}\n\n`;
+    }
+    
+    contextString += `## 🚜 Intervention à analyser\n\n`;
+    contextString += `**Nom** : ${intervention.name}\n`;
+    contextString += `**Description** : ${intervention.description || 'Non spécifiée'}\n`;
+    contextString += `**Type** : ${intervention.type}\n`;
+    contextString += `**Date** : Jour ${intervention.day} après le début de l'étape\n`;
+    
+    if (interventionAssumptions) {
+      contextString += `\n**Hypothèses supplémentaires** :\n${interventionAssumptions}\n`;
+    }
+
+    // Replace {context} placeholder
+    return template.replace('{context}', contextString);
   }
 }
 
