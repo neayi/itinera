@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { queryOne, query } from '@/lib/db';
 import { indicatorCalculator } from '@/lib/ai/indicator-calculator';
+import { calculateAndSaveStepTotals } from '@/lib/calculate-step-totals';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -66,11 +67,8 @@ export async function POST(request: NextRequest) {
 
       console.log('[calculate-all-missing-stream] Calculation complete, updating database...');
 
-      // Update system in database
-      await query(
-        'UPDATE systems SET json = ?, updated_at = NOW() WHERE id = ?',
-        [JSON.stringify(result.systemData), systemId]
-      );
+      // Calculate and save step totals
+      const finalSystemData = await calculateAndSaveStepTotals(systemId, result.systemData);
 
       // Send completion event
       const completionData = {

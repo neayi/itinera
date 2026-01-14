@@ -263,17 +263,6 @@ export function EditableNumberCell({
   // Déterminer si la cellule doit avoir un fond jaune
   const needsReview = reviewed !== true && reviewed !== 'n/a';
 
-  // Get confidence badge
-  const getConfidenceBadge = () => {
-    if (!confidence) return null;
-    const badges = {
-      high: '🟢',
-      medium: '🟡',
-      low: '🔴',
-    };
-    return badges[confidence] || null;
-  };
-
   // Show clickable span for empty cells (calculation now triggered from AI Assistant panel)
   if (isEmpty) {
     return (
@@ -307,16 +296,7 @@ export function EditableNumberCell({
       className={needsReview ? 'needsReview' : ''}
       title={needsReview ? "Valeur à vérifier (cliquer pour éditer)" : "Cliquer pour éditer"}
     >
-      <span style={{ flex: 1 }}>{formatValue(value, fieldKey)}</span>
-      {getConfidenceBadge() && (
-        <span 
-          onClick={handleOpenAssistant}
-          style={{ cursor: 'pointer' }}
-          title={`Confiance: ${confidence} (cliquer pour voir les détails)`}
-        >
-          {getConfidenceBadge()}
-        </span>
-      )}
+      <span style={{ flex: 1 }}>{formatValue(value, fieldKey)}</span>    
     </span>
   );
 }

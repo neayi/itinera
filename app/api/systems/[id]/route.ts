@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { SystemWithFarm } from '@/lib/types';
+import { calculateAndSaveStepTotals } from '@/lib/calculate-step-totals';
 
 export async function GET(
   request: Request,
@@ -57,10 +58,8 @@ export async function PATCH(
 
     // Mise à jour du champ JSON
     if (body.json) {
-      await query(
-        'UPDATE systems SET json = ?, updated_at = NOW() WHERE id = ?',
-        [JSON.stringify(body.json), id]
-      );
+      // Calculate and save step totals automatically
+      await calculateAndSaveStepTotals(id, body.json);
     }
 
     return NextResponse.json({ success: true });
