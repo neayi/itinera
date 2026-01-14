@@ -19,6 +19,7 @@ interface AIAssistantProps {
   systemId: string;
   onClose: () => void;
   onValueUpdate?: (updatedSystemData: any) => void;
+  onCalculate?: () => Promise<void>;
 }
 
 export default function AIAssistant({
@@ -28,8 +29,10 @@ export default function AIAssistant({
   systemId,
   onClose,
   onValueUpdate,
+  onCalculate,
 }: AIAssistantProps) {
   const [isRefining, setIsRefining] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   if (!isOpen) {
     return null;
@@ -176,8 +179,45 @@ export default function AIAssistant({
             
             <div className="empty-card">
               <div className="empty-content">
-                <p className="mb-2">Aucune conversation pour cette valeur.</p>
-                <p>Cliquez sur le bouton 🤖 pour calculer avec l'IA.</p>
+                <p className="mb-4">Aucune conversation pour cette valeur.</p>
+                {onCalculate && (
+                  <button
+                    onClick={async () => {
+                      setIsCalculating(true);
+                      try {
+                        await onCalculate();
+                      } finally {
+                        setIsCalculating(false);
+                      }
+                    }}
+                    disabled={isCalculating}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      fontSize: '1rem',
+                      backgroundColor: isCalculating ? '#9ca3af' : '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      cursor: isCalculating ? 'not-allowed' : 'pointer',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      margin: '0 auto',
+                    }}
+                  >
+                    {isCalculating ? (
+                      <>
+                        <span>Calcul en cours...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>🤖</span>
+                        <span>Calculer cette valeur</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -185,7 +225,7 @@ export default function AIAssistant({
           <div className="empty-card">
             <div className="empty-content">
               <p className="mb-4">Bonjour ! Je suis votre assistant de simulation d'itinéraires techniques.</p>
-              <p>Pour calculer un indicateur avec l'IA, cliquez sur le bouton 🤖 dans une cellule vide du tableau.</p>
+              <p>Pour calculer un indicateur avec l'IA, cliquez sur une cellule vide du tableau pour ouvrir ce panneau, puis utilisez le bouton "Calculer cette valeur".</p>
               <p>Je peux vous aider à :</p>
               <ul>
                 <li>Calculer des valeurs d'indicateurs basées sur le contexte</li>

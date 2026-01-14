@@ -31,7 +31,6 @@ export function EditableNumberCell({
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value?.toString() || '');
   const [isSaving, setIsSaving] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -194,48 +193,8 @@ export function EditableNumberCell({
     }
   };
 
-  const handleCalculate = async () => {
-    if (interventionIndex === -1) return; // No calculation for total rows
-    
-    setIsCalculating(true);
-    try {
-      const response = await fetch('/api/ai/calculate-indicator', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          systemId,
-          stepIndex,
-          interventionIndex,
-          indicatorKey: fieldKey,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to calculate indicator');
-      }
-
-      const result = await response.json();
-
-      // Notify parent of the update
-      if (onUpdate && result.updatedSystemData) {
-        onUpdate(result.updatedSystemData);
-      }
-
-    } catch (error: any) {
-      console.error('Error calculating indicator:', error);
-      alert(`Erreur lors du calcul: ${error.message}`);
-    } finally {
-      setIsCalculating(false);
-    }
-  };
-
-  // Check if cell is empty or unreviewed
+  // Check if cell is empty
   const isEmpty = !value || value === 0 || value === '0';
-  const aiEnabled = process.env.NEXT_PUBLIC_AI_ASSISTANT_ENABLED === 'true';
-  const canCalculate = isEmpty || (reviewed === false && aiEnabled);
 
   if (interventionIndex === -1) {
     // Pour les lignes de totaux, afficher le total
@@ -315,41 +274,21 @@ export function EditableNumberCell({
     return badges[confidence] || null;
   };
 
-  // Show calculate button for empty cells
-  if (isEmpty && !isCalculating && aiEnabled) {
+  // Show clickable span for empty cells (calculation now triggered from AI Assistant panel)
+  if (isEmpty) {
     return (
-      <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-        <span
-          onClick={handleClick}
-          style={{
-            cursor: 'pointer',
-            flex: 1,
-            padding: '0.25rem 0',
-            minHeight: '1.5rem',
-          }}
-          title="Cliquer pour éditer manuellement"
-        >
-          -
-        </span>
-        <button
-          onClick={handleCalculate}
-          disabled={isCalculating}
-          style={{
-            padding: '0.25rem 0.5rem',
-            fontSize: '0.75rem',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.25rem',
-            cursor: isCalculating ? 'not-allowed' : 'pointer',
-            opacity: isCalculating ? 0.6 : 1,
-            whiteSpace: 'nowrap',
-          }}
-          title="Calculer avec l'IA"
-        >
-          {isCalculating ? '...' : '🤖'}
-        </button>
-      </div>
+      <span
+        onClick={handleClick}
+        style={{
+          cursor: 'pointer',
+          padding: '0.25rem 0',
+          minHeight: '1.5rem',
+          display: 'inline-block',
+        }}
+        title="Cliquer pour ouvrir l'assistant IA"
+      >
+        -
+      </span>
     );
   }
 

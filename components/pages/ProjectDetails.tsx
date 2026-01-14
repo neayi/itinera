@@ -211,6 +211,44 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     }
   };
 
+  const handleCalculateIndicator = async () => {
+    if (!aiAssistantFocusedCell) return;
+
+    const { stepIndex, interventionIndex, indicatorKey } = aiAssistantFocusedCell;
+
+    try {
+      const response = await fetch('/api/ai/calculate-indicator', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          systemId: projectId,
+          stepIndex,
+          interventionIndex,
+          indicatorKey,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to calculate indicator');
+      }
+
+      const result = await response.json();
+
+      // Refresh system data to show the new calculation
+      if (result.updatedSystemData) {
+        await fetchSystemData();
+      }
+
+    } catch (error: any) {
+      console.error('Error calculating indicator:', error);
+      alert(`Erreur lors du calcul: ${error.message}`);
+      throw error; // Re-throw to let the button handle loading state
+    }
+  };
+
   // Ne pas rendre le composant tant qu'il n'est pas monté côté client
   if (!isMounted) {
     return null;
@@ -329,6 +367,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
             setAIAssistantFocusedCell(undefined);
           }}
           onValueUpdate={fetchSystemData}
+          onCalculate={handleCalculateIndicator}
         />
       </div>
     </div>

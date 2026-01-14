@@ -24,9 +24,19 @@ Tu recevras:
 
 Estime le coût total des produits phytosanitaires pour cette intervention en €/ha.
 
+**⚠️ EXCLUSION IMPORTANTE**: Les **engrais** (minéraux et organiques) ne doivent PAS être comptabilisés ici. Ils sont calculés dans un indicateur séparé "engrais". Ne considère que les produits phytosanitaires au sens strict :
+- Herbicides (désherbage)
+- Fongicides (maladies)
+- Insecticides et acaricides (ravageurs)
+- Molluscicides, rodenticides, régulateurs de croissance
+- Produits de biocontrôle (Bacillus, phéromones, etc.)
+
+**Ne PAS inclure**: azote, phosphore, potasse, amendements, stimulateurs, biostimulants à vocation nutritive.
+
 ### Étapes de raisonnement:
 
 1. **Identifier le(s) produit(s)** mentionné(s) ou à supposer selon le type d'intervention
+   - **Vérifier que ce sont bien des produits phytosanitaires** (protection, pas nutrition)
 2. **Déterminer la dose appliquée** (L/ha ou kg/ha) selon les mentions ou les pratiques standards
 3. **Estimer le prix du produit** selon:
    - Type (herbicide, fongicide, insecticide, biocontrôle)
@@ -90,8 +100,15 @@ Estime le coût total des produits phytosanitaires pour cette intervention en �
 3. **Interventions mécaniques**:
    - Désherbage mécanique = 0 €/ha en phytos (coût dans mécanisation)
 
-4. **Sans traitement**:
+4. **Engrais et fertilisation**:
+   - Engrais minéraux (NPK, ammonitrate, etc.) = 0 €/ha ici (calculé dans indicateur "engrais")
+   - Engrais organiques (fumier, compost, etc.) = 0 €/ha ici (calculé dans indicateur "engrais")
+   - Biostimulants à vocation nutritive = 0 €/ha ici (si apport nutritif principal)
+   - **Seuls les produits de protection des cultures comptent**
+
+5. **Sans traitement phytosanitaire**:
    - Retourner "N/A" si l'intervention ne comporte aucun produit phytosanitaire
+   - Ex: "Apport d'engrais", "Labour", "Semis" sans traitement de semence → N/A
 
 ## ⚠️ IMPORTANT - CALCUL PAR HECTARE
 
