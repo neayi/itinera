@@ -382,20 +382,18 @@ Response: {
 - **N/A si** : Intervention n'est pas récolte/moisson/fauche
 
 ### IFT
-- **Source** : Base Ephy
-- **Calcul** : Σ(quantité appliquée / dose max d'emploi)
-- **API externe** : Base Ephy (https://ephy.anses.fr/)
-- **Hypothèses partagées** : Liste produits, doses
+- **Source** : Description intervention, assumptions (produits mentionnés)
+- **Calcul** : Estimation basée sur les produits et doses mentionnés + connaissance IA des doses homologuées
+- **Hypothèses partagées** : Liste produits, doses appliquées
 - **N/A si** : Pas de produits phytos
+- **Note** : L'IA utilise sa connaissance des produits courants. Dialogue avec utilisateur pour affiner.
 
 ### EIQ
-- **Source** : Base Ephy, table EIQ
-- **Calcul** : 
-  1. Identifier matières actives (Ephy)
-  2. Calculer quantité MA
-  3. Appliquer coefficient EIQ par MA
-- **Hypothèses partagées** : Liste produits, doses
+- **Source** : Description intervention, assumptions (produits mentionnés)
+- **Calcul** : Estimation basée sur les matières actives connues et doses appliquées
+- **Hypothèses partagées** : Liste produits, doses, matières actives
 - **N/A si** : Pas de produits phytos
+- **Note** : L'IA utilise sa connaissance des produits et matières actives courantes. Dialogue pour affiner.
 
 ### GES
 - **Source** : Colonne GNR
@@ -408,38 +406,36 @@ Response: {
 - **Hypothèses partagées** : Machine (largeur, vitesse)
 
 ### Coûts phytos
-- **Source** : Base prix actuels
-- **Calcul** : Σ(quantité × prix unitaire)
-- **API externe** : Prix agricoles (Arvalis, Terre-net)
-- **Hypothèses partagées** : Liste produits, doses
+- **Source** : Description intervention, assumptions (produits et quantités)
+- **Calcul** : Estimation basée sur prix moyens connus de l'IA
+- **Hypothèses partagées** : Liste produits, doses, prix unitaires estimés
+- **Note** : L'IA propose des prix moyens. L'utilisateur peut affiner via dialogue avec prix réels.
 
 ### Semences
-- **Source** : Description step (variété), assumptions (densité)
-- **Calcul** : Densité × prix/dose × cahier des charges (bio/conv)
-- **Hypothèses** : Variété, densité, bio/conventionnel
+- **Source** : Description step (variété), assumptions (densité, cahier des charges)
+- **Calcul** : Estimation basée densité × prix moyen culture × facteur bio/conv
+- **Hypothèses** : Variété, densité, bio/conventionnel, prix moyen estimé
 - **N/A si** : Pas un semis
+- **Note** : L'IA utilise des prix moyens. Affinage via dialogue.
 
 ### Engrais
 - **Source** : Assumptions (type engrais, quantité)
-- **Calcul** : Quantité × prix/unité
-- **API externe** : Prix agricoles
-- **Hypothèses partagées** : Type, formulation, quantité
+- **Calcul** : Quantité × prix moyen estimé par type
+- **Hypothèses partagées** : Type, formulation, quantité, prix unitaire estimé
 - **N/A si** : Pas d'apport engrais
+- **Note** : L'IA propose des prix moyens par type d'engrais. Affinage via dialogue.
 
 ### Mécanisation
-- **Source** : Assumptions (machine)
-- **Calcul** : 
-  - Amortissement : Coût machine / (durée vie × surface annuelle)
-  - Charges fixes : Assurance + hangar + financier (barème)
-  - Entretien : Proportionnel usage (barème)
-- **Sources** : Barème Cerfrance, Chambres d'Agriculture
-- **Hypothèses partagées** : Machine (type, puissance, largeur, coût)
+- **Source** : Assumptions (machine, type d'intervention)
+- **Calcul** : Estimation globale basée sur type machine et intervention
+- **Hypothèses partagées** : Machine (type, puissance, largeur), coût estimé
+- **Note** : L'IA utilise sa connaissance des coûts moyens de mécanisation par type d'opération. L'utilisateur peut préciser les coûts réels via dialogue.
 
 ### GNR
 - **Source** : Assumptions (machine, temps travail)
-- **Calcul** : Temps × consommation/h × prix GNR
-- **Hypothèses partagées** : Machine (consommation), temps travail, Litres GNR
-- **Prix** : Prix actuel GNR (API ou défaut 1.10 €/L)
+- **Calcul** : Temps × consommation/h × prix GNR estimé (1.10 €/L par défaut)
+- **Hypothèses partagées** : Machine (consommation), temps travail, prix GNR
+- **Note** : Prix par défaut 1.10 €/L. L'utilisateur peut préciser le prix réel via dialogue.
 
 ### Irrigation
 - **Source** : Description intervention, contexte culture
@@ -448,10 +444,11 @@ Response: {
 - **N/A si** : Pas d'irrigation dans le système (nom/description du système). Calculer cet indicateur uniquement si l'intervention est récolte/moisson/fauche
 
 ### Prix de vente
-- **Source** : Type culture (step), cahier des charges (bio/conv)
-- **Calcul** : Prix marché actuel × qualité
-- **API externe** : Prix agricoles (FranceAgriMer)
+- **Source** : Type culture (step), cahier des charges (bio/conv), assumptions
+- **Calcul** : Prix moyen estimé pour la culture × facteur bio/conv × facteur qualité
+- **Hypothèses** : Type culture, bio/conventionnel, qualité standard
 - **N/A si** : Calculer cet indicateur uniquement si l'intervention est récolte/moisson/fauche
+- **Note** : L'IA propose des prix moyens. L'utilisateur peut préciser les prix de vente réels via dialogue.
 
 ## Flux utilisateur
 
@@ -519,30 +516,30 @@ Response: {
    - Si conflit détecté (ex: produit interdit en bio alors que système.assumptions.bio = true)
    - IA signale l'incohérence et propose correction
 
-## Sources de données externes
+## Sources de données
 
-### Base Ephy (ANSES)
-- URL : https://ephy.anses.fr/
-- Usage : IFT, EIQ (matières actives)
-- **Implémentation initiale** : Scraping HTML/recherche
-- **Migration prévue** : MCP server pour accès structuré
+**Pour cette version initiale, l'IA utilise uniquement** :
+- Les informations fournies dans les descriptions (intervention, step, système)
+- Les hypothèses en markdown (3 niveaux)
+- Sa connaissance générale de l'agronomie française
+- Le dialogue avec l'utilisateur pour affiner
 
-### Prix agricoles
-- Sources : Arvalis, Terre-net, FranceAgriMer, La France Agricole
-- Usage : Phytos, semences, engrais, prix vente
-- **Implémentation initiale** : Scraping + valeurs par défaut
-- **Migration prévue** : MCP servers spécialisés par source
+**Pas d'intégration externe pour le moment** :
+- ❌ Pas de scraping de bases de données (Ephy, prix agricoles)
+- ❌ Pas de barèmes statiques (Cerfrance, Chambres d'Agriculture)
+- ❌ Pas d'API externes
 
-### Barèmes coûts
-- Source : Cerfrance, Chambres d'Agriculture
-- Usage : Mécanisation, GNR
-- **Implémentation** : Tables statiques JSON actualisées annuellement
-- Format : Fichiers dans `/lib/data/baremes/`
+**Avantages de cette approche** :
+- Démarrage rapide sans dépendances externes
+- Pas de maintenance de scrapers fragiles
+- Focus sur le dialogue et l'apprentissage avec l'utilisateur
+- Migration future vers MCP servers facilitée
 
-### Données pédoclimatiques
-- Source : Meteo France, Sols de Bretagne/France
-- Usage : Rendements par défaut
-- Format : API
+**L'IA proposera des valeurs basées sur** :
+- Moyennes agricoles françaises (connaissance GPT)
+- Analyse sémantique des descriptions
+- Cohérence avec les hypothèses système/step/intervention
+- Validation par l'utilisateur via dialogue
 
 ## Configuration
 
@@ -559,11 +556,6 @@ OPENAI_TEMPERATURE=0.3  # Basse pour calculs déterministes
 AI_ASSISTANT_ENABLED=true
 AI_AUTO_CALCULATE=false  # Calcul auto au chargement
 AI_MAX_CONVERSATIONS_LENGTH=10
-
-# External Data Sources
-EPHY_SCRAPING_ENABLED=true
-EPHY_CACHE_TTL=86400  # 24h en secondes
-PRIX_AGRICOLES_CACHE_TTL=3600  # 1h
 ```
 
 ## Contraintes techniques
@@ -571,7 +563,7 @@ PRIX_AGRICOLES_CACHE_TTL=3600  # 1h
 ### Performance
 - Calculs séquentiels : Max 30s pour toute une rotation
 - Calculs parallèles : Jusqu'à 5 indicateurs simultanés
-- Cache des résultats intermédiaires (ex: données Ephy)
+- Pas de cache nécessaire (pas de données externes)
 
 ### Coûts IA
 - Modèle principal : OpenAI GPT-4o-mini pour calculs standards (économique)
@@ -630,11 +622,10 @@ PRIX_AGRICOLES_CACHE_TTL=3600  # 1h
 
 | Risque | Impact | Mitigation |
 |--------|--------|------------|
-| API Ephy indisponible/changeante | Haut | Scraping + cache local, fallback sur moyennes |
-| Coûts IA élevés | Moyen | Modèles économiques, limite conversations |
-| Calculs imprécis | Haut | Transparence totale, validation utilisateur |
+| Coûts IA élevés | Moyen | Modèles économiques (gpt-4o-mini), limite conversations |
+| Calculs imprécis sans données réelles | Haut | Transparence totale, dialogue pour affinage, validation utilisateur obligatoire |
 | JSON trop volumineux | Moyen | Compression conversations anciennes |
-| Temps calcul trop long | Moyen | Parallélisation, cache, indicateur progression |
+| Temps calcul trop long | Moyen | Parallélisation, indicateur progression |
 
 ## Métriques de succès
 
@@ -652,9 +643,10 @@ PRIX_AGRICOLES_CACHE_TTL=3600  # 1h
    - Clé API stockée dans `.env` : `OPENAI_API_KEY`
    - Architecture permettant ajout d'autres modèles ultérieurement
    
-2. **✅ Accès bases externes** : Scraping pour démarrage rapide
-   - Migration vers MCP (Model Context Protocol) prévue pour données précises/actualisées
-   - Abstraire l'accès via interfaces pour faciliter migration
+2. **✅ Pas de données externes** : L'IA utilise sa connaissance générale et le dialogue
+   - Démarrage immédiat sans dépendances externes
+   - Focus sur l'interaction utilisateur pour affinage
+   - Migration future vers MCP servers facilitée (architecture prête)
    
 3. **✅ Persistence conversations** : JSON pour commencer
    - Migration vers table séparée si problèmes de performance constatés

@@ -109,3 +109,33 @@ export interface SoilProperties {
   };
   classification: string;
 }
+
+// AI Assistant types
+export type ConfidenceLevel = 'high' | 'medium' | 'low';
+
+export interface ConversationMessage {
+  role: 'system' | 'assistant' | 'user';
+  content: string;
+  timestamp: string;
+  assumptions?: string[];
+  calculation_steps?: string[];
+  sources?: string[];
+  confidence?: ConfidenceLevel;
+  caveats?: string[];
+}
+
+export interface InterventionValue {
+  key: string;
+  value: number | string;
+  reviewed?: boolean;
+  confidence?: ConfidenceLevel;
+  conversation?: ConversationMessage[];
+}
+
+export interface StepValue {
+  key: string;
+  value: number | string;
+  reviewed?: boolean;
+  confidence?: ConfidenceLevel;
+  conversation?: ConversationMessage[];
+}

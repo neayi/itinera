@@ -4,6 +4,7 @@ import { TopBar } from '@/components/TopBar';
 import { ContextPanel } from '@/components/ContextPanel';
 import { InterventionsTable } from '@/components/InterventionsTable';
 import { ChatBot } from '@/components/ChatBot';
+import { AIAssistant } from '@/components/ai-assistant';
 import { InterventionData, RotationData } from '@/lib/types';
 import { variant1Interventions } from '@/lib/data/variant1Interventions';
 import { ItineraireTechnique } from '@/components/ItineraireTechnique';
@@ -165,6 +166,14 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     timestamp: Date;
   }>>([]);
 
+  // AI Assistant state
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+  const [aiAssistantFocusedCell, setAIAssistantFocusedCell] = useState<{
+    stepIndex: number;
+    interventionIndex: number;
+    indicatorKey: string;
+  } | undefined>(undefined);
+
   const variants = ['Originale', 'Variante 1'];
 
   const getColumnLabel = (columnName: string): string => {
@@ -260,9 +269,9 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
                   Tout effacer
                 </span>
               </button>
-              {!chatOpen && (
+              {!isAIAssistantOpen && (
                 <button
-                  onClick={() => setChatOpen(!chatOpen)}
+                  onClick={() => setIsAIAssistantOpen(true)}
                   className="flex items-center gap-2 px-[12px] py-[8px] bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-colors text-sm"
                   title="Ouvrir l'assistant IA"
                 >
@@ -300,13 +309,17 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
               systemData={systemData} 
               systemId={projectId}
               onUpdate={fetchSystemData}
+              onCellFocus={(stepIndex, interventionIndex, indicatorKey) => {
+                setAIAssistantFocusedCell({ stepIndex, interventionIndex, indicatorKey });
+                setIsAIAssistantOpen(true);
+              }}
             />            
           </section>
 
         </main>
 
         {/* ChatBot side panel */}
-        <ChatBot
+        {/* <ChatBot
           isOpen={chatOpen}
           setIsOpen={setChatOpen}
           focusedCell={focusedCell}
@@ -314,6 +327,19 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
           onAddContextualMessage={(message) => {
             setContextualMessages(prev => [...prev, message]);
           }}
+        /> */}
+
+        {/* AI Assistant panel */}
+        <AIAssistant
+          isOpen={isAIAssistantOpen}
+          focusedCell={aiAssistantFocusedCell}
+          systemData={systemData}
+          systemId={projectId}
+          onClose={() => {
+            setIsAIAssistantOpen(false);
+            setAIAssistantFocusedCell(undefined);
+          }}
+          onValueUpdate={fetchSystemData}
         />
       </div>
     </div>

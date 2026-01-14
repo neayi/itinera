@@ -18,7 +18,12 @@ import { EditableNumberCell } from './EditableNumberCell';
 import { EditableStepValueCell } from './EditableStepValueCell';
 import './interventions-table.scss';
 
-export function InterventionsDataTable({ systemData, systemId, onUpdate }: InterventionsDataTableProps) {
+export function InterventionsDataTable({ 
+  systemData, 
+  systemId, 
+  onUpdate,
+  onCellFocus 
+}: InterventionsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   // Fonction utilitaire pour extraire une valeur du tableau values
@@ -286,12 +291,18 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
                 className={row.original.isStepTotal ? 'step-total-row' : ''}
               >
                 {row.getVisibleCells().map((cell) => {
-                  // Récupérer le statut reviewed pour les cellules numériques éditables
+                  // Récupérer le statut reviewed et confidence pour les cellules numériques éditables
                   let reviewedStatus: boolean | 'n/a' | undefined = undefined;
+                  let confidenceLevel: 'high' | 'medium' | 'low' | undefined = undefined;
                   if ((cell.column.columnDef.meta as any)?.fieldType === 'number' && !row.original.isStepTotal) {
                     const intervention = systemData.steps[row.original.stepIndex]?.interventions[row.original.interventionIndex];
                     if (intervention) {
                       reviewedStatus = getReviewedStatus(intervention, cell.column.id);
+                      // Get confidence level from intervention values
+                      const valueEntry = intervention.values?.find((v: any) => v.key === cell.column.id);
+                      if (valueEntry?.confidence) {
+                        confidenceLevel = valueEntry.confidence;
+                      }
                     }
                   }
 
@@ -324,7 +335,9 @@ export function InterventionsDataTable({ systemData, systemId, onUpdate }: Inter
                           systemData={systemData}
                           fieldKey={cell.column.id as any}
                           reviewed={reviewedStatus}
+                          confidence={confidenceLevel}
                           onUpdate={onUpdate}
+                          onCellFocus={onCellFocus}
                         />
                       ) : cell.column.id === 'date' ? (
                         <EditableDateCell

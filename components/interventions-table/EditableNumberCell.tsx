@@ -11,7 +11,9 @@ interface EditableNumberCellProps {
   systemData: any;
   fieldKey: FieldKey;
   reviewed?: boolean | 'n/a';
+  confidence?: 'high' | 'medium' | 'low';
   onUpdate?: (updatedSystemData: any) => void;
+  onCellFocus?: (stepIndex: number, interventionIndex: number, indicatorKey: string) => void;
 }
 
 export function EditableNumberCell({ 
@@ -22,11 +24,14 @@ export function EditableNumberCell({
   systemData,
   fieldKey,
   reviewed,
-  onUpdate 
+  confidence,
+  onUpdate,
+  onCellFocus
 }: EditableNumberCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value?.toString() || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -38,8 +43,22 @@ export function EditableNumberCell({
 
   const handleClick = () => {
     if (interventionIndex === -1) return; // Pas d'édition pour les lignes de totaux
+    
+    // Open edit mode
     setEditValue(value?.toString() || '');
     setIsEditing(true);
+    
+    // Open AI Assistant for this cell
+    if (onCellFocus) {
+      onCellFocus(stepIndex, interventionIndex, fieldKey);
+    }
+  };
+
+  const handleOpenAssistant = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Empêcher l'ouverture de l'éditeur
+    if (onCellFocus) {
+      onCellFocus(stepIndex, interventionIndex, fieldKey);
+    }
   };
 
   const handleCancel = () => {
@@ -84,8 +103,18 @@ export function EditableNumberCell({
       const setValue = (key: string, value: number, reviewed: boolean = true) => {
         const idx = intervention.values.findIndex((v: any) => v.key === key);
         if (idx >= 0) {
+          const oldValue = intervention.values[idx].value;
           intervention.values[idx].value = value;
           intervention.values[idx].reviewed = reviewed;
+          
+          // If there's an existing conversation and the value changed, add a manual edit message
+          if (intervention.values[idx].conversation && intervention.values[idx].conversation.length > 0 && valueChanged) {
+            intervention.values[idx].conversation.push({
+              role: 'user',
+              content: `Modification manuelle : ${oldValue} → ${value}`,
+              timestamp: new Date().toISOString(),
+            });
+          }
         } else {
           intervention.values.push({ key, value, reviewed });
         }
@@ -158,6 +187,49 @@ export function EditableNumberCell({
     }
   };
 
+  const handleCalculate = async () => {
+    if (interventionIndex === -1) return; // No calculation for total rows
+    
+    setIsCalculating(true);
+    try {
+      const response = await fetch('/api/ai/calculate-indicator', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          systemId,
+          stepIndex,
+          interventionIndex,
+          indicatorKey: fieldKey,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to calculate indicator');
+      }
+
+      const result = await response.json();
+
+      // Notify parent of the update
+      if (onUpdate && result.updatedSystemData) {
+        onUpdate(result.updatedSystemData);
+      }
+
+    } catch (error: any) {
+      console.error('Error calculating indicator:', error);
+      alert(`Erreur lors du calcul: ${error.message}`);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+  // Check if cell is empty or unreviewed
+  const isEmpty = !value || value === 0 || value === '0';
+  const aiEnabled = process.env.NEXT_PUBLIC_AI_ASSISTANT_ENABLED === 'true';
+  const canCalculate = isEmpty || (reviewed === false && aiEnabled);
+
   if (interventionIndex === -1) {
     // Pour les lignes de totaux, afficher le total
     return <span>{typeof value === 'number' ? value.toFixed(2) : value || '-'}</span>;
@@ -225,12 +297,63 @@ export function EditableNumberCell({
   // Déterminer si la cellule doit avoir un fond jaune
   const needsReview = reviewed !== true && reviewed !== 'n/a';
 
+  // Get confidence badge
+  const getConfidenceBadge = () => {
+    if (!confidence) return null;
+    const badges = {
+      high: '🟢',
+      medium: '🟡',
+      low: '🔴',
+    };
+    return badges[confidence] || null;
+  };
+
+  // Show calculate button for empty cells
+  if (isEmpty && !isCalculating && aiEnabled) {
+    return (
+      <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+        <span
+          onClick={handleClick}
+          style={{
+            cursor: 'pointer',
+            flex: 1,
+            padding: '0.25rem 0',
+            minHeight: '1.5rem',
+          }}
+          title="Cliquer pour éditer manuellement"
+        >
+          -
+        </span>
+        <button
+          onClick={handleCalculate}
+          disabled={isCalculating}
+          style={{
+            padding: '0.25rem 0.5rem',
+            fontSize: '0.75rem',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '0.25rem',
+            cursor: isCalculating ? 'not-allowed' : 'pointer',
+            opacity: isCalculating ? 0.6 : 1,
+            whiteSpace: 'nowrap',
+          }}
+          title="Calculer avec l'IA"
+        >
+          {isCalculating ? '...' : '🤖'}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <span
       onClick={handleClick}
       style={{
         cursor: 'pointer',
-        display: 'block',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.25rem',
         padding: '0.25rem 0',
         minHeight: '1.5rem',
         borderRadius: '0.25rem',
@@ -238,7 +361,16 @@ export function EditableNumberCell({
       className={needsReview ? 'needsReview' : ''}
       title={needsReview ? "Valeur à vérifier (cliquer pour éditer)" : "Cliquer pour éditer"}
     >
-      {formatValue(value, fieldKey)}
+      <span style={{ flex: 1 }}>{formatValue(value, fieldKey)}</span>
+      {getConfidenceBadge() && (
+        <span 
+          onClick={handleOpenAssistant}
+          style={{ cursor: 'pointer' }}
+          title={`Confiance: ${confidence} (cliquer pour voir les détails)`}
+        >
+          {getConfidenceBadge()}
+        </span>
+      )}
     </span>
   );
 }

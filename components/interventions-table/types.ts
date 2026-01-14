@@ -32,4 +32,5 @@ export interface InterventionsDataTableProps {
   systemData: any;
   systemId: string;
   onUpdate?: (updatedSystemData: any) => void;
+  onCellFocus?: (stepIndex: number, interventionIndex: number, indicatorKey: string) => void;
 }
