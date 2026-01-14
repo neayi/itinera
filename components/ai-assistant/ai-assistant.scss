@@ -193,14 +193,16 @@
   }
 }
 
-// Conversation Messages
 .message {
-  background-color: white;
   border-radius: 10px;
   border: 1px solid #e5e7eb;
-  box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 1px 2px -1px rgba(0, 0, 0, 0.1);   
+}
+
+// Conversation Messages
+.message-assistant {
+  background-color: white;
   padding: 18px;
-  margin-bottom: 1rem;
 
   .content {
     font-size: 14px;
@@ -310,13 +312,11 @@
 .message-user-wrapper {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 1rem;
 }
 
 .message-user {
   background-color: #6b9571;
-  border-radius: 10px;
-  box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1);
+
   padding: 0.75rem 1rem;
   max-width: 80%;
 

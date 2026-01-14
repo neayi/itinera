@@ -24,7 +24,7 @@ export default function ConversationHistory({ messages }: ConversationHistoryPro
       {messages.map((message, index) => (
         <div key={index}>
           {message.role === 'assistant' || message.role === 'system' ? (
-            <div className="message">
+            <div className="message message-assistant">
               {/* Content */}
               <div className="content">
                 {message.content}
@@ -94,7 +94,7 @@ export default function ConversationHistory({ messages }: ConversationHistoryPro
           ) : (
             /* User message - right aligned with green background */
             <div className="message-user-wrapper">
-              <div className="message-user">
+              <div className="message message-user">
                 <p className="content">
                   {message.content}
                 </p>
