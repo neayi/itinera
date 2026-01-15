@@ -401,7 +401,7 @@ Réponds en JSON valide avec cette structure :
         
         return `Tu es un assistant expert en agronomie française. Tu dois analyser les données agricoles et calculer des indicateurs avec précision.
 
-${isPerHectare ? `**⚠️ RÈGLE CRITIQUE - CALCUL PAR HECTARE** : L'indicateur "${indicatorKey}" doit TOUJOURS être exprimé **PAR HECTARE**. Peu importe les données sources (totales, par parcelle, etc.), tu dois RAMENER le résultat final à l'hectare. Les unités attendues sont : €/ha, kg/ha, h/ha, TeqCO2/ha, uN/ha, qtx/ha selon l'indicateur.
+${isPerHectare ? `**⚠️ RÈGLE CRITIQUE - CALCUL PAR HECTARE** : L'indicateur "${indicatorKey}" doit TOUJOURS être exprimé **PAR HECTARE**. Peu importe les données sources (totales, par parcelle, etc.), tu dois RAMENER le résultat final à l'hectare. Les unités attendues sont : €/ha, kg/ha, h/ha, kg CO2e/ha, uN/ha, qtx/ha selon l'indicateur.
 
 Si tu disposes de :
 - Valeurs totales pour une surface S : divise par S pour obtenir /ha
@@ -412,7 +412,7 @@ Si tu disposes de :
 Exemples :
 - Coût total de semences 180 € pour 15 ha → 180/15 = 12 €/ha ✓
 - Temps de travail 8h pour 20 ha → 8/20 = 0.4 h/ha ✓
-- GES 150 kg pour 10 ha → 150/10 = 15 kg/ha = 0.015 TeqCO2/ha ✓
+- GES 150 kg pour 10 ha → 150/10 = 15 kg CO2e/ha ✓
 
 ` : ''}Réponds toujours en JSON valide.`;
     }

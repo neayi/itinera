@@ -41,8 +41,6 @@ export function SystemIndicators({
 
     if (!data?.steps) return totals;
 
-    console.log('[SystemIndicators] Calculating totals for', data.steps.length, 'steps');
-
     // Sum values from step totals (step.values)
     // NEVER sum from interventions directly - frequency weighting is already applied in step.values
     data.steps.forEach((step: any, stepIndex: number) => {
@@ -58,7 +56,7 @@ export function SystemIndicators({
         const key = valueEntry.key;
         const value = parseFloat(valueEntry.value) || 0;
 
-        if (key === 'margeBrute' || key === 'totalProduits') {
+        if (key === 'ges') {
           console.log(`[SystemIndicators] Step ${stepIndex} ${key}:`, value);
         }
 
@@ -115,6 +113,8 @@ export function SystemIndicators({
 
   const totals = calculateTotals(systemData);
 
+  console.log('[SystemIndicators] Calculated totals:', totals);
+
   // Calculate rotation duration in years
   const getRotationDurationYears = (data: any) => {
     if (!data?.steps || data.steps.length === 0) return 1;
@@ -157,7 +157,7 @@ export function SystemIndicators({
 
   // Calculate per hectare per year values
   const workTimePerHaPerYear = totals.workTime / nbYears;
-  const gesPerHaPerYear = 1000 * totals.ges / nbYears;
+  const gesPerHaPerYear = totals.ges / nbYears;
   const iftMoyenParAn = totals.ift / nbYears;
   const azoteTotalPerHaPerYear = (totals.azoteMineral + totals.azoteOrganique) / nbYears;
   const semencesPerHaPerYear = totals.semences / nbYears;

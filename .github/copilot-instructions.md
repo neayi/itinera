@@ -124,7 +124,7 @@ Les données des systèmes de culture sont stockées dans un champ JSON avec cet
 
 **Formatage des valeurs numériques :**
 - Utiliser la fonction `formatValue()` de `components/interventions-table/formatters.ts`
-- Supporte les unités (€, kg, h, TeqCO2, qtx)
+- Supporte les unités (€, kg, h, kg CO2e, qtx)
 - Arrondi selon le type de donnée
 
 ## Librairies principales

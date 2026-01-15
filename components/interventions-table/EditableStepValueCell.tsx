@@ -9,7 +9,7 @@ interface EditableStepValueCellProps {
   systemId: string;
   systemData: any;
   fieldKey: FieldKey;
-  onUpdate?: (updatedSystemData: any) => void;
+  onUpdate?: (updatedSystemData?: any) => void;
 }
 
 export function EditableStepValueCell({ 
@@ -91,9 +91,9 @@ export function EditableStepValueCell({
         throw new Error('Failed to update step value');
       }
 
-      // Notifier le parent du changement
+      // Recharger les données depuis l'API pour obtenir les totaux recalculés
       if (onUpdate) {
-        onUpdate(updatedSystemData);
+        onUpdate();
       }
       setIsEditing(false);
     } catch (error) {

@@ -117,7 +117,7 @@ Supported methods:
 
 ### Value Formatting
 All numeric values displayed through `formatValue()`:
-- Handles units (€, kg, h, TeqCO2, qtx)
+- Handles units (€, kg, h, kg CO2e, qtx)
 - Applies rounding rules per field type
 - Returns "-" for zero/null values
 

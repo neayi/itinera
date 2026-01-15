@@ -12,7 +12,7 @@ interface EditableNumberCellProps {
   fieldKey: FieldKey;
   reviewed?: boolean | 'n/a';
   confidence?: 'high' | 'medium' | 'low';
-  onUpdate?: (updatedSystemData: any) => void;
+  onUpdate?: (updatedSystemData?: any) => void;
   onCellFocus?: (stepIndex: number, interventionIndex: number, indicatorKey: string) => void;
 }
 
@@ -171,9 +171,11 @@ export function EditableNumberCell({
         throw new Error('Failed to update intervention value');
       }
 
-      // Notifier le parent du changement
+      // Recharger les données depuis l'API pour obtenir les totaux recalculés
+      // L'API appelle calculateAndSaveStepTotals qui met à jour step.values
       if (onUpdate) {
-        onUpdate(updatedSystemData);
+        // Passer undefined pour forcer le rechargement depuis l'API
+        onUpdate();
       }
       setIsEditing(false);
     } catch (error) {

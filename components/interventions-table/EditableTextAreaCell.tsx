@@ -8,7 +8,7 @@ interface EditableTextAreaCellProps {
   interventionIndex: number;
   systemId: string;
   systemData: any;
-  onUpdate?: (updatedSystemData: any) => void;
+  onUpdate?: (updatedSystemData?: any) => void;
 }
 
 export function EditableTextAreaCell({ 
@@ -71,9 +71,9 @@ export function EditableTextAreaCell({
         throw new Error('Failed to update intervention description');
       }
 
-      // Notifier le parent du changement
+      // Recharger les données depuis l'API
       if (onUpdate) {
-        onUpdate(updatedSystemData);
+        onUpdate();
       }
       setIsEditing(false);
     } catch (error) {

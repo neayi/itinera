@@ -47,9 +47,9 @@ export function formatValue(value: number | string | null | undefined, fieldKey:
     case 'eiq':
       return `${Math.round(numValue)}`;
 
-    // Pas d'arrondi, unité : TeqCO2
+    // Pas d'arrondi, unité : kg
     case 'ges':
-      return numValue.toFixed(3) + ' TeqCO2';
+      return `${Math.round(numValue)} kg`;
 
     // Arrondi sans chiffre après la virgule, unité : h
     case 'tempsTravail':

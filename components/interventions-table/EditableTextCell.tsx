@@ -9,7 +9,7 @@ interface EditableTextCellProps {
   systemId: string;
   systemData: any;
   fieldName: 'name' | 'description';
-  onUpdate?: (updatedSystemData: any) => void;
+  onUpdate?: (updatedSystemData?: any) => void;
 }
 
 export function EditableTextCell({ 
@@ -73,9 +73,9 @@ export function EditableTextCell({
         throw new Error(`Failed to update intervention ${fieldName}`);
       }
 
-      // Notifier le parent du changement
+      // Recharger les données depuis l'API
       if (onUpdate) {
-        onUpdate(updatedSystemData);
+        onUpdate();
       }
       setIsEditing(false);
     } catch (error) {

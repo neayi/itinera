@@ -8,7 +8,7 @@ interface EditableDateCellProps {
   interventionIndex: number;
   systemId: string;
   systemData: any;
-  onUpdate?: (updatedSystemData: any) => void;
+  onUpdate?: (updatedSystemData?: any) => void;
 }
 
 export function EditableDateCell({ 
@@ -77,9 +77,9 @@ export function EditableDateCell({
         throw new Error('Failed to update intervention date');
       }
 
-      // Notifier le parent du changement
+      // Recharger les données depuis l'API
       if (onUpdate) {
-        onUpdate(updatedSystemData);
+        onUpdate();
       }
       setIsEditing(false);
     } catch (error) {
