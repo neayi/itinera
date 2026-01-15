@@ -26,6 +26,8 @@ interface AIAssistantProps {
     current: number;
     total: number;
     currentIndicator: string;
+    stepName?: string;
+    interventionName?: string;
   };
   isBatchCalculating?: boolean;
   onCancelBatch?: () => void;

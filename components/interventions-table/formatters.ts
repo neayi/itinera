@@ -49,7 +49,7 @@ export function formatValue(value: number | string | null | undefined, fieldKey:
 
     // Pas d'arrondi, unité : TeqCO2
     case 'ges':
-      return `${numValue} TeqCO2`;
+      return numValue.toFixed(3) + ' TeqCO2';
 
     // Arrondi sans chiffre après la virgule, unité : h
     case 'tempsTravail':

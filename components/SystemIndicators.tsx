@@ -17,6 +17,10 @@ export function SystemIndicators({
 }: SystemIndicatorsProps) {
   
   // Calculate totals from system data
+  // IMPORTANT: Les totaux système doivent TOUJOURS être calculés en sommant les valeurs
+  // au niveau des ÉTAPES (step.values), jamais au niveau des interventions.
+  // Les step.values sont pré-calculés avec pondération par fréquence via calculate-step-totals.ts
+  // Voir specs/002-system-indicators-calculation/README.md
   const calculateTotals = (data: any) => {
     const totals = {
       workTime: 0,
@@ -39,34 +43,18 @@ export function SystemIndicators({
 
     console.log('[SystemIndicators] Calculating totals for', data.steps.length, 'steps');
 
-    // Sum values from step totals
+    // Sum values from step totals (step.values)
+    // NEVER sum from interventions directly - frequency weighting is already applied in step.values
     data.steps.forEach((step: any, stepIndex: number) => {
-      // First, calculate step totals from interventions if step.values doesn't exist
-      const stepTotals: any = {};
-      
-      if (step.interventions) {
-        step.interventions.forEach((intervention: any) => {
-          if (!intervention.values) return;
-
-          intervention.values.forEach((valueEntry: any) => {
-            const key = valueEntry.key;
-            const value = parseFloat(valueEntry.value) || 0;
-            
-            if (!stepTotals[key]) {
-              stepTotals[key] = 0;
-            }
-            stepTotals[key] += value;
-          });
-        });
+      // ALWAYS use step.values - it contains pre-calculated totals with frequency weighting
+      // If step.values is missing, this is an error - the data should be recalculated via API
+      if (!step.values || step.values.length === 0) {
+        console.error(`[SystemIndicators] step.values is missing for step ${stepIndex} (${step.name})`);
+        console.error('[SystemIndicators] Data should be recalculated via calculate-step-totals.ts');
+        return;
       }
 
-      // Use step.values if exists, otherwise use calculated stepTotals
-      const valuesToUse = step.values && step.values.length > 0 ? step.values : 
-        Object.entries(stepTotals).map(([key, value]) => ({ key, value }));
-
-      console.log(`[SystemIndicators] Step ${stepIndex} (${step.name}):`, valuesToUse.length, 'values');
-
-      valuesToUse.forEach((valueEntry: any) => {
+      step.values.forEach((valueEntry: any) => {
         const key = valueEntry.key;
         const value = parseFloat(valueEntry.value) || 0;
 
@@ -122,12 +110,6 @@ export function SystemIndicators({
       });
     });
 
-    console.log('[SystemIndicators] Final totals:', {
-      margeBrute: totals.margeBrute,
-      totalProduits: totals.totalProduits,
-      totalCharges: totals.totalCharges
-    });
-
     return totals;
   };
 
@@ -137,26 +119,34 @@ export function SystemIndicators({
   const getRotationDurationYears = (data: any) => {
     if (!data?.steps || data.steps.length === 0) return 1;
 
-    let startDate: Date | null = null;
-    let endDate: Date | null = null;
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
 
     // We don't know if the steps are sorted, so reduce the dates out of all steps
     data.steps.forEach((step: any) => {
       if (step.startDate) {
         const stepStart = new Date(step.startDate);
-        if (startDate === null || stepStart < startDate) {
-          startDate = stepStart;
+        // Verify the date is valid
+        if (!isNaN(stepStart.getTime())) {
+          if (!startDate || stepStart < startDate) {
+            startDate = stepStart;
+          }
         }
       }
       if (step.endDate) {
         const stepEnd = new Date(step.endDate);
-        if (endDate === null || stepEnd > endDate) {
-          endDate = stepEnd;
+        // Verify the date is valid
+        if (!isNaN(stepEnd.getTime())) {
+          if (!endDate || stepEnd > endDate) {
+            endDate = stepEnd;
+          }
         }
       }
     });
 
-    const durationMs = endDate !== null && startDate !== null ? endDate.getTime() - startDate.getTime() : 0;
+    if (!startDate || !endDate) return 1;
+
+    const durationMs = endDate.getTime() - startDate.getTime();
     const durationDays = durationMs / (1000 * 60 * 60 * 24);
     const durationYears = durationDays / 365.25;
 
@@ -167,7 +157,7 @@ export function SystemIndicators({
 
   // Calculate per hectare per year values
   const workTimePerHaPerYear = totals.workTime / nbYears;
-  const gesPerHaPerYear = totals.ges / nbYears;
+  const gesPerHaPerYear = 1000 * totals.ges / nbYears;
   const iftMoyenParAn = totals.ift / nbYears;
   const azoteTotalPerHaPerYear = (totals.azoteMineral + totals.azoteOrganique) / nbYears;
   const semencesPerHaPerYear = totals.semences / nbYears;
