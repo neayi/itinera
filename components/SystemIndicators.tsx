@@ -20,7 +20,7 @@ export function SystemIndicators({
   // Calculate totals from system data
   // IMPORTANT: Les totaux système doivent TOUJOURS être calculés en sommant les valeurs
   // au niveau des ÉTAPES (step.values), jamais au niveau des interventions.
-  // Les step.values sont pré-calculés avec pondération par fréquence via calculate-step-totals.ts
+  // Les step.values sont pré-calculés avec pondération par fréquence via calculate-system-totals.ts
   // Voir specs/002-system-indicators-calculation/README.md
   const calculateTotals = (data: any) => {
     const totals = {
@@ -49,7 +49,7 @@ export function SystemIndicators({
       // If step.values is missing, this is an error - the data should be recalculated via API
       if (!step.values || step.values.length === 0) {
         console.error(`[SystemIndicators] step.values is missing for step ${stepIndex} (${step.name})`);
-        console.error('[SystemIndicators] Data should be recalculated via calculate-step-totals.ts');
+        console.error('[SystemIndicators] Data should be recalculated via calculate-system-totals.ts');
         return;
       }
 

@@ -92,69 +92,39 @@ export function EditableNumberCell({
       const updatedSystemData = JSON.parse(JSON.stringify(systemData));
       
       const intervention = updatedSystemData.steps[stepIndex].interventions[interventionIndex];
-      const step = updatedSystemData.steps[stepIndex];
       
       // S'assurer que le tableau values existe
       if (!intervention.values) {
         intervention.values = [];
       }
       
-      // Fonction utilitaire pour récupérer une valeur
-      const getValue = (key: string): number => {
-        const item = intervention.values.find((v: any) => v.key === key);
-        return item ? (typeof item.value === 'number' ? item.value : 0) : 0;
-      };
-      
-      // Fonction utilitaire pour mettre à jour ou ajouter une valeur
-      const setValue = (key: string, value: number, reviewed: boolean = true) => {
-        const idx = intervention.values.findIndex((v: any) => v.key === key);
-        if (idx >= 0) {
-          const oldValue = intervention.values[idx].value;
-          intervention.values[idx].value = value;
-          intervention.values[idx].reviewed = reviewed;
-          
-          // If there's an existing conversation and the value changed, add a manual edit message
-          if (intervention.values[idx].conversation && intervention.values[idx].conversation.length > 0 && valueChanged) {
-            intervention.values[idx].conversation.push({
-              role: 'user',
-              content: `Modification manuelle : ${oldValue} → ${value}`,
-              timestamp: new Date().toISOString(),
-            });
-          }
-        } else {
-          intervention.values.push({ key, value, reviewed });
-        }
-      };
-      
-      // Mettre à jour la valeur modifiée
-      setValue(fieldKey, finalValue, true);
-      
-      // Si on modifie un des composants de totalCharges, recalculer totalCharges
-      const totalChargesComponents = ['coutsPhytos', 'semences', 'engrais', 'mecanisation', 'gnr', 'irrigation'];
-      if (totalChargesComponents.includes(fieldKey)) {
-        const newTotalCharges = 
-          getValue('coutsPhytos') +
-          getValue('semences') +
-          getValue('engrais') +
-          getValue('mecanisation') +
-          getValue('gnr') +
-          getValue('irrigation');
+      // Mettre à jour la valeur modifiée avec status='user'
+      const idx = intervention.values.findIndex((v: any) => v.key === fieldKey);
+      if (idx >= 0) {
+        const oldValue = intervention.values[idx].value;
+        intervention.values[idx].value = finalValue;
+        intervention.values[idx].status = 'user';
+        intervention.values[idx].reviewed = true;
         
-        setValue('totalCharges', newTotalCharges, false);
+        // If there's an existing conversation and the value changed, add a manual edit message
+        if (intervention.values[idx].conversation && intervention.values[idx].conversation.length > 0 && valueChanged) {
+          intervention.values[idx].conversation.push({
+            role: 'user',
+            content: `Modification manuelle : ${oldValue} → ${finalValue}`,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      } else {
+        intervention.values.push({ 
+          key: fieldKey, 
+          value: finalValue, 
+          status: 'user',
+          reviewed: true 
+        });
       }
 
-      // Si ce champ est éditable au niveau de l'étape (irrigation, rendementTMS, prixVente),
-      // supprimer la valeur au niveau de l'étape pour restaurer le calcul par somme pondérée
-      const stepLevelEditableFields = ['irrigation', 'rendementTMS', 'prixVente'];
-      if (stepLevelEditableFields.includes(fieldKey)) {
-        if (step.values && Array.isArray(step.values)) {
-          const stepValueIndex = step.values.findIndex((v: any) => v.key === fieldKey);
-          if (stepValueIndex >= 0) {
-            // Supprimer la valeur au niveau de l'étape
-            step.values.splice(stepValueIndex, 1);
-          }
-        }
-      }
+      // Note: totalCharges, totalProduits, margeBrute are now calculated automatically 
+      // by calculateAndSaveSystemTotals() on the server after this PATCH
 
       // Envoyer la mise à jour à l'API
       const response = await fetch(`/api/systems/${systemId}`, {
@@ -172,7 +142,7 @@ export function EditableNumberCell({
       }
 
       // Recharger les données depuis l'API pour obtenir les totaux recalculés
-      // L'API appelle calculateAndSaveStepTotals qui met à jour step.values
+      // L'API appelle calculateAndSaveSystemTotals qui met à jour intervention.values, step.values et systemValues
       if (onUpdate) {
         // Passer undefined pour forcer le rechargement depuis l'API
         onUpdate();

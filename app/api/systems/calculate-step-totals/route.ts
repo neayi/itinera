@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queryOne } from '@/lib/db';
-import { calculateAndSaveStepTotals } from '@/lib/calculate-step-totals';
+import { calculateAndSaveSystemTotals } from '@/lib/calculate-system-totals';
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate and save step totals
-    const updatedSystemData = await calculateAndSaveStepTotals(systemId, systemData);
+    const updatedSystemData = await calculateAndSaveSystemTotals(systemId, systemData);
 
     return NextResponse.json({
       success: true,
