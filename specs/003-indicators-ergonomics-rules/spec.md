@@ -94,24 +94,25 @@ Pour certains indicateurs (semences, irrigation), l'utilisateur doit pouvoir mod
 
 ### Edge Cases
 
-- Que se passe-t-il si l'utilisateur saisit une valeur non numérique dans une cellule ?
-- Comment le système gère-t-il une fréquence de 0 ou négative ?
-- Que se passe-t-il si rendementTMS ou prixVente sont à zéro lors du calcul de totalProduits ?
-- Comment distinguer visuellement une cellule calculée d'une cellule validée (toutes deux sur fond blanc) ?
-- Que se passe-t-il si step.values est manquant ou vide pour une étape ?
+- Que se passe-t-il si l'utilisateur saisit une valeur non numérique dans une cellule ? → **Clarifié : validation HTML5 avec input type="number" empêche la saisie de caractères non numériques**
+- Comment le système gère-t-il une fréquence de 0 ou négative ? → **Clarifié : fréquence=0 exclut l'intervention des totaux (contribution nulle), fréquences décimales 0<f<1 acceptées (ex: 0.5 = une année sur deux)**
+- Que se passe-t-il si rendementTMS ou prixVente sont à zéro lors du calcul de totalProduits ? → **Clarifié : calcul normal (0 × n = 0), résultat zéro est valide, utilisateur peut forcer via status='user' si nécessaire**
+- Comment distinguer visuellement une cellule calculée d'une cellule validée (toutes deux sur fond blanc) ? → **Clarifié : pas de distinction visuelle nécessaire, les deux sont considérées comme valeurs finales**
+- Que se passe-t-il si step.values est manquant ou vide pour une étape ? → **Clarifié : traiter comme zéro (contribution nulle de cette étape aux indicateurs système)**
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements - Statuts des cellules
 
 - **FR-001**: System MUST supporter 5 états de cellule : vide (non calculé), 'n/a' (non applicable), 'ia' (calculé par IA), 'user' (validé/saisi), 'calculated' (résultat de calcul)
-- **FR-002**: System MUST afficher un code couleur distinct pour chaque statut : blanc pour vide, gris n/a, bleu clair pour IA haute confiance, jaune pour IA confiance moyenne/basse, blanc pour user/calculated
+- **FR-002**: System MUST afficher un code couleur distinct pour chaque statut : blanc pour vide, gris n/a, bleu clair pour IA haute confiance, jaune pour IA confiance moyenne/basse, blanc pour user/calculated (pas de distinction visuelle entre 'user' et 'calculated', les deux sont considérées comme valeurs finales)
 - **FR-003**: System MUST stocker le statut dans le champ `status` de chaque objet dans `values[]`
 - **FR-004**: System MUST stocker le flag `reviewed` (true/false) pour distinguer les valeurs validées
 
 ### Functional Requirements - Édition des cellules
 
 - **FR-005**: System MUST permettre de cliquer sur toute cellule éditable pour entrer en mode édition
+- **FR-005a**: System MUST utiliser validation HTML5 (input type="number") pour empêcher la saisie de caractères non numériques
 - **FR-006**: System MUST afficher un curseur "pointer" au survol des cellules éditables
 - **FR-007**: System MUST afficher l'assistant IA avec l'historique lors du clic sur une cellule
 - **FR-008**: System MUST mettre `reviewed=true` et `status='user'` lors de la validation d'une modification utilisateur
@@ -120,7 +121,7 @@ Pour certains indicateurs (semences, irrigation), l'utilisateur doit pouvoir mod
 ### Functional Requirements - Indicateurs au niveau intervention
 
 - **FR-010**: System MUST supporter les indicateurs simples : frequence, azoteMineral, azoteOrganique, rendementTMS, ift, eiq, ges, tempsTravail, coutsPhytos, semences, engrais, mecanisation, gnr, irrigation, prixVente
-- **FR-011**: System MUST calculer automatiquement `totalProduits = prixVente × rendementTMS` sauf si status='user' au niveau étape
+- **FR-011**: System MUST calculer automatiquement `totalProduits = prixVente × rendementTMS` sauf si status='user' au niveau étape. Si prixVente ou rendementTMS = 0, le résultat 0 est valide (utilisateur peut forcer via status='user')
 - **FR-012**: System MUST calculer automatiquement `totalCharges = coutsPhytos + semences + engrais + mecanisation + gnr + irrigation` (non éditable)
 - **FR-013**: System MUST calculer automatiquement `margeBrute = totalProduits - totalCharges` (non éditable)
 - **FR-014**: System MUST assigner `status='calculated'` aux indicateurs calculés automatiquement
@@ -129,6 +130,7 @@ Pour certains indicateurs (semences, irrigation), l'utilisateur doit pouvoir mod
 
 - **FR-015**: System MUST calculer les totaux d'étape par somme pondérée : valeur_étape = Σ(valeur_intervention × fréquence_intervention)
 - **FR-016**: System MUST utiliser une fréquence par défaut de 1 si le champ fréquence est absent
+- **FR-016a**: System MUST exclure les interventions avec fréquence=0 des totaux (contribution nulle), et accepter les fréquences décimales 0<f<1 (ex: 0.5 = une année sur deux)
 - **FR-017**: System MUST stocker les totaux d'étape dans `step.values[]` (source unique de vérité)
 - **FR-018**: System MUST permettre l'édition directe de semences et irrigation au niveau étape
 - **FR-019**: System MUST permettre de forcer totalProduits au niveau étape (status='user' désactive le calcul automatique)
@@ -136,7 +138,7 @@ Pour certains indicateurs (semences, irrigation), l'utilisateur doit pouvoir mod
 
 ### Functional Requirements - Indicateurs système consolidés
 
-- **FR-021**: System MUST calculer les indicateurs système en sommant les valeurs de toutes les étapes (via step.values)
+- **FR-021**: System MUST calculer les indicateurs système en sommant les valeurs de toutes les étapes (via step.values). Si step.values est manquant ou vide pour une étape, traiter comme contribution nulle (zéro)
 - **FR-022**: System MUST calculer nbYears comme la durée totale du système (dernière date de fin - première date de début)
 - **FR-023**: System MUST calculer les indicateurs annuels par hectare : valeur_système / nbYears
 - **FR-024**: System MUST recalculer les indicateurs système après toute modification affectant les totaux d'étape
@@ -186,4 +188,14 @@ Pour certains indicateurs (semences, irrigation), l'utilisateur doit pouvoir mod
 - Historique complet des modifications (seule la conversation par cellule est gardée)
 - Mode multi-utilisateurs avec gestion des conflits
 - Annulation/Rétablissement (undo/redo)
+
+## Clarifications
+
+### Session 2026-01-16
+
+- Q: Comment le système gère-t-il une fréquence de 0 ou négative ? → A: fréquence=0 exclut l'intervention des totaux (contribution nulle), fréquences décimales 0<f<1 acceptées (ex: 0.5 = une année sur deux)
+- Q: Que se passe-t-il si rendementTMS ou prixVente sont à zéro lors du calcul de totalProduits ? → A: calcul normal (0 × n = 0), résultat zéro est valide, utilisateur peut forcer via status='user' si nécessaire
+- Q: Comment distinguer visuellement une cellule calculée d'une cellule validée (toutes deux sur fond blanc) ? → A: pas de distinction visuelle nécessaire, les deux sont considérées comme valeurs finales
+- Q: Que se passe-t-il si step.values est manquant ou vide pour une étape ? → A: traiter comme zéro (contribution nulle de cette étape aux indicateurs système)
+- Q: Que se passe-t-il si l'utilisateur saisit une valeur non numérique dans une cellule ? → A: validation HTML5 avec input type="number" empêche la saisie de caractères non numériques
 
