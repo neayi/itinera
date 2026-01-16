@@ -51,13 +51,15 @@ export function EditableNumberCell({
   const handleClick = () => {
     if (interventionIndex === -1) return; // Pas d'édition pour les lignes de totaux
     
-    // Open edit mode
+    // Open edit mode immediately (synchronous)
     setEditValue(value?.toString() || '');
     setIsEditing(true);
     
-    // Open AI Assistant for this cell
+    // Open AI Assistant asynchronously after editor is rendered
     if (onCellFocus) {
-      onCellFocus(stepIndex, interventionIndex, fieldKey);
+      setTimeout(() => {
+        onCellFocus(stepIndex, interventionIndex, fieldKey);
+      }, 0);
     }
   };
 
