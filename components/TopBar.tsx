@@ -1,8 +1,9 @@
 'use client';
 
-import { User, ArrowLeft, GitBranch, ChevronDown, LogOut } from 'lucide-react';
+import { User, ArrowLeft, GitBranch, ChevronDown, LogOut, CloudUpload, CloudCheck } from 'lucide-react';
 import LocationMapIcon from '@/components/imports/LocationMapAppStreetStreamlineMicroLine';
 import { useState, useEffect } from 'react';
+import type { SaveStatus } from '@/lib/hooks/useDebouncedSave';
 
 interface TopBarProps {
   variant?: 'list' | 'project';
@@ -12,6 +13,7 @@ interface TopBarProps {
   rotationTitle?: string;
   activeView?: 'my-systems' | 'explore';
   onViewChange?: (view: 'my-systems' | 'explore') => void;
+  saveStatus?: SaveStatus;
 }
 
 interface UserInfo {
@@ -20,7 +22,7 @@ interface UserInfo {
   username?: string;
 }
 
-export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'Originale', onVariantChange, rotationTitle = 'Rotation Bio 2027-2033', activeView = 'my-systems', onViewChange }: TopBarProps) {
+export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'Originale', onVariantChange, rotationTitle = 'Rotation Bio 2027-2033', activeView = 'my-systems', onViewChange, saveStatus = 'saved' }: TopBarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo>({ name: 'Utilisateur', email: '', username: undefined });
@@ -179,6 +181,18 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
                 className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/20 transition-colors min-w-[250px]"
               >
                 <span className="text-white flex-1 text-left">{rotationTitle}-{currentVariant}</span>
+                {/* Save status icon */}
+                <div className="flex items-center">
+                  {saveStatus === 'saved' && (
+                    <CloudCheck className="size-4 text-green-200" aria-label="Toutes les modifications sont sauvegardées" />
+                  )}
+                  {(saveStatus === 'pending' || saveStatus === 'saving') && (
+                    <CloudUpload className="size-4 text-yellow-200 animate-pulse" aria-label="Sauvegarde en cours..." />
+                  )}
+                  {saveStatus === 'error' && (
+                    <CloudUpload className="size-4 text-red-300" aria-label="Erreur lors de la sauvegarde" />
+                  )}
+                </div>
                 <ChevronDown className="size-4 text-white" />
               </button>
 

@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { getRotationDurationYears } from '@/lib/calculate-rotation-duration';
 
 interface SystemIndicatorsProps {
   systemData: any;
@@ -17,126 +16,32 @@ export function SystemIndicators({
   variantData,
 }: SystemIndicatorsProps) {
   
-  // Calculate totals from system data
-  // IMPORTANT: Les totaux système doivent TOUJOURS être calculés en sommant les valeurs
-  // au niveau des ÉTAPES (step.values), jamais au niveau des interventions.
-  // Les step.values sont pré-calculés avec pondération par fréquence via calculate-system-totals.ts
-  // Voir specs/002-system-indicators-calculation/README.md
-  const calculateTotals = (data: any) => {
-    const totals = {
-      workTime: 0,
-      ges: 0,
-      ift: 0,
-      azoteMineral: 0,
-      azoteOrganique: 0,
-      semences: 0,
-      engrais: 0,
-      coutsPhytos: 0,
-      mecanisation: 0,
-      irrigation: 0,
-      gnr: 0,
-      totalCharges: 0,
-      totalProduits: 0,
-      margeBrute: 0,
-    };
+  // Use pre-calculated indicators from systemData.systemIndicators
+  // These values are computed server-side by calculate-system-totals.ts
+  // and stored in the database, eliminating runtime recalculation.
+  // See specs/003-indicators-ergonomics-rules/spec.md
+  const indicators = systemData.systemIndicators || {};
+  
+  // Destructure all needed values with fallback to 0
+  const {
+    tempsTravailParHaParAn = 0,
+    gesParHaParAn = 0,
+    iftMoyenParAn = 0,
+    azoteTotalParHaParAn = 0,
+    semencesParHaParAn = 0,
+    chargesParHaParAn = 0,
+    margeBruteParHaParAn = 0,
+    margePercentage = 0,
+    nbYears = 1,
+    // Raw totals (for comparison mode)
+    tempsTravail = 0,
+    ges = 0,
+    totalProduits = 0,
+    margeBrute = 0,
+  } = indicators;
 
-    if (!data?.steps) return totals;
-
-    // Sum values from step totals (step.values)
-    // NEVER sum from interventions directly - frequency weighting is already applied in step.values
-    data.steps.forEach((step: any, stepIndex: number) => {
-      // ALWAYS use step.values - it contains pre-calculated totals with frequency weighting
-      // If step.values is missing, this is an error - the data should be recalculated via API
-      if (!step.values || step.values.length === 0) {
-        console.error(`[SystemIndicators] step.values is missing for step ${stepIndex} (${step.name})`);
-        console.error('[SystemIndicators] Data should be recalculated via calculate-system-totals.ts');
-        return;
-      }
-
-      step.values.forEach((valueEntry: any) => {
-        const key = valueEntry.key;
-        const value = parseFloat(valueEntry.value) || 0;
-
-        if (key === 'ges') {
-          console.log(`[SystemIndicators] Step ${stepIndex} ${key}:`, value);
-        }
-
-        // Map indicator keys to totals
-        switch (key) {
-          case 'tempsTravail':
-            totals.workTime += value;
-            break;
-          case 'ges':
-            totals.ges += value;
-            break;
-          case 'ift':
-            totals.ift += value;
-            break;
-          case 'azoteMineral':
-            totals.azoteMineral += value;
-            break;
-          case 'azoteOrganique':
-            totals.azoteOrganique += value;
-            break;
-          case 'semences':
-            totals.semences += value;
-            break;
-          case 'engrais':
-            totals.engrais += value;
-            break;
-          case 'coutsPhytos':
-            totals.coutsPhytos += value;
-            break;
-          case 'mecanisation':
-            totals.mecanisation += value;
-            break;
-          case 'irrigation':
-            totals.irrigation += value;
-            break;
-          case 'gnr':
-            totals.gnr += value;
-            break;
-          case 'totalCharges':
-            totals.totalCharges += value;
-            break;
-          case 'totalProduits':
-            totals.totalProduits += value;
-            break;
-          case 'margeBrute':
-            totals.margeBrute += value;
-            break;
-        }
-      });
-    });
-
-    return totals;
-  };
-
-  const totals = calculateTotals(systemData);
-
-  console.log('[SystemIndicators] Calculated totals:', totals);
-
-  const nbYears = getRotationDurationYears(systemData);
-
-  // Calculate per hectare per year values
-  const workTimePerHaPerYear = totals.workTime / nbYears;
-  const gesPerHaPerYear = totals.ges / nbYears;
-  const iftMoyenParAn = totals.ift / nbYears;
-  const azoteTotalPerHaPerYear = (totals.azoteMineral + totals.azoteOrganique) / nbYears;
-  const semencesPerHaPerYear = totals.semences / nbYears;
-  const chargesPerHaPerYear = totals.totalCharges / nbYears;
-  const margeBrutePerHaPerYear = totals.margeBrute / nbYears;
-
-  // Calculate margin percentage
-  const margePercentage = totals.totalProduits > 0 ? (totals.margeBrute / totals.totalProduits) * 100 : 0;
-
-  // Calculate variant totals if in compare mode
-  let variantTotals = null;
-  let variantNbYears = nbYears;
-  if (compareMode && variantData) {
-    variantTotals = calculateTotals(variantData);
-    variantNbYears = getRotationDurationYears(variantData);
-  }
+  // Get variant indicators if in compare mode
+  const variantIndicators = variantData?.systemIndicators || {};
 
   const visibleCount = visibleIndicators.size;
   const gridColsClass = visibleCount === 1 ? 'grid-cols-1'
@@ -161,7 +66,7 @@ export function SystemIndicators({
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="text-sm text-gray-600">Temps de travail</div>
               <div className="text-2xl mt-1">
-                {workTimePerHaPerYear.toFixed(1)} h <span className="text-sm text-gray-600">/ha/an</span>
+                {tempsTravailParHaParAn.toFixed(1)} h <span className="text-sm text-gray-600">/ha/an</span>
               </div>
             </div>
           )}
@@ -169,7 +74,7 @@ export function SystemIndicators({
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="text-sm text-gray-600">Émissions GES</div>
               <div className="text-2xl mt-1">
-                {gesPerHaPerYear.toFixed(0)} kg <span className="text-sm text-gray-600">/ha/an</span>
+                {gesParHaParAn.toFixed(0)} kg <span className="text-sm text-gray-600">/ha/an</span>
               </div>
             </div>
           )}
@@ -185,7 +90,7 @@ export function SystemIndicators({
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="text-sm text-gray-600">Azote total</div>
               <div className="text-2xl mt-1">
-                {azoteTotalPerHaPerYear > 0 ? azoteTotalPerHaPerYear.toFixed(0) : '0'} N <span className="text-sm text-gray-600">/ha/an</span>
+                {azoteTotalParHaParAn > 0 ? azoteTotalParHaParAn.toFixed(0) : '0'} N <span className="text-sm text-gray-600">/ha/an</span>
               </div>
             </div>
           )}
@@ -193,7 +98,7 @@ export function SystemIndicators({
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="text-sm text-gray-600">Semences</div>
               <div className="text-2xl mt-1">
-                {semencesPerHaPerYear > 0 ? `${semencesPerHaPerYear.toFixed(0)} €` : '0 €'} <span className="text-sm text-gray-600">/ha/an</span>
+                {semencesParHaParAn > 0 ? `${semencesParHaParAn.toFixed(0)} €` : '0 €'} <span className="text-sm text-gray-600">/ha/an</span>
               </div>
             </div>
           )}
@@ -201,7 +106,7 @@ export function SystemIndicators({
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="text-sm text-gray-600">Charges totales</div>
               <div className="text-2xl mt-1">
-                {chargesPerHaPerYear.toFixed(0)} € <span className="text-sm text-gray-600">/ha/an</span>
+                {chargesParHaParAn.toFixed(0)} € <span className="text-sm text-gray-600">/ha/an</span>
               </div>
             </div>
           )}
@@ -209,7 +114,7 @@ export function SystemIndicators({
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <div className="text-sm text-gray-600">Marge brute</div>
               <div className="text-2xl mt-1">
-                {margeBrutePerHaPerYear.toFixed(0)} € <span className="text-sm text-gray-600">/ha/an</span>
+                {margeBruteParHaParAn.toFixed(0)} € <span className="text-sm text-gray-600">/ha/an</span>
               </div>
               <div className="text-xs text-gray-500 mt-1">{margePercentage.toFixed(1)}%</div>
             </div>
@@ -218,7 +123,7 @@ export function SystemIndicators({
       </div>
 
       {/* Variant indicators (only in compare mode) */}
-      {compareMode && variantTotals && (
+      {compareMode && variantIndicators.tempsTravailParHaParAn !== undefined && (
         <div>
           <div className="text-sm mb-2 px-1">
             <span className="bg-[#8b7355] text-white px-3 py-1 rounded">Variante</span>
@@ -228,10 +133,10 @@ export function SystemIndicators({
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="text-sm text-gray-600">Temps de travail</div>
                 <div className="text-2xl mt-1">
-                  {(variantTotals.workTime / variantNbYears).toFixed(1)} h <span className="text-sm text-gray-600">/ha/an</span>
+                  {(variantIndicators.tempsTravailParHaParAn || 0).toFixed(1)} h <span className="text-sm text-gray-600">/ha/an</span>
                 </div>
                 <div className="text-xs text-green-600 mt-1">
-                  {((1 - variantTotals.workTime / totals.workTime) * 100).toFixed(0)}%
+                  {tempsTravail > 0 ? ((1 - (variantIndicators.tempsTravail || 0) / tempsTravail) * 100).toFixed(0) : '0'}%
                 </div>
               </div>
             )}

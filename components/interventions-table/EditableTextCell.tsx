@@ -58,6 +58,8 @@ export function EditableTextCell({
       // Mettre à jour le champ approprié
       updatedSystemData.steps[stepIndex].interventions[interventionIndex][fieldName] = editValue;
 
+      console.log('Storing system data');
+      
       // Envoyer la mise à jour à l'API
       const response = await fetch(`/api/systems/${systemId}`, {
         method: 'PATCH',

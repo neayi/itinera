@@ -10,6 +10,8 @@ import { InterventionData, RotationData } from '@/lib/types';
 import { variant1Interventions } from '@/lib/data/variant1Interventions';
 import { ItineraireTechnique, ItineraireTechniqueRef } from '@/components/ItineraireTechnique';
 import { InterventionsDataTable } from '@/components/interventions-table';
+import { useDebouncedSave, SaveStatus } from '@/lib/hooks/useDebouncedSave';
+import { calculateSystemTotals } from '@/lib/calculate-system-totals';
 
 interface ProjectDetailsProps {
   projectId: string;
@@ -35,6 +37,24 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
   const [batchAbortController, setBatchAbortController] = useState<AbortController | null>(null);
   const [calculationAlert, setCalculationAlert] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
 
+  // Setup debounced save with 10 second delay
+  const { saveStatus, triggerSave, forceSave } = useDebouncedSave({
+    systemId: projectId,
+    onSave: async (data: any) => {
+      console.log('Storing system data (async)');
+
+      const response = await fetch(`/api/systems/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ json: data }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save system data');
+      }
+    },
+    debounceMs: 10000, // 10 seconds
+  });
+
   // S'assurer que le composant est monté côté client
   useEffect(() => {
     setIsMounted(true);
@@ -49,12 +69,18 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
 
   const fetchSystemData = (updatedData?: any) => {
     if (updatedData) {
-      // Si on reçoit les données mises à jour directement
-      setSystemData(updatedData);
+      // Calculate totals client-side
+      const calculatedData = calculateSystemTotals(updatedData);
+      
+      // Update UI immediately with calculated data
+      setSystemData(calculatedData);
+      
+      // Trigger debounced save to server
+      triggerSave(calculatedData);
       return;
     }
     
-    // Sinon, recharger depuis l'API
+    // Initial load from API
     setIsLoading(true);
     fetch(`/api/systems/${projectId}`)
       .then(res => {
@@ -67,17 +93,17 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         if (system.json) {
           setSystemData(system.json);
         }
-        setSystemName(system.name || 'Rotation Bio 2027-2033');
-        setFarmerName(system.farmer_name || 'Jean Dupont');
-        setFarmName(system.farm_name || 'EARL Dupont');
+        setSystemName(system.name || 'Libellé du système');
+        setFarmerName(system.farmer_name || "Nom de l'agriculteur");
+        setFarmName(system.farm_name || 'Nom de la ferme');
         setGpsLocation(system.gps_location || null);
       })
       .catch(error => {
         console.error('Erreur lors du chargement du système:', error);
         // Valeurs par défaut en cas d'erreur
-        setSystemName('Rotation Bio 2027-2033');
-        setFarmerName('Jean Dupont');
-        setFarmName('EARL Dupont');
+        setSystemName('Libellé du système');
+        setFarmerName("Nom de l'agriculteur");
+        setFarmName('Nom de la ferme');
       })
       .finally(() => {
         setIsLoading(false);
@@ -420,6 +446,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         currentVariant={currentVariant}
         onVariantChange={setCurrentVariant}
         rotationTitle={isLoading ? 'Chargement...' : systemName}
+        saveStatus={saveStatus}
       />
 
       {/* Contenu principal et ChatBot côte à côte en dessous de la TopBar */}

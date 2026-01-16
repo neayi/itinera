@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { queryOne, query } from '@/lib/db';
 import { indicatorCalculator } from '@/lib/ai/indicator-calculator';
-import { calculateAndSaveSystemTotals } from '@/lib/calculate-system-totals';
+import { calculateAndSaveSystemTotals } from '@/lib/persist-system';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

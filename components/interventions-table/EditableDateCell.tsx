@@ -62,6 +62,8 @@ export function EditableDateCell({
       const updatedSystemData = JSON.parse(JSON.stringify(systemData));
       updatedSystemData.steps[stepIndex].interventions[interventionIndex].day = newDay;
 
+      console.log('Storing system data');
+
       // Envoyer la mise à jour à l'API
       const response = await fetch(`/api/systems/${systemId}`, {
         method: 'PATCH',

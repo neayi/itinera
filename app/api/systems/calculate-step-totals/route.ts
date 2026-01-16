@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { queryOne } from '@/lib/db';
-import { calculateAndSaveSystemTotals } from '@/lib/calculate-system-totals';
+import { calculateAndSaveSystemTotals } from '@/lib/persist-system';
 
 export async function POST(request: NextRequest) {
   try {

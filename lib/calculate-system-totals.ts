@@ -1,18 +1,22 @@
-import { query } from '@/lib/db';
+import { getRotationDurationYears } from '@/lib/calculate-rotation-duration';
 
 /**
- * Calculate and save all totals in the system data
+ * Calculate all totals in the system data (PURE FUNCTION - no DB access)
  * This function computes:
  * 1. Intervention-level totals (totalProduits, totalCharges)
  * 2. Step-level totals (weighted sums + totalProduits, totalCharges, margeBrute)
  * 3. System-level totals (sum across all steps)
+ * 4. System-level indicators per ha per year
  * 
- * All calculated values are stored in systemData.
+ * Can be used both client-side and server-side.
+ * Returns updated systemData without saving to database.
  */
-export async function calculateAndSaveSystemTotals(systemId: string, systemData: any) {
+export function calculateSystemTotals(systemData: any) {
   if (!systemData?.steps) {
     return systemData;
   }
+  
+  console.log('[calculateSystemTotals] Calculating totals for systemData:', systemData);
 
   // System-level totals (will be calculated from step totals)
   const systemTotals: Record<string, number> = {
@@ -29,7 +33,6 @@ export async function calculateAndSaveSystemTotals(systemId: string, systemData:
     gnr: 0,
     irrigation: 0,
     totalCharges: 0,
-    rendementTMS: 0,
     totalProduits: 0,
     margeBrute: 0,
   };
@@ -70,8 +73,8 @@ export async function calculateAndSaveSystemTotals(systemId: string, systemData:
       const calculatedTotalProduits = prixVente * rendementTMS;
       
       // Only update totalProduits if not manually set by user (status='user')
-      const existingTotalProduitsEntry = intervention.values.find((v: any) => v.key === 'totalProduits');
-      if (!existingTotalProduitsEntry || existingTotalProduitsEntry.status !== 'user') {
+      const totalProduitsEntryForceByUser = intervention.values.find((v: any) => v.key === 'totalProduits' && v.status === 'user');
+      if (!totalProduitsEntryForceByUser) {
         setValue('totalProduits', calculatedTotalProduits, 'calculated');
       }
 
@@ -90,7 +93,6 @@ export async function calculateAndSaveSystemTotals(systemId: string, systemData:
 
     // LEVEL 2: Calculate step-level totals (weighted sums)
     const stepTotals: Record<string, number> = {
-      frequence: 0,
       azoteMineral: 0,
       azoteOrganique: 0,
       ift: 0,
@@ -112,7 +114,7 @@ export async function calculateAndSaveSystemTotals(systemId: string, systemData:
     };
 
     // Indicators that should not be summed from interventions
-    const stepLevelOnlyIndicators = ['rendementTMS', 'prixVente', 'totalProduits', 'margeBrute'];
+    const stepLevelOnlyIndicators = ['frequence', 'rendementTMS', 'prixVente', 'totalProduits', 'margeBrute'];
 
     // Sum values from interventions with frequency weighting
     updatedInterventions.forEach((intervention: any) => {
@@ -134,35 +136,30 @@ export async function calculateAndSaveSystemTotals(systemId: string, systemData:
         if (stepLevelOnlyIndicators.includes(key)) return;
 
         if (key in stepTotals) {
-          // For frequence, just sum without multiplying
-          if (key === 'frequence') {
-            stepTotals[key] += value;
-          } else {
             // For other indicators, multiply by frequency
             stepTotals[key] += value * freq;
-          }
         }
       });
     });
 
-    // Get step-level forced values (user overrides)
-    const existingRendementTMS = step.values?.find((v: any) => v.key === 'rendementTMS' && v.status === 'user');
-    const existingPrixVente = step.values?.find((v: any) => v.key === 'prixVente' && v.status === 'user');
-    const existingTotalProduits = step.values?.find((v: any) => v.key === 'totalProduits' && v.status === 'user');
+    // Get step-level values
+    const totalProduitsForcedByUser = step.values?.find((v: any) => v.key === 'totalProduits' && v.status === 'user');
 
-    // Use step-level forced values if they exist
-    if (existingRendementTMS) {
-      stepTotals.rendementTMS = parseFloat(existingRendementTMS.value) || 0;
-    }
-    if (existingPrixVente) {
-      stepTotals.prixVente = parseFloat(existingPrixVente.value) || 0;
-    }
+    if (!totalProduitsForcedByUser) {
+        const existingRendementTMS = step.values?.find((v: any) => v.key === 'rendementTMS');
+        const existingPrixVente = step.values?.find((v: any) => v.key === 'prixVente');
+        // Use step-level forced values if they exist
+        if (existingRendementTMS) {
+            stepTotals.rendementTMS = parseFloat(existingRendementTMS.value) || 0;
+        }
+        if (existingPrixVente) {
+            stepTotals.prixVente = parseFloat(existingPrixVente.value) || 0;
+        }
 
-    // Calculate step-level totalProduits: use forced value if exists, otherwise calculate
-    if (existingTotalProduits && existingTotalProduits.value !== 0) {
-      stepTotals.totalProduits = parseFloat(existingTotalProduits.value) || 0;
-    } else {
-      stepTotals.totalProduits = stepTotals.rendementTMS * stepTotals.prixVente;
+        stepTotals.totalProduits = stepTotals.rendementTMS * stepTotals.prixVente;
+    }
+    else {
+        stepTotals.totalProduits = parseFloat(totalProduitsForcedByUser.value) || 0;
     }
 
     // Calculate step-level margeBrute: totalProduits - totalCharges
@@ -206,20 +203,45 @@ export async function calculateAndSaveSystemTotals(systemId: string, systemData:
     reviewed: true,
   }));
 
-  const updatedSystemData = {
-    ...systemData,
-    steps: updatedSteps,
-    systemValues, // Store system-level totals
+  // LEVEL 4: Calculate system-level indicators per ha per year
+  const nbYears = getRotationDurationYears(systemData);
+  
+  const systemIndicators = {
+    // Totals (sum across all steps)
+    tempsTravail: systemTotals.tempsTravail,
+    ges: systemTotals.ges,
+    ift: systemTotals.ift,
+    azoteMineral: systemTotals.azoteMineral,
+    azoteOrganique: systemTotals.azoteOrganique,
+    azoteTotal: systemTotals.azoteMineral + systemTotals.azoteOrganique,
+    semences: systemTotals.semences,
+    totalCharges: systemTotals.totalCharges,
+    totalProduits: systemTotals.totalProduits,
+    margeBrute: systemTotals.margeBrute,
+    
+    // Per ha per year indicators
+    tempsTravailParHaParAn: systemTotals.tempsTravail / nbYears,
+    gesParHaParAn: systemTotals.ges / nbYears,
+    iftMoyenParAn: systemTotals.ift / nbYears,
+    azoteTotalParHaParAn: (systemTotals.azoteMineral + systemTotals.azoteOrganique) / nbYears,
+    semencesParHaParAn: systemTotals.semences / nbYears,
+    chargesParHaParAn: systemTotals.totalCharges / nbYears,
+    margeBruteParHaParAn: systemTotals.margeBrute / nbYears,
+    
+    // Percentage
+    margePercentage: systemTotals.totalProduits > 0 
+      ? (systemTotals.margeBrute / systemTotals.totalProduits) * 100 
+      : 0,
+    
+    // Meta info
+    nbYears,
   };
 
-  // Save to database
-  await query(
-    'UPDATE systems SET json = ?, updated_at = NOW() WHERE id = ?',
-    [JSON.stringify(updatedSystemData), systemId]
-  );
-
-  return updatedSystemData;
+  return {
+    ...systemData,
+    steps: updatedSteps,
+    systemValues, // Store system-level totals (raw values)
+    systemIndicators, // Store system-level indicators (per ha per year + percentages)
+  };
 }
 
-// Backward compatibility alias
-export const calculateAndSaveStepTotals = calculateAndSaveSystemTotals;

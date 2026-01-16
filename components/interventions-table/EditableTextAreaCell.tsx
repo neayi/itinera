@@ -56,6 +56,8 @@ export function EditableTextAreaCell({
       // Mettre à jour la description
       updatedSystemData.steps[stepIndex].interventions[interventionIndex].description = editValue;
 
+      console.log('Storing system data');
+      
       // Envoyer la mise à jour à l'API
       const response = await fetch(`/api/systems/${systemId}`, {
         method: 'PATCH',

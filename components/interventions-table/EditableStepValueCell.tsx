@@ -76,6 +76,8 @@ export function EditableStepValueCell({
         step.values.push({ key: fieldKey, value: finalValue });
       }
 
+      console.log('Storing system data');
+      
       // Envoyer la mise à jour à l'API
       const response = await fetch(`/api/systems/${systemId}`, {
         method: 'PATCH',

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { formatValue, FieldKey } from './formatters';
+import { calculateSystemTotals } from '@/lib/calculate-system-totals';
 
 interface EditableNumberCellProps {
   value: number | string;
@@ -123,30 +124,11 @@ export function EditableNumberCell({
         });
       }
 
-      // Note: totalCharges, totalProduits, margeBrute are now calculated automatically 
-      // by calculateAndSaveSystemTotals() on the server after this PATCH
-
-      // Envoyer la mise à jour à l'API
-      const response = await fetch(`/api/systems/${systemId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          json: updatedSystemData,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update intervention value');
-      }
-
-      // Recharger les données depuis l'API pour obtenir les totaux recalculés
-      // L'API appelle calculateAndSaveSystemTotals qui met à jour intervention.values, step.values et systemValues
+      // Update UI immediately with calculated data (no server round-trip)
       if (onUpdate) {
-        // Passer undefined pour forcer le rechargement depuis l'API
-        onUpdate();
+        onUpdate(updatedSystemData);
       }
+
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving value:', error);

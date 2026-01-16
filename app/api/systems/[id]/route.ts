@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { SystemWithFarm } from '@/lib/types';
-import { calculateAndSaveSystemTotals } from '@/lib/calculate-system-totals';
+import { saveSystemTotals } from '@/lib/persist-system';
 
 export async function GET(
   request: Request,
@@ -57,9 +57,10 @@ export async function PATCH(
     const body = await request.json();
 
     // Mise à jour du champ JSON
+    // Les totaux sont maintenant calculés côté client avant l'envoi
+    // Le serveur ne fait plus que sauvegarder les données
     if (body.json) {
-      // Calculate and save step totals automatically
-      await calculateAndSaveSystemTotals(id, body.json);
+      await saveSystemTotals(id, body.json);
     }
 
     return NextResponse.json({ success: true });
