@@ -87,6 +87,10 @@ services:
       - PMA_USER=${DB_USER:-itinera_user}
       - PMA_PASSWORD=${DB_PASSWORD:-itinera_password}
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
+      # Augmenter les limites PHP pour éditer de gros JSON
+      - UPLOAD_LIMIT=50M
+      - MEMORY_LIMIT=512M
+      - MAX_EXECUTION_TIME=600
     depends_on:
       mysql:
         condition: service_healthy

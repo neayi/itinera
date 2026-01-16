@@ -147,11 +147,22 @@ $color-na        : #f3f4f6;  // gris pour non applicable
     }
 
     td {
-
-        // TD that contains spans with a class needsReview should have a pale yellow background
-        &:has(.needsReview) {
-            background-color: #e0f2fe;
+        // Classes appliquées aux cellules selon leur statut
+        &:has(.status-na) {
+            background-color: $color-na !important; // gris pour non applicable
         }
+
+        &:has(.status-ia-high) {
+            background-color: $color-ai-high !important; // bleu clair pour IA haute confiance
+        }
+
+        &:has(.status-ia-medium) {
+            background-color: $color-ai-medium !important; // jaune pour IA confiance moyenne
+        }
+
+        &:has(.status-ia-low) {
+            background-color: $color-ai-low !important; // jaune pour IA confiance basse
+        }        
     }
 
     // Sortable header
@@ -269,20 +280,3 @@ $color-na        : #f3f4f6;  // gris pour non applicable
     }
 }
 
-// Status color classes (US1 - T005)
-// Classes appliquées aux cellules selon leur statut
-.status-na {
-    background-color: #f3f4f6 !important; // gris pour non applicable
-}
-
-.status-ia-high {
-    background-color: #dbeafe !important; // bleu clair pour IA haute confiance
-}
-
-.status-ia-medium {
-    background-color: #fef3c7 !important; // jaune pour IA confiance moyenne
-}
-
-.status-ia-low {
-    background-color: #fef3c7 !important; // jaune pour IA confiance basse
-}
