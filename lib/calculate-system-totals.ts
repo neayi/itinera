@@ -54,6 +54,10 @@ export function calculateSystemTotals(systemData: any) {
       const setValue = (key: string, value: number, status: string = 'calculated') => {
         const idx = intervention.values.findIndex((v: any) => v.key === key);
         if (idx >= 0) {
+          // Preserve 'user' and 'ia' status (T003 - don't overwrite AI values)
+          if (intervention.values[idx].status === 'user' || intervention.values[idx].status === 'ia') {
+            return; // Keep existing value and status
+          }
           intervention.values[idx].value = value;
           intervention.values[idx].status = status;
           intervention.values[idx].reviewed = true;
@@ -167,10 +171,12 @@ export function calculateSystemTotals(systemData: any) {
 
     // Convert to values array format with status='calculated'
     const stepValues = Object.entries(stepTotals).map(([key, value]) => {
-      // Preserve user-forced values
-      const existingEntry = step.values?.find((v: any) => v.key === key && v.status === 'user');
+      // Preserve user-forced values and AI values (T003-T004)
+      const existingEntry = step.values?.find(
+        (v: any) => v.key === key && (v.status === 'user' || v.status === 'ia' || v.status === 'n/a')
+      );
       if (existingEntry) {
-        return existingEntry; // Keep user value with status='user'
+        return existingEntry; // Keep user/AI/n/a value with original status
       }
 
       return {

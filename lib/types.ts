@@ -112,6 +112,7 @@ export interface SoilProperties {
 
 // AI Assistant types
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
+export type ValueStatus = 'user' | 'calculated' | 'ia' | 'n/a';
 
 export interface ConversationMessage {
   role: 'system' | 'assistant' | 'user';
@@ -127,6 +128,7 @@ export interface ConversationMessage {
 export interface InterventionValue {
   key: string;
   value: number | string;
+  status?: ValueStatus;
   reviewed?: boolean;
   confidence?: ConfidenceLevel;
   conversation?: ConversationMessage[];
@@ -135,6 +137,7 @@ export interface InterventionValue {
 export interface StepValue {
   key: string;
   value: number | string;
+  status?: ValueStatus;
   reviewed?: boolean;
   confidence?: ConfidenceLevel;
   conversation?: ConversationMessage[];

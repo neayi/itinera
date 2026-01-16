@@ -2,6 +2,23 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { formatValue, FieldKey } from './formatters';
+import type { ValueStatus, ConfidenceLevel } from '@/lib/types';
+
+/**
+ * T009: Determine CSS class based on status and confidence (same as EditableNumberCell)
+ */
+function getCellClassName(status?: ValueStatus, confidence?: ConfidenceLevel): string {
+  if (status === 'n/a') {
+    return 'status-na';
+  }
+  if (status === 'ia') {
+    if (confidence === 'high') return 'status-ia-high';
+    if (confidence === 'medium') return 'status-ia-medium';
+    if (confidence === 'low') return 'status-ia-low';
+    return 'status-ia-medium';
+  }
+  return '';
+}
 
 interface EditableStepValueCellProps {
   value: number;
@@ -9,6 +26,8 @@ interface EditableStepValueCellProps {
   systemId: string;
   systemData: any;
   fieldKey: FieldKey;
+  status?: ValueStatus;
+  confidence?: ConfidenceLevel;
   onUpdate?: (updatedSystemData?: any) => void;
 }
 
@@ -18,12 +37,17 @@ export function EditableStepValueCell({
   systemId,
   systemData,
   fieldKey,
+  status,
+  confidence,
   onUpdate 
 }: EditableStepValueCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value?.toString() || '');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // T009: Get CSS class based on status and confidence
+  const cellClassName = getCellClassName(status, confidence);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -77,7 +101,7 @@ export function EditableStepValueCell({
       }
 
       console.log('Storing system data');
-      
+
       // Envoyer la mise à jour à l'API
       const response = await fetch(`/api/systems/${systemId}`, {
         method: 'PATCH',
@@ -176,6 +200,7 @@ export function EditableStepValueCell({
     <span 
       onClick={handleClick}
       style={{ cursor: 'pointer' }}
+      className={cellClassName}
       title="Cliquer pour éditer la valeur au niveau de l'étape"
     >
       {formatValue(value, fieldKey)}

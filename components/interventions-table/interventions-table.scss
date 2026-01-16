@@ -18,6 +18,12 @@ $transition-speed: 0.15s;
 $shadow-sm       : 0 1px 3px rgba(0, 0, 0, 0.1);
 $shadow-sticky   : 2px 0 4px rgba(0, 0, 0, 0.05);
 
+// Status color classes (T005)
+$color-ai-high   : #dbeafe;  // bleu clair pour IA haute confiance
+$color-ai-medium : #fef3c7;  // jaune pour IA confiance moyenne
+$color-ai-low    : #fef3c7;  // jaune pour IA confiance basse
+$color-na        : #f3f4f6;  // gris pour non applicable
+
 // Container
 .interventions-table-container {
     width        : 100%;
@@ -261,4 +267,22 @@ $shadow-sticky   : 2px 0 4px rgba(0, 0, 0, 0.05);
             padding: 0.5rem 0.75rem;
         }
     }
+}
+
+// Status color classes (US1 - T005)
+// Classes appliquées aux cellules selon leur statut
+.status-na {
+    background-color: #f3f4f6 !important; // gris pour non applicable
+}
+
+.status-ia-high {
+    background-color: #dbeafe !important; // bleu clair pour IA haute confiance
+}
+
+.status-ia-medium {
+    background-color: #fef3c7 !important; // jaune pour IA confiance moyenne
+}
+
+.status-ia-low {
+    background-color: #fef3c7 !important; // jaune pour IA confiance basse
 }

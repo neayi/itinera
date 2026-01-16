@@ -3,6 +3,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatValue, FieldKey } from './formatters';
 import { calculateSystemTotals } from '@/lib/calculate-system-totals';
+import type { ValueStatus, ConfidenceLevel } from '@/lib/types';
+
+/**
+ * T006: Determine CSS class based on status and confidence
+ * Returns appropriate class name for visual indication of cell source
+ */
+function getCellClassName(status?: ValueStatus, confidence?: ConfidenceLevel): string {
+  if (status === 'n/a') {
+    return 'status-na';
+  }
+  if (status === 'ia') {
+    if (confidence === 'high') return 'status-ia-high';
+    if (confidence === 'medium') return 'status-ia-medium';
+    if (confidence === 'low') return 'status-ia-low';
+    // Fallback for IA without confidence
+    return 'status-ia-medium';
+  }
+  // For 'user', 'calculated', or undefined: no special class (white background)
+  return '';
+}
 
 interface EditableNumberCellProps {
   value: number | string;
@@ -11,6 +31,7 @@ interface EditableNumberCellProps {
   systemId: string;
   systemData: any;
   fieldKey: FieldKey;
+  status?: ValueStatus;
   reviewed?: boolean | 'n/a';
   confidence?: 'high' | 'medium' | 'low';
   onUpdate?: (updatedSystemData?: any) => void;
@@ -24,6 +45,7 @@ export function EditableNumberCell({
   systemId,
   systemData,
   fieldKey,
+  status,
   reviewed,
   confidence,
   onUpdate,
@@ -33,6 +55,9 @@ export function EditableNumberCell({
   const [editValue, setEditValue] = useState(value?.toString() || '');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // T006: Get CSS class based on status and confidence
+  const cellClassName = getCellClassName(status, confidence);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -249,7 +274,7 @@ export function EditableNumberCell({
         minHeight: '1.5rem',
         borderRadius: '0.25rem',
       }}
-      className={needsReview ? 'needsReview' : ''}
+      className={`${needsReview ? 'needsReview' : ''} ${cellClassName}`.trim()}
       title={needsReview ? "Valeur à vérifier (cliquer pour éditer)" : "Cliquer pour éditer"}
     >
       <span style={{ flex: 1 }}>{formatValue(value, fieldKey)}</span>    
