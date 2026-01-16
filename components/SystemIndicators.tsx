@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { getRotationDurationYears } from '@/lib/calculate-rotation-duration';
 
 interface SystemIndicatorsProps {
   systemData: any;
@@ -114,44 +115,6 @@ export function SystemIndicators({
   const totals = calculateTotals(systemData);
 
   console.log('[SystemIndicators] Calculated totals:', totals);
-
-  // Calculate rotation duration in years
-  const getRotationDurationYears = (data: any) => {
-    if (!data?.steps || data.steps.length === 0) return 1;
-
-    let startDate: Date | undefined;
-    let endDate: Date | undefined;
-
-    // We don't know if the steps are sorted, so reduce the dates out of all steps
-    data.steps.forEach((step: any) => {
-      if (step.startDate) {
-        const stepStart = new Date(step.startDate);
-        // Verify the date is valid
-        if (!isNaN(stepStart.getTime())) {
-          if (!startDate || stepStart < startDate) {
-            startDate = stepStart;
-          }
-        }
-      }
-      if (step.endDate) {
-        const stepEnd = new Date(step.endDate);
-        // Verify the date is valid
-        if (!isNaN(stepEnd.getTime())) {
-          if (!endDate || stepEnd > endDate) {
-            endDate = stepEnd;
-          }
-        }
-      }
-    });
-
-    if (!startDate || !endDate) return 1;
-
-    const durationMs = endDate.getTime() - startDate.getTime();
-    const durationDays = durationMs / (1000 * 60 * 60 * 24);
-    const durationYears = durationDays / 365.25;
-
-    return Math.max(durationYears, 1);
-  };
 
   const nbYears = getRotationDurationYears(systemData);
 

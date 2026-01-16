@@ -42,8 +42,8 @@ export function InterventionsDataTable({
 
   // Fonction utilitaire pour récupérer une valeur au niveau de l'étape
   const getStepLevelValue = (step: any, key: string): number | undefined => {
-    if (!step.stepValues || !Array.isArray(step.stepValues)) return undefined;
-    const item = step.stepValues.find((v: any) => v.key === key);
+    if (!step.values || !Array.isArray(step.values)) return undefined;
+    const item = step.values.find((v: any) => v.key === key);
     return item ? (typeof item.value === 'number' ? item.value : undefined) : undefined;
   };
 

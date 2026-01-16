@@ -147,11 +147,11 @@ export function EditableNumberCell({
       // supprimer la valeur au niveau de l'étape pour restaurer le calcul par somme pondérée
       const stepLevelEditableFields = ['irrigation', 'rendementTMS', 'prixVente'];
       if (stepLevelEditableFields.includes(fieldKey)) {
-        if (step.stepValues && Array.isArray(step.stepValues)) {
-          const stepValueIndex = step.stepValues.findIndex((v: any) => v.key === fieldKey);
+        if (step.values && Array.isArray(step.values)) {
+          const stepValueIndex = step.values.findIndex((v: any) => v.key === fieldKey);
           if (stepValueIndex >= 0) {
             // Supprimer la valeur au niveau de l'étape
-            step.stepValues.splice(stepValueIndex, 1);
+            step.values.splice(stepValueIndex, 1);
           }
         }
       }

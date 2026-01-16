@@ -60,20 +60,20 @@ export function EditableStepValueCell({
       
       const step = updatedSystemData.steps[stepIndex];
       
-      // S'assurer que le tableau stepValues existe
-      if (!step.stepValues) {
-        step.stepValues = [];
+      // S'assurer que le tableau values existe
+      if (!step.values) {
+        step.values = [];
       }
       
       // Chercher si la clé existe déjà
-      const existingIndex = step.stepValues.findIndex((v: any) => v.key === fieldKey);
+      const existingIndex = step.values.findIndex((v: any) => v.key === fieldKey);
       
       if (existingIndex >= 0) {
         // Mettre à jour la valeur existante
-        step.stepValues[existingIndex].value = finalValue;
+        step.values[existingIndex].value = finalValue;
       } else {
         // Ajouter une nouvelle entrée
-        step.stepValues.push({ key: fieldKey, value: finalValue });
+        step.values.push({ key: fieldKey, value: finalValue });
       }
 
       // Envoyer la mise à jour à l'API

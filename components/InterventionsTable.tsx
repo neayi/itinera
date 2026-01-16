@@ -3,6 +3,9 @@ import { ChevronDown, ChevronUp, Columns, Plus, BarChart3, Settings, RefreshCw, 
 import { InterventionData } from '@/lib/types';
 import { InterventionsDataTable } from '@/components/interventions-table';
 import { SystemIndicators } from '@/components/SystemIndicators';
+import { getRotationDurationYears } from '@/lib/calculate-rotation-duration';
+import { JsonView, allExpanded, darkStyles, defaultStyles } from 'react-json-view-lite';
+import 'react-json-view-lite/dist/index.css';
 
 interface InterventionsTableProps {
   interventions?: InterventionData[];
@@ -145,16 +148,16 @@ export function InterventionsTable({
 
   // Calculate surface from systemData if available
   const systemSurface = systemData?.surface || surface;
+  const systemYears = systemData ? getRotationDurationYears(systemData) : (endYear - startYear);
 
   return (
     <div className="relative">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <h2>Indicateurs technico-économiques</h2>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-sky-100 rounded"></div>
-            <span className="text-sm text-gray-700">Calcul réalisé par IA</span>
-          </div>
+          <div className="">
+            <span className="text-sm text-gray-700">Calculs pour {Math.round(systemSurface)} ha et {Math.round(systemYears)} ans</span>
+          </div>          
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
@@ -294,6 +297,23 @@ export function InterventionsTable({
           onUpdate={onUpdate}
           onCellFocus={onCellFocusAI}
         />
+      )}
+
+      <div className="text-right">
+        <span className="w-4 h-4 bg-sky-100 rounded inline-block mr-2"></span>
+        <span className="text-sm text-gray-700">Calcul réalisé par IA</span>
+      </div>
+
+      {/* Debug JSON - visible uniquement en développement */}
+      {process.env.NODE_ENV === 'development' && systemData && (
+        <div className="mt-6 border border-gray-300 rounded-lg overflow-hidden">
+          <div className="px-4 py-2 bg-gray-100 text-sm font-medium text-gray-700">
+            🔧 Debug - System Data JSON
+          </div>
+          <div className="p-4 bg-white overflow-auto max-h-500">
+            <JsonView data={systemData} shouldExpandNode={allExpanded} style={defaultStyles} />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -75,9 +75,9 @@ export async function calculateAndSaveStepTotals(systemId: string, systemData: a
       stepTotals.irrigation;
 
     // Get step-level values for rendementTMS, prixVente, and totalProduits
-    const existingRendementTMS = step.stepValues?.find((v: any) => v.key === 'rendementTMS');
-    const existingPrixVente = step.stepValues?.find((v: any) => v.key === 'prixVente');
-    const existingTotalProduits = step.stepValues?.find((v: any) => v.key === 'totalProduits');
+    const existingRendementTMS = step.values?.find((v: any) => v.key === 'rendementTMS');
+    const existingPrixVente = step.values?.find((v: any) => v.key === 'prixVente');
+    const existingTotalProduits = step.values?.find((v: any) => v.key === 'totalProduits');
 
     // Use step-level values if they exist
     if (existingRendementTMS) {
