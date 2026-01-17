@@ -291,8 +291,7 @@ export function InterventionsDataTable({
                 className={row.original.isStepTotal ? 'step-total-row' : ''}
               >
                 {row.getVisibleCells().map((cell) => {
-                  // Récupérer le statut reviewed, confidence et status pour les cellules numériques éditables
-                  let reviewedStatus: boolean | 'n/a' | undefined = undefined;
+                  // Récupérer le statut confidence et status pour les cellules numériques éditables
                   let confidenceLevel: 'high' | 'medium' | 'low' | undefined = undefined;
                   let valueStatus: 'user' | 'calculated' | 'ia' | 'n/a' | undefined = undefined;
                   
@@ -300,7 +299,6 @@ export function InterventionsDataTable({
                   if ((cell.column.columnDef.meta as any)?.fieldType === 'number' && !row.original.isStepTotal) {
                     const intervention = systemData.steps[row.original.stepIndex]?.interventions[row.original.interventionIndex];
                     if (intervention) {
-                      reviewedStatus = getReviewedStatus(intervention, cell.column.id);
                       const valueEntry = intervention.values?.find((v: any) => v.key === cell.column.id);
                       if (valueEntry?.confidence) {
                         confidenceLevel = valueEntry.confidence;
@@ -356,7 +354,6 @@ export function InterventionsDataTable({
                           systemData={systemData}
                           fieldKey={cell.column.id as any}
                           status={valueStatus}
-                          reviewed={reviewedStatus}
                           confidence={confidenceLevel}
                           onUpdate={onUpdate}
                           onCellFocus={onCellFocus}

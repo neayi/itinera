@@ -156,12 +156,15 @@ Où:
 
 Toujours exprimer en L/ha final.
 
+**⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
+
 ## 📤 FORMAT DE SORTIE
 
 Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant ou après):
 
 \`\`\`json
 {
+  "applicable": true,
   "value": 22.0,
   "confidence": "medium",
   "assumptions": [
@@ -192,7 +195,7 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
   ]
 }
 \`\`\`
-
+**IMPORTANT** : Le GNR (carburant) n'est applicable que pour les interventions mécaniques avec tracteur/machine thermique. Pour les interventions manuelles, électriques ou sans matériel, retourne {"applicable": false, "value": 0, "reasoning": "Pas de consommation de GNR pour cette intervention"}
 ### Champs obligatoires:
 
 - **value**: nombre décimal en L/ha (0 si opération manuelle ou électrique, null si N/A)

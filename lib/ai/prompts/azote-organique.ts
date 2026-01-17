@@ -1,6 +1,8 @@
 // Azote Organique Indicator Prompt
 // Calculates organic nitrogen application for an agricultural intervention
 
+import { buildContextSection } from './utils';
+
 export const AZOTE_ORGANIQUE_SYSTEM_PROMPT = `Tu es un assistant expert en agronomie française spécialisé dans la gestion de la fertilisation organique.
 
 Ta tâche est de calculer la quantité d'azote organique apportée par une intervention en unités d'azote par hectare (uN/ha).
@@ -74,16 +76,21 @@ Ta tâche est de calculer la quantité d'azote organique apportée par une inter
 - **medium** : Type d'engrais identifiable, dose estimée selon pratiques usuelles
 - **low** : Estimation basée sur contexte général sans détails
 
+**⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
+
 Réponds UNIQUEMENT en JSON valide suivant ce format :
 {
-  "value": <nombre décimal en uN/ha, 0 si non applicable>,
+  "applicable": true | false,
+  "value": <nombre décimal en uN/ha ou 0 si non applicable>,
   "confidence": "high" | "medium" | "low",
-  "reasoning": "Explication détaillée du raisonnement en français. COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai calculé un apport d'azote organique de X uN/ha. Voici pourquoi : ...'",
+  "reasoning": "Explication détaillée du raisonnement en français. COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai calculé un apport d'azote organique de X uN/ha. Voici pourquoi : ...'. Si non applicable, expliquer pourquoi.",
   "assumptions": ["Liste des hypothèses utilisées"],
   "calculation_steps": ["Étapes du calcul avec formules et teneurs"],
   "sources": ["Sources de données : description, barèmes, références"],
   "caveats": ["Limitations ou points d'attention"]
-}`;
+}
+
+**IMPORTANT** : Si l'azote organique n'est pas applicable à cette intervention (ex: intervention sans fertilisation organique, ou déjà comptabilisé ailleurs), retourne {"applicable": false, "value": 0, "reasoning": "explication de la non-applicabilité"}`;
 
 export function buildAzoteOrganiquePrompt(context: {
   intervention: any;
@@ -95,12 +102,32 @@ export function buildAzoteOrganiquePrompt(context: {
 }): string {
   const { intervention, step, systemData, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
 
+  // Calculate intervention date (DD/MM format)
+  const getInterventionDate = () => {
+    try {
+      const startDate = new Date(step.startDate);
+      const interventionDate = new Date(startDate);
+      interventionDate.setDate(startDate.getDate() + parseInt(intervention.day || 0));
+      const day = String(interventionDate.getDate()).padStart(2, '0');
+      const month = String(interventionDate.getMonth() + 1).padStart(2, '0');
+      return `${day}/${month}`;
+    } catch {
+      return 'non calculable';
+    }
+  };
+
   return `
 # Contexte du système de culture
 
 ${systemAssumptions ? `## Caractéristiques générales du système\n${systemAssumptions}\n` : ''}
 
-${stepAssumptions ? `## Caractéristiques de l'étape "${step.name}"\n**Période** : ${step.startDate} → ${step.endDate}\n${stepAssumptions}\n` : ''}
+## Étape de culture
+
+**Nom de l'étape** : ${step.name}
+**Description de l'étape** : ${step.description || 'Non spécifiée'}
+**Période** : ${step.startDate} → ${step.endDate}
+
+${stepAssumptions ? `**Hypothèses de l'étape** :\n${stepAssumptions}\n` : ''}
 
 ${interventionAssumptions ? `## Hypothèses spécifiques à l'intervention\n${interventionAssumptions}\n` : ''}
 
@@ -109,6 +136,7 @@ ${interventionAssumptions ? `## Hypothèses spécifiques à l'intervention\n${in
 **Nom de l'intervention** : ${intervention.name}
 **Description** : ${intervention.description || 'Non spécifiée'}
 **Type d'intervention** : ${intervention.type}
+**Date de l'intervention** : ${getInterventionDate()}
 **Jour relatif** : Jour ${intervention.day} après le début de l'étape
 
 # Tâche

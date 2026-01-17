@@ -210,6 +210,7 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
 
 \`\`\`json
 {
+  "applicable": true,
   "value": 50.0,
   "confidence": "medium",
   "assumptions": [
@@ -242,6 +243,9 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
   ]
 }
 \`\`\`
+**IMPORTANT** : L'irrigation n'est applicable que pour les interventions d'irrigation (apport d'eau). Pour les cultures non irriguées ou toute autre intervention, retourne {"applicable": false, "value": 0, "reasoning": "L'irrigation ne s'applique qu'aux interventions d'apport d'eau"}
+
+**⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
 
 ### Champs obligatoires:
 

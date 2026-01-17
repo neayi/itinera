@@ -232,6 +232,7 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
 
 \`\`\`json
 {
+  "applicable": true,
   "value": 1650.0,
   "confidence": "medium",
   "assumptions": [
@@ -262,7 +263,8 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
   ]
 }
 \`\`\`
-
+**IMPORTANT** : Le prix de vente n'est applicable QUE pour les interventions de récolte/moisson/vente. Pour toute autre intervention, retourne {"applicable": false, "value": 0, "reasoning": "Le prix de vente ne s'applique qu'aux interventions de récolte"}
+**⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
 ### Champs obligatoires:
 
 - **value**: nombre décimal en €/ha (ou "N/A" si intervention non applicable)

@@ -1,6 +1,8 @@
 // Azote Minéral Indicator Prompt
 // Calculates mineral nitrogen application for an agricultural intervention
 
+import { buildContextSection } from './utils';
+
 export const AZOTE_MINERAL_SYSTEM_PROMPT = `Tu es un assistant expert en agronomie française spécialisé dans la gestion de la fertilisation azotée.
 
 Ta tâche est de calculer la quantité d'azote minéral apportée par une intervention en unités d'azote par hectare (uN/ha).
@@ -58,16 +60,21 @@ Ta tâche est de calculer la quantité d'azote minéral apportée par une interv
 - **medium** : Type d'engrais identifiable, dose estimée selon barèmes
 - **low** : Estimation basée uniquement sur le type de culture et contexte général
 
+**⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
+
 Réponds UNIQUEMENT en JSON valide suivant ce format :
 {
-  "value": <nombre décimal en uN/ha, 0 si bio ou non applicable>,
+  "applicable": true | false,
+  "value": <nombre décimal en uN/ha ou 0 si non applicable>,
   "confidence": "high" | "medium" | "low",
-  "reasoning": "Explication détaillée du raisonnement en français. COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai calculé un apport d'azote minéral de X uN/ha. Voici pourquoi : ...'",
+  "reasoning": "Explication détaillée du raisonnement en français. COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai calculé un apport d'azote minéral de X uN/ha. Voici pourquoi : ...'. Si non applicable, expliquer pourquoi.",
   "assumptions": ["Liste des hypothèses utilisées"],
   "calculation_steps": ["Étapes du calcul avec formules"],
   "sources": ["Sources de données : description, barèmes, contexte"],
   "caveats": ["Limitations ou points d'attention"]
-}`;
+}
+
+**IMPORTANT** : Si l'azote minéral n'est pas applicable à cette intervention (ex: culture bio, légumineuse fixatrice, ou intervention sans fertilisation), retourne {"applicable": false, "value": 0, "reasoning": "explication de la non-applicabilité"}`;
 
 export function buildAzoteMineralPrompt(context: {
   intervention: any;
@@ -77,23 +84,18 @@ export function buildAzoteMineralPrompt(context: {
   stepAssumptions: string;
   interventionAssumptions: string;
 }): string {
-  const { intervention, step, systemData, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+  const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+
+  const contextSection = buildContextSection(
+    systemAssumptions,
+    step,
+    stepAssumptions,
+    interventionAssumptions,
+    intervention
+  );
 
   return `
-# Contexte du système de culture
-
-${systemAssumptions ? `## Caractéristiques générales du système\n${systemAssumptions}\n` : ''}
-
-${stepAssumptions ? `## Caractéristiques de l'étape "${step.name}"\n**Période** : ${step.startDate} → ${step.endDate}\n${stepAssumptions}\n` : ''}
-
-${interventionAssumptions ? `## Hypothèses spécifiques à l'intervention\n${interventionAssumptions}\n` : ''}
-
-# Intervention à analyser
-
-**Nom de l'intervention** : ${intervention.name}
-**Description** : ${intervention.description || 'Non spécifiée'}
-**Type d'intervention** : ${intervention.type}
-**Jour relatif** : Jour ${intervention.day} après le début de l'étape
+${contextSection}
 
 # Tâche
 

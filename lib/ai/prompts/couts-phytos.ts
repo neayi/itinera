@@ -127,6 +127,7 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
 
 \`\`\`json
 {
+  "applicable": true,
   "value": 35.5,
   "confidence": "medium",
   "assumptions": [
@@ -155,6 +156,9 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
   ]
 }
 \`\`\`
+**IMPORTANT** : Le coût des phytos n'est applicable que pour les interventions phytosanitaires (traitements herbicides, fongicides, insecticides). Pour toute autre intervention, retourne {"applicable": false, "value": 0, "reasoning": "Le coût des phytos ne s'applique qu'aux interventions phytosanitaires"}
+
+**⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
 
 ### Champs obligatoires:
 

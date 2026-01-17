@@ -100,7 +100,7 @@ export async function POST(request: Request) {
 
     // Update the value with refined results
     valueEntry.value = result.value;
-    valueEntry.reviewed = false; // Refined values remain unreviewed until user confirms
+    valueEntry.status = result.status || 'ia'; // Use status from AI ('ia' or 'n/a'), default to 'ia'
     valueEntry.confidence = result.confidence;
     valueEntry.conversation = result.conversation;
 

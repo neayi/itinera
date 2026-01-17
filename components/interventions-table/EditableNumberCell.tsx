@@ -32,7 +32,6 @@ interface EditableNumberCellProps {
   systemData: any;
   fieldKey: FieldKey;
   status?: ValueStatus;
-  reviewed?: boolean | 'n/a';
   confidence?: 'high' | 'medium' | 'low';
   onUpdate?: (updatedSystemData?: any) => void;
   onCellFocus?: (stepIndex: number, interventionIndex: number, indicatorKey: string) => void;
@@ -46,7 +45,6 @@ export function EditableNumberCell({
   systemData,
   fieldKey,
   status,
-  reviewed,
   confidence,
   onUpdate,
   onCellFocus
@@ -132,7 +130,6 @@ export function EditableNumberCell({
         const oldValue = intervention.values[idx].value;
         intervention.values[idx].value = finalValue;
         intervention.values[idx].status = 'user';
-        intervention.values[idx].reviewed = true;
         
         // If there's an existing conversation and the value changed, add a manual edit message
         if (intervention.values[idx].conversation && intervention.values[idx].conversation.length > 0 && valueChanged) {
@@ -146,8 +143,7 @@ export function EditableNumberCell({
         intervention.values.push({ 
           key: fieldKey, 
           value: finalValue, 
-          status: 'user',
-          reviewed: true 
+          status: 'user'
         });
       }
 
@@ -241,9 +237,6 @@ export function EditableNumberCell({
     );
   }
 
-  // Déterminer si la cellule doit avoir un fond jaune
-  const needsReview = reviewed !== true && reviewed !== 'n/a';
-
   // Show clickable span for empty cells (calculation now triggered from AI Assistant panel)
   if (isEmpty) {
     return (
@@ -274,8 +267,8 @@ export function EditableNumberCell({
         minHeight: '1.5rem',
         borderRadius: '0.25rem',
       }}
-      className={`${needsReview ? 'needsReview' : ''} ${cellClassName}`.trim()}
-      title={needsReview ? "Valeur à vérifier (cliquer pour éditer)" : "Cliquer pour éditer"}
+      className={cellClassName}
+      title="Cliquer pour éditer"
     >
       <span style={{ flex: 1 }}>{formatValue(value, fieldKey)}</span>    
     </span>

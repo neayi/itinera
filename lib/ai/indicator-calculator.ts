@@ -7,6 +7,7 @@ import { buildGesPrompt, GES_SYSTEM_PROMPT } from './prompts/ges';
 import { buildAzoteMineralPrompt, AZOTE_MINERAL_SYSTEM_PROMPT } from './prompts/azote-mineral';
 import { buildAzoteOrganiquePrompt, AZOTE_ORGANIQUE_SYSTEM_PROMPT } from './prompts/azote-organique';
 import { buildRendementPrompt, RENDEMENT_SYSTEM_PROMPT } from './prompts/rendement';
+import { buildContextSection } from './prompts/utils';
 import { COUTS_PHYTOS_PROMPT } from './prompts/couts-phytos';
 import { SEMENCES_PROMPT } from './prompts/semences';
 import { ENGRAIS_PROMPT } from './prompts/engrais';
@@ -29,6 +30,25 @@ function cleanJsonResponse(response: string): string {
     cleaned = cleaned.replace(/^```\s*/, '').replace(/```\s*$/, '');
   }
   return cleaned.trim();
+}
+
+/**
+ * Calculate intervention date from step start date and intervention day offset
+ * Returns date formatted as DD/MM (without year)
+ */
+function formatInterventionDate(stepStartDate: string, interventionDay: number): string {
+  try {
+    const startDate = new Date(stepStartDate);
+    const interventionDate = new Date(startDate);
+    interventionDate.setDate(startDate.getDate() + interventionDay);
+    
+    const day = String(interventionDate.getDate()).padStart(2, '0');
+    const month = String(interventionDate.getMonth() + 1).padStart(2, '0');
+    
+    return `${day}/${month}`;
+  } catch (error) {
+    return 'Date non calculable';
+  }
 }
 
 export class IndicatorCalculator {
@@ -71,10 +91,35 @@ export class IndicatorCalculator {
       { role: 'user' as const, content: prompt },
     ];
 
+    // Debug logs (development only)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('\n========== AI PROMPT DEBUG ==========');
+      console.log(`Indicator: ${indicatorKey}`);
+      console.log(`Intervention: ${intervention.name}`);
+      console.log('\n--- SYSTEM MESSAGE ---');
+      console.log(systemMessage);
+      console.log('\n--- USER PROMPT ---');
+      console.log(prompt);
+      console.log('=====================================\n');
+    }
+
     try {
       const response = await callGPT(messages);
       const cleanedResponse = cleanJsonResponse(response);
       const parsed = JSON.parse(cleanedResponse);
+
+      // Debug logs (development only)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('\n========== AI RESPONSE DEBUG ==========');
+        console.log(`Indicator: ${indicatorKey}`);
+        console.log(response);
+        console.log('=======================================\n');
+      }
+
+      // Store updated assumptions in intervention (replacing previous ones)
+      if (parsed.assumptions && parsed.assumptions.length > 0) {
+        intervention.assumptions = parsed.assumptions.join('\n');
+      }
 
       // Build conversation history
       const conversation: ConversationMessage[] = [
@@ -95,6 +140,10 @@ export class IndicatorCalculator {
         },
       ];
 
+      // Determine status based on applicability
+      const isApplicable = parsed.applicable !== false; // Default to true if not specified
+      const status = isApplicable ? 'ia' : 'n/a';
+
       return {
         value: parsed.value,
         confidence: parsed.confidence || 'medium',
@@ -102,6 +151,7 @@ export class IndicatorCalculator {
         sources: parsed.sources || [],
         calculationSteps: parsed.calculation_steps,
         caveats: parsed.caveats,
+        status, // Add status field to result
       };
     } catch (error: any) {
       throw new Error(`Failed to calculate indicator: ${error.message}`);
@@ -150,13 +200,42 @@ export class IndicatorCalculator {
     // Add user's refinement request
     messages.push({
       role: 'user',
-      content: `Demande de raffinement : ${userMessage}\n\nVeuillez recalculer la valeur si nécessaire et répondre en JSON avec : { "value": number, "confidence": "high"|"medium"|"low", "reasoning": string, "assumptions": string[], "calculation_steps": string[], "sources": string[], "caveats": string[] }\n\n**IMPORTANT** : Dans le "reasoning", commencez TOUJOURS par annoncer la nouvelle valeur calculée. Par exemple : "J'ai calculé une nouvelle valeur de 150 pour cet indicateur. Voici pourquoi : ..."`,
+      content: `Demande de raffinement : ${userMessage}\n\nVeuillez recalculer la valeur si nécessaire et répondre en JSON avec : { "applicable": true|false, "value": number, "confidence": "high"|"medium"|"low", "reasoning": string, "assumptions": string[], "calculation_steps": string[], "sources": string[], "caveats": string[] }\n\n**IMPORTANT** : \n1. Si l'indicateur n'est pas applicable, retournez {"applicable": false, "value": 0, "reasoning": "explication"}\n2. Sinon, dans le "reasoning", commencez TOUJOURS par annoncer la nouvelle valeur calculée. Par exemple : "J'ai calculé une nouvelle valeur de 150 pour cet indicateur. Voici pourquoi : ..."\n3. Dans le champ "assumptions" : retourne la liste COMPLÈTE et MISE À JOUR de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles hypothèses). Intègre les nouvelles informations fournies par l'utilisateur dans cette liste complète.`,
     });
+
+    // Debug logs (development only)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('\n========== AI REFINE PROMPT DEBUG ==========');
+      console.log(`Indicator: ${indicatorKey}`);
+      console.log(`User message: ${userMessage}`);
+      console.log('\n--- FULL CONVERSATION ---');
+      messages.forEach((msg, idx) => {
+        console.log(`\n[${idx}] ${msg.role.toUpperCase()}:`);
+        console.log(msg.content);
+      });
+      console.log('\n============================================\n');
+    }
 
     try {
       const response = await callGPT(messages);
       const cleanedResponse = cleanJsonResponse(response);
       const parsed = JSON.parse(cleanedResponse);
+
+      // Debug logs (development only)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('\n========== AI REFINE RESPONSE DEBUG ==========');
+        console.log(`Indicator: ${indicatorKey}`);
+        console.log('\n--- RAW RESPONSE ---');
+        console.log(response);
+        console.log('\n--- PARSED JSON ---');
+        console.log(JSON.stringify(parsed, null, 2));
+        console.log('==============================================\n');
+      }
+
+      // Store updated assumptions in intervention (replacing previous ones)
+      if (parsed.assumptions && parsed.assumptions.length > 0) {
+        intervention.assumptions = parsed.assumptions.join('\n');
+      }
 
       // Build updated conversation
       const updatedConversation: ConversationMessage[] = [
@@ -178,6 +257,10 @@ export class IndicatorCalculator {
         },
       ];
 
+      // Determine status based on applicability
+      const isApplicable = parsed.applicable !== false; // Default to true if not specified
+      const status = isApplicable ? 'ia' : 'n/a';
+
       return {
         value: parsed.value,
         confidence: parsed.confidence || 'medium',
@@ -185,6 +268,7 @@ export class IndicatorCalculator {
         sources: parsed.sources || [],
         calculationSteps: parsed.calculation_steps,
         caveats: parsed.caveats,
+        status, // Add status field to result
       };
     } catch (error: any) {
       throw new Error(`Failed to refine value: ${error.message}`);
@@ -294,32 +378,22 @@ export class IndicatorCalculator {
       
       // Add more indicators as they are implemented
       default:
-        // Fallback to generic prompt
+        // Fallback to generic prompt - use shared context builder
         const { intervention, step, systemData, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
 
+        // Build context section using shared utility
+        const contextString = buildContextSection(
+          systemAssumptions,
+          step,
+          stepAssumptions,
+          interventionAssumptions,
+          intervention
+        );
+
         // Determine if this indicator should be per hectare
-        const perHectareIndicators = [
-          'azoteMineral', 'azoteOrganique', 'ges', 'tempsTravail',
-          'coutsPhytos', 'semences', 'engrais', 'mecanisation', 'gnr', 'irrigation',
-          'ift', 'eiq', 'rendementTMS', 'prixVente', 'margeBrute', 'totalCharges', 'totalProduits'
-        ];
-        const isPerHectare = perHectareIndicators.includes(indicatorKey);
+        const isPerHectare = 'frequence' != indicatorKey;
         
-        return `
-# Contexte du système
-
-${systemAssumptions ? `## Caractéristiques du système\n${systemAssumptions}\n` : ''}
-
-${stepAssumptions ? `## Caractéristiques de l'étape "${step.name}"\n${stepAssumptions}\n` : ''}
-
-${interventionAssumptions ? `## Caractéristiques de l'intervention\n${interventionAssumptions}\n` : ''}
-
-# Intervention à analyser
-
-**Nom** : ${intervention.name}
-**Description** : ${intervention.description || 'Non spécifiée'}
-**Type** : ${intervention.type}
-**Date** : Jour ${intervention.day} après le début de l'étape
+        return `${contextString}
 
 # Tâche
 
@@ -392,16 +466,10 @@ Réponds en JSON valide avec cette structure :
       // Add more indicators as they are implemented
       default:
         // Determine if this indicator should be per hectare
-        const perHectareIndicators = [
-          'azoteMineral', 'azoteOrganique', 'ges', 'tempsTravail',
-          'coutsPhytos', 'semences', 'engrais', 'mecanisation', 'gnr', 'irrigation',
-          'ift', 'eiq', 'rendementTMS', 'prixVente', 'margeBrute', 'totalCharges', 'totalProduits'
-        ];
-        const isPerHectare = perHectareIndicators.includes(indicatorKey);
-        
+       
         return `Tu es un assistant expert en agronomie française. Tu dois analyser les données agricoles et calculer des indicateurs avec précision.
-
-${isPerHectare ? `**⚠️ RÈGLE CRITIQUE - CALCUL PAR HECTARE** : L'indicateur "${indicatorKey}" doit TOUJOURS être exprimé **PAR HECTARE**. Peu importe les données sources (totales, par parcelle, etc.), tu dois RAMENER le résultat final à l'hectare. Les unités attendues sont : €/ha, kg/ha, h/ha, kg CO2e/ha, uN/ha, qtx/ha selon l'indicateur.
+        
+**⚠️ RÈGLE CRITIQUE - CALCUL PAR HECTARE** : L'indicateur "${indicatorKey}" doit TOUJOURS être exprimé **PAR HECTARE**. Peu importe les données sources (totales, par parcelle, etc.), tu dois RAMENER le résultat final à l'hectare. Les unités attendues sont : €/ha, kg/ha, h/ha, kg CO2e/ha, uN/ha, qtx/ha selon l'indicateur.
 
 Si tu disposes de :
 - Valeurs totales pour une surface S : divise par S pour obtenir /ha
@@ -414,7 +482,7 @@ Exemples :
 - Temps de travail 8h pour 20 ha → 8/20 = 0.4 h/ha ✓
 - GES 150 kg pour 10 ha → 150/10 = 15 kg CO2e/ha ✓
 
-` : ''}Réponds toujours en JSON valide.`;
+Réponds toujours en JSON valide.`;
     }
   }
 
@@ -435,28 +503,16 @@ Exemples :
       interventionAssumptions: string;
     }
   ): string {
-    const { intervention, step, systemData, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+    const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
 
-    // Build context string
-    let contextString = '';
-    
-    if (systemAssumptions) {
-      contextString += `## 🌾 Caractéristiques du système de culture\n\n${systemAssumptions}\n\n`;
-    }
-    
-    if (stepAssumptions) {
-      contextString += `## 📅 Caractéristiques de l'étape "${step.name}"\n\n${stepAssumptions}\n\n`;
-    }
-    
-    contextString += `## 🚜 Intervention à analyser\n\n`;
-    contextString += `**Nom** : ${intervention.name}\n`;
-    contextString += `**Description** : ${intervention.description || 'Non spécifiée'}\n`;
-    contextString += `**Type** : ${intervention.type}\n`;
-    contextString += `**Date** : Jour ${intervention.day} après le début de l'étape\n`;
-    
-    if (interventionAssumptions) {
-      contextString += `\n**Hypothèses supplémentaires** :\n${interventionAssumptions}\n`;
-    }
+    // Use shared context builder from utils
+    const contextString = buildContextSection(
+      systemAssumptions,
+      step,
+      stepAssumptions,
+      interventionAssumptions,
+      intervention
+    );
 
     // Replace {context} placeholder
     return template.replace('{context}', contextString);

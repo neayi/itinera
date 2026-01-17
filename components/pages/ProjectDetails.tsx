@@ -3,13 +3,9 @@ import { ArrowLeft, FolderOpen, Download, Trash2, Settings, ChevronsRight, Chevr
 import { TopBar } from '@/components/TopBar';
 import { ContextPanel } from '@/components/ContextPanel';
 import { InterventionsTable } from '@/components/InterventionsTable';
-import { ChatBot } from '@/components/ChatBot';
 import { AIAssistant } from '@/components/ai-assistant';
 import CalculationAlert from '@/components/ai-assistant/CalculationAlert';
-import { InterventionData, RotationData } from '@/lib/types';
-import { variant1Interventions } from '@/lib/data/variant1Interventions';
 import { ItineraireTechnique, ItineraireTechniqueRef } from '@/components/ItineraireTechnique';
-import { InterventionsDataTable } from '@/components/interventions-table';
 import { useDebouncedSave, SaveStatus } from '@/lib/hooks/useDebouncedSave';
 import { calculateSystemTotals } from '@/lib/calculate-system-totals';
 
@@ -110,92 +106,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       });
   };
 
-  const [rotationData] = useState<RotationData[]>([
-    {
-      id: 'r1',
-      name: 'Orge + Lupin',
-      startDate: new Date('2027-09-15'),
-      endDate: new Date('2028-07-10'),
-      color: '#F59E0B',
-      layer: 0
-    },
-    {
-      id: 'r2',
-      name: 'Luzerne + trèfle violet et blanc',
-      startDate: new Date('2028-08-01'),
-      endDate: new Date('2029-05-20'),
-      color: '#8B5CF6',
-      layer: 0
-    },
-    {
-      id: 'r3',
-      name: 'CIVE (Triticale)',
-      startDate: new Date('2029-02-15'),
-      endDate: new Date('2029-05-20'),
-      color: '#10B981',
-      layer: 0
-    },
-    {
-      id: 'r4',
-      name: 'Quinoa',
-      startDate: new Date('2029-06-15'),
-      endDate: new Date('2029-09-10'),
-      color: '#06B6D4',
-      layer: 0
-    },
-    {
-      id: 'r5',
-      name: 'Blé + féverole',
-      startDate: new Date('2029-11-01'),
-      endDate: new Date('2030-07-25'),
-      color: '#F59E0B',
-      layer: 0
-    },
-    {
-      id: 'r6',
-      name: 'Colza + sarrasin',
-      startDate: new Date('2030-08-05'),
-      endDate: new Date('2031-07-15'),
-      color: '#FBBF24',
-      layer: 0
-    },
-    {
-      id: 'r7',
-      name: 'Maïs grain',
-      startDate: new Date('2031-10-20'),
-      endDate: new Date('2032-10-15'),
-      color: '#EAB308',
-      layer: 0
-    },
-    {
-      id: 'r8',
-      name: 'Phacélie (couvert)',
-      startDate: new Date('2032-11-01'),
-      endDate: new Date('2033-03-15'),
-      color: '#84CC16',
-      layer: 0
-    },
-    {
-      id: 'r9',
-      name: 'Méteil grain',
-      startDate: new Date('2033-03-25'),
-      endDate: new Date('2033-07-15'),
-      color: '#22C55E',
-      layer: 0
-    }
-  ]);
-
   const [currentVariant, setCurrentVariant] = useState(variant);
-  const [showVariantSelector, setShowVariantSelector] = useState(false);
-  const [aiMessage, setAiMessage] = useState('');
-  const [chatOpen, setChatOpen] = useState(true);
-  const [focusedCell, setFocusedCell] = useState<{ interventionName: string; columnName: string } | null>(null);
-  const [contextualMessages, setContextualMessages] = useState<Array<{
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: Date;
-  }>>([]);
 
   // AI Assistant state
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
@@ -219,43 +130,6 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
 
     return () => clearTimeout(timeoutId);
   }, [isAIAssistantOpen]);
-
-  const variants = ['Originale', 'Variante 1'];
-
-  const getColumnLabel = (columnName: string): string => {
-    const labels: Record<string, string> = {
-      semences: 'semences',
-      engrais: 'engrais',
-      azoteMineral: 'unités minéral',
-      azoteOrganique: 'azote organique',
-      oligos: 'rendement',
-      phytos: 'phytos',
-      ift: 'IFT',
-      hri1: 'HRI1',
-      mecanisation: 'mécanisation',
-      irrigation: 'irrigation',
-      workTime: 'temps de travail',
-      gnr: 'GNR',
-      ges: 'GES',
-      charges: 'charges',
-      prixVente: 'prix de vente',
-      margeBrute: 'marge brute'
-    };
-    return labels[columnName] || columnName;
-  };
-
-  const handleCellChange = (interventionName: string, columnName: string, oldValue: any, newValue: any) => {
-    if (chatOpen) {
-      const columnLabel = getColumnLabel(columnName);
-      const newMessage = {
-        id: Date.now().toString(),
-        role: 'assistant' as const,
-        content: 'Je vois que vous avez modifié le montant des ' + columnLabel + ' pour "' + interventionName + '", pouvez-vous m' + String.fromCharCode(39) + 'expliquer pourquoi ?',
-        timestamp: new Date()
-      };
-      setContextualMessages(prev => [...prev, newMessage]);
-    }
-  };
 
   const handleCalculateIndicator = async () => {
     if (!aiAssistantFocusedCell) return;
@@ -520,8 +394,6 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
               surface={projectSurface}
               startYear={rotationStartYear}
               endYear={rotationEndYear}
-              onCellBlur={() => setFocusedCell(null)}
-              onCellChange={handleCellChange}
               systemData={systemData}
               systemId={projectId}
               onUpdate={fetchSystemData}
@@ -535,17 +407,6 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
           </section>
 
         </main>
-
-        {/* ChatBot side panel */}
-        {/* <ChatBot
-          isOpen={chatOpen}
-          setIsOpen={setChatOpen}
-          focusedCell={focusedCell}
-          contextualMessages={contextualMessages}
-          onAddContextualMessage={(message) => {
-            setContextualMessages(prev => [...prev, message]);
-          }}
-        /> */}
 
         {/* AI Assistant panel */}
         <AIAssistant

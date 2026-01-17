@@ -29,6 +29,7 @@ export interface CalculationResult {
   sources: string[];
   calculationSteps?: string[];
   caveats?: string[];
+  status?: 'ia' | 'n/a'; // Status: 'ia' if applicable, 'n/a' if not applicable
 }
 
 export interface InterventionValue {

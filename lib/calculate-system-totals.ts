@@ -60,13 +60,11 @@ export function calculateSystemTotals(systemData: any) {
           }
           intervention.values[idx].value = value;
           intervention.values[idx].status = status;
-          intervention.values[idx].reviewed = true;
         } else {
           intervention.values.push({
             key,
             value,
             status,
-            reviewed: true,
           });
         }
       };
@@ -183,7 +181,6 @@ export function calculateSystemTotals(systemData: any) {
         key,
         value,
         status: 'calculated',
-        reviewed: true,
       };
     });
 
@@ -206,7 +203,6 @@ export function calculateSystemTotals(systemData: any) {
     key,
     value,
     status: 'calculated',
-    reviewed: true,
   }));
 
   // LEVEL 4: Calculate system-level indicators per ha per year

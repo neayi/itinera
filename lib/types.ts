@@ -129,7 +129,6 @@ export interface InterventionValue {
   key: string;
   value: number | string;
   status?: ValueStatus;
-  reviewed?: boolean;
   confidence?: ConfidenceLevel;
   conversation?: ConversationMessage[];
 }
@@ -138,7 +137,6 @@ export interface StepValue {
   key: string;
   value: number | string;
   status?: ValueStatus;
-  reviewed?: boolean;
   confidence?: ConfidenceLevel;
   conversation?: ConversationMessage[];
 }

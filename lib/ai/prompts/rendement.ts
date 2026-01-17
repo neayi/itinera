@@ -1,6 +1,8 @@
 // Rendement Indicator Prompt  
 // Estimates crop yield for harvest interventions
 
+import { buildContextSection } from './utils';
+
 export const RENDEMENT_SYSTEM_PROMPT = `Tu es un assistant expert en agronomie française spécialisé dans l'estimation des rendements des cultures.
 
 Ta tâche est d'estimer le rendement d'une culture en quintaux par hectare (qtx/ha) lors de l'intervention de récolte.
@@ -88,16 +90,21 @@ Ta tâche est d'estimer le rendement d'une culture en quintaux par hectare (qtx/
 - **Fourrage** : cumul des coupes annuelles
 - **Cultures dérobées** : rendements plus faibles (50-70% d'une culture principale)
 
+**⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
+
 Réponds UNIQUEMENT en JSON valide suivant ce format :
 {
-  "value": <nombre entier en qtx/ha, ou "N/A" si non récolte>,
+  "applicable": true | false,
+  "value": <nombre entier en qtx/ha ou 0 si non applicable>,
   "confidence": "high" | "medium" | "low",
-  "reasoning": "Explication détaillée du raisonnement en français. COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai estimé un rendement de X qtx/ha. Voici pourquoi : ...'",
+  "reasoning": "Explication détaillée du raisonnement en français. COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai estimé un rendement de X qtx/ha. Voici pourquoi : ...'. Si non applicable (pas une récolte), expliquer pourquoi.",
   "assumptions": ["Liste des hypothèses utilisées"],
   "calculation_steps": ["Étapes du raisonnement et ajustements"],
   "sources": ["Sources de données : statistiques régionales, barèmes, contexte"],
   "caveats": ["Limitations ou points d'attention"]
-}`;
+}
+
+**IMPORTANT** : Le rendement n'est applicable QUE pour les interventions de récolte/moisson/fauche. Pour toute autre intervention, retourne {"applicable": false, "value": 0, "reasoning": "Le rendement ne s'applique qu'aux interventions de récolte"}`;
 
 export function buildRendementPrompt(context: {
   intervention: any;
@@ -107,23 +114,18 @@ export function buildRendementPrompt(context: {
   stepAssumptions: string;
   interventionAssumptions: string;
 }): string {
-  const { intervention, step, systemData, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+  const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+
+  const contextSection = buildContextSection(
+    systemAssumptions,
+    step,
+    stepAssumptions,
+    interventionAssumptions,
+    intervention
+  );
 
   return `
-# Contexte du système de culture
-
-${systemAssumptions ? `## Caractéristiques générales du système\n${systemAssumptions}\n` : ''}
-
-${stepAssumptions ? `## Caractéristiques de l'étape "${step.name}"\n**Période** : ${step.startDate} → ${step.endDate}\n${stepAssumptions}\n` : ''}
-
-${interventionAssumptions ? `## Hypothèses spécifiques à l'intervention\n${interventionAssumptions}\n` : ''}
-
-# Intervention à analyser
-
-**Nom de l'intervention** : ${intervention.name}
-**Description** : ${intervention.description || 'Non spécifiée'}
-**Type d'intervention** : ${intervention.type}
-**Jour relatif** : Jour ${intervention.day} après le début de l'étape
+${contextSection}
 
 # Tâche
 

@@ -1,6 +1,8 @@
 // Frequence Indicator Prompt
 // Determines the annual frequency of an agricultural intervention
 
+import { buildContextSection } from './utils';
+
 export const FREQUENCE_SYSTEM_PROMPT = `Tu es un assistant expert en agronomie française spécialisé dans l'analyse des itinéraires techniques.
 
 Ta tâche est de déterminer la fréquence annuelle d'une intervention agricole en analysant son nom et sa description.
@@ -28,16 +30,21 @@ Ta tâche est de déterminer la fréquence annuelle d'une intervention agricole 
 - **medium** : Basé sur le type d'intervention et le contexte cultural (bio, conventionnel)
 - **low** : Basé uniquement sur des hypothèses générales, contexte insuffisant
 
+**⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
+
 Réponds UNIQUEMENT en JSON valide suivant ce format :
 {
-  "value": <nombre entier>,
+  "applicable": true | false,
+  "value": <nombre entier ou 0 si non applicable>,
   "confidence": "high" | "medium" | "low",
-  "reasoning": "Explication détaillée du raisonnement en français. COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai calculé une fréquence de X. Voici pourquoi : ...'",
+  "reasoning": "Explication détaillée du raisonnement en français. Si non applicable, explique pourquoi. Sinon COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai calculé une fréquence de X. Voici pourquoi : ...'",
   "assumptions": ["Liste des hypothèses utilisées"],
   "calculation_steps": ["Étapes du raisonnement"],
   "sources": ["Sources de données : description, nom, contexte, etc."],
   "caveats": ["Limitations ou points d'attention"]
-}`;
+}
+
+IMPORTANT : Si l'indicateur n'est pas applicable à cette intervention spécifique (par exemple, pas d'azote pour une culture non fertilisée, pas d'irrigation pour une culture pluviale, etc.), retourne {"applicable": false, "value": 0, "reasoning": "explication pourquoi non applicable"}. Sinon, retourne {"applicable": true, ...}`;
 
 export function buildFrequencePrompt(context: {
   intervention: any;
@@ -47,23 +54,18 @@ export function buildFrequencePrompt(context: {
   stepAssumptions: string;
   interventionAssumptions: string;
 }): string {
-  const { intervention, step, systemData, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+  const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+
+  const contextSection = buildContextSection(
+    systemAssumptions,
+    step,
+    stepAssumptions,
+    interventionAssumptions,
+    intervention
+  );
 
   return `
-# Contexte du système de culture
-
-${systemAssumptions ? `## Caractéristiques générales du système\n${systemAssumptions}\n` : ''}
-
-${stepAssumptions ? `## Caractéristiques de l'étape "${step.name}"\n**Période** : ${step.startDate} → ${step.endDate}\n${stepAssumptions}\n` : ''}
-
-${interventionAssumptions ? `## Hypothèses spécifiques à l'intervention\n${interventionAssumptions}\n` : ''}
-
-# Intervention à analyser
-
-**Nom de l'intervention** : ${intervention.name}
-**Description** : ${intervention.description || 'Non spécifiée'}
-**Type d'intervention** : ${intervention.type}
-**Jour relatif** : Jour ${intervention.day} après le début de l'étape
+${contextSection}
 
 # Tâche
 

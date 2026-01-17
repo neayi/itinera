@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
     // Update the value with AI results
     valueEntry.value = result.value;
-    valueEntry.reviewed = false; // AI-calculated values start as unreviewed
+    valueEntry.status = result.status || 'ia'; // Use status from AI ('ia' or 'n/a'), default to 'ia'
     valueEntry.confidence = result.confidence;
     valueEntry.conversation = result.conversation;
 
