@@ -69,18 +69,30 @@ export class IndicatorCalculator {
     }
 
     // Build hierarchical assumptions
-    const systemAssumptions = systemData.assumptions || '';
-    const stepAssumptions = step.assumptions || '';
-    const interventionAssumptions = intervention.assumptions || '';
+    // Support both array (new format) and string (old format) for backward compatibility
+    const systemAssumptions = systemData.assumptions || [];
+    const stepAssumptions = step.assumptions || [];
+    const interventionAssumptions = intervention.assumptions || [];
+
+    // Convert to arrays if they're still stored as strings (backward compatibility)
+    const systemAssumptionsArray = Array.isArray(systemAssumptions) 
+      ? systemAssumptions 
+      : (systemAssumptions ? systemAssumptions.split('\n').filter(Boolean) : []);
+    const stepAssumptionsArray = Array.isArray(stepAssumptions) 
+      ? stepAssumptions 
+      : (stepAssumptions ? stepAssumptions.split('\n').filter(Boolean) : []);
+    const interventionAssumptionsArray = Array.isArray(interventionAssumptions) 
+      ? interventionAssumptions 
+      : (interventionAssumptions ? interventionAssumptions.split('\n').filter(Boolean) : []);
 
     // Get appropriate prompt for this indicator
     const prompt = this.buildPrompt(indicatorKey, {
       intervention,
       step,
       systemData,
-      systemAssumptions,
-      stepAssumptions,
-      interventionAssumptions,
+      systemAssumptions: systemAssumptionsArray,
+      stepAssumptions: stepAssumptionsArray,
+      interventionAssumptions: interventionAssumptionsArray,
     });
 
     // Call OpenAI with indicator-specific system prompt
@@ -116,9 +128,9 @@ export class IndicatorCalculator {
         console.log('=======================================\n');
       }
 
-      // Store updated assumptions in intervention (replacing previous ones)
+      // Store updated assumptions in intervention as array (replacing previous ones)
       if (parsed.assumptions && parsed.assumptions.length > 0) {
-        intervention.assumptions = parsed.assumptions.join('\n');
+        intervention.assumptions = parsed.assumptions;
       }
 
       // Build conversation history
@@ -232,9 +244,9 @@ export class IndicatorCalculator {
         console.log('==============================================\n');
       }
 
-      // Store updated assumptions in intervention (replacing previous ones)
+      // Store updated assumptions in intervention as array (replacing previous ones)
       if (parsed.assumptions && parsed.assumptions.length > 0) {
-        intervention.assumptions = parsed.assumptions.join('\n');
+        intervention.assumptions = parsed.assumptions;
       }
 
       // Build updated conversation
@@ -304,9 +316,9 @@ export class IndicatorCalculator {
       intervention: any;
       step: any;
       systemData: any;
-      systemAssumptions: string;
-      stepAssumptions: string;
-      interventionAssumptions: string;
+      systemAssumptions: string[];
+      stepAssumptions: string[];
+      interventionAssumptions: string[];
     }
   ): string {
     // Route to specific prompt based on indicator type
@@ -498,9 +510,9 @@ Réponds toujours en JSON valide.`;
       intervention: any;
       step: any;
       systemData: any;
-      systemAssumptions: string;
-      stepAssumptions: string;
-      interventionAssumptions: string;
+      systemAssumptions: string[];
+      stepAssumptions: string[];
+      interventionAssumptions: string[];
     }
   ): string {
     const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;

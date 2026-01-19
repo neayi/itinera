@@ -32,6 +32,15 @@ Ta tâche est de déterminer la fréquence annuelle d'une intervention agricole 
 
 **⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
 
+**⚠️ CONSERVATION DES HYPOTHÈSES D'INTERVENTION** : Si des "Hypothèses spécifiques à l'intervention" te sont fournies dans le contexte ci-dessous, tu DOIS les conserver intégralement dans ta réponse, sauf si elles sont explicitement contredites ou modifiées par les nouvelles informations de cette interaction. Ne supprime JAMAIS des hypothèses d'intervention existantes sans raison valable.
+
+**⚠️ VÉRIFICATION CRITIQUE** : Le champ "value" DOIT correspondre EXACTEMENT au résultat final de la dernière ligne de "calculation_steps". Si ton calcul donne 35.63, alors "value" doit être 35.63, PAS 56.55 ou une autre valeur. Vérifie toujours cette cohérence avant de retourner le JSON.
+
+**⚠️ COHÉRENCE DES CALCULS** :
+- NE corrige PAS les résultats de tes calculs par des "ordres de grandeur métiers" ou "valeurs de référence". Si ton calcul donne 0.83, ne renvoie PAS 0.2 sous prétexte que "c'est plus proche des valeurs habituelles".
+- Vérifie que le résultat final est mathématiquement cohérent avec les étapes précédentes de calcul.
+- Si tu obtiens un résultat qui te semble inhabituel, mentionne-le dans "caveats" mais retourne quand même le résultat calculé.
+
 Réponds UNIQUEMENT en JSON valide suivant ce format :
 {
   "applicable": true | false,
@@ -50,9 +59,9 @@ export function buildFrequencePrompt(context: {
   intervention: any;
   step: any;
   systemData: any;
-  systemAssumptions: string;
-  stepAssumptions: string;
-  interventionAssumptions: string;
+  systemAssumptions: string[];
+  stepAssumptions: string[];
+  interventionAssumptions: string[];
 }): string {
   const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
 
@@ -61,7 +70,8 @@ export function buildFrequencePrompt(context: {
     step,
     stepAssumptions,
     interventionAssumptions,
-    intervention
+    intervention,
+    'frequence'
   );
 
   return `

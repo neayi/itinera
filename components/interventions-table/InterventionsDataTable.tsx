@@ -33,13 +33,6 @@ export function InterventionsDataTable({
     return item ? (typeof item.value === 'number' ? item.value : 0) : 0;
   };
 
-  // Fonction utilitaire pour récupérer le statut reviewed
-  const getReviewedStatus = (intervention: any, key: string): boolean | 'n/a' | undefined => {
-    if (!intervention.values || !Array.isArray(intervention.values)) return undefined;
-    const item = intervention.values.find((v: any) => v.key === key);
-    return item?.reviewed;
-  };
-
   // Fonction utilitaire pour récupérer une valeur au niveau de l'étape
   const getStepLevelValue = (step: any, key: string): number | undefined => {
     if (!step.values || !Array.isArray(step.values)) return undefined;

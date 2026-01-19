@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { parseAssumptionsMarkdown, detectConflicts } from '@/lib/ai/assumptions-parser';
 
 interface AssumptionsPanelProps {
-  systemAssumptions?: string;
-  stepAssumptions?: string;
-  interventionAssumptions?: string;
+  systemAssumptions?: string | string[];
+  stepAssumptions?: string | string[];
+  interventionAssumptions?: string | string[];
   stepName?: string;
   interventionName?: string;
 }

@@ -15,14 +15,29 @@ export interface ParsedAssumption {
 /**
  * Parse markdown assumptions text into structured list
  * Extracts bullet points and their context
+ * @param markdown - Can be a string (old format) or string[] (new format)
  */
-export function parseAssumptionsMarkdown(markdown: string | undefined): ParsedAssumption[] {
-  if (!markdown || markdown.trim() === '') {
+export function parseAssumptionsMarkdown(markdown: string | string[] | undefined): ParsedAssumption[] {
+  if (!markdown) {
+    return [];
+  }
+
+  // Convert to string format for processing
+  let markdownText: string;
+  if (Array.isArray(markdown)) {
+    // New format: array of assumptions
+    markdownText = markdown.map(a => `- ${a}`).join('\n');
+  } else {
+    // Old format: markdown string
+    markdownText = markdown;
+  }
+
+  if (markdownText.trim() === '') {
     return [];
   }
 
   const assumptions: ParsedAssumption[] = [];
-  const lines = markdown.split('\n');
+  const lines = markdownText.split('\n');
   let currentCategory: string | undefined;
 
   for (const line of lines) {
@@ -100,22 +115,33 @@ export function formatAssumptionsToMarkdown(
  * Used for AI prompts
  */
 export function buildAssumptionsContext(
-  systemAssumptions?: string,
-  stepAssumptions?: string,
-  interventionAssumptions?: string
+  systemAssumptions?: string | string[],
+  stepAssumptions?: string | string[],
+  interventionAssumptions?: string | string[]
 ): string {
   const parts: string[] = [];
 
-  if (systemAssumptions && systemAssumptions.trim()) {
-    parts.push(`### Hypothèses système\n\n${systemAssumptions}`);
+  // Convert to string if needed
+  const systemText = Array.isArray(systemAssumptions) 
+    ? systemAssumptions.join('\n') 
+    : systemAssumptions;
+  const stepText = Array.isArray(stepAssumptions) 
+    ? stepAssumptions.join('\n') 
+    : stepAssumptions;
+  const interventionText = Array.isArray(interventionAssumptions) 
+    ? interventionAssumptions.join('\n') 
+    : interventionAssumptions;
+
+  if (systemText && systemText.trim()) {
+    parts.push(`### Hypothèses système\n\n${systemText}`);
   }
 
-  if (stepAssumptions && stepAssumptions.trim()) {
-    parts.push(`### Hypothèses étape\n\n${stepAssumptions}`);
+  if (stepText && stepText.trim()) {
+    parts.push(`### Hypothèses étape\n\n${stepText}`);
   }
 
-  if (interventionAssumptions && interventionAssumptions.trim()) {
-    parts.push(`### Hypothèses intervention\n\n${interventionAssumptions}`);
+  if (interventionText && interventionText.trim()) {
+    parts.push(`### Hypothèses intervention\n\n${interventionText}`);
   }
 
   if (parts.length === 0) {
@@ -128,7 +154,7 @@ export function buildAssumptionsContext(
 /**
  * Check if assumption already exists in markdown to avoid duplication
  */
-export function assumptionExists(markdown: string | undefined, assumptionText: string): boolean {
+export function assumptionExists(markdown: string | string[] | undefined, assumptionText: string): boolean {
   if (!markdown) return false;
   
   const parsed = parseAssumptionsMarkdown(markdown);
@@ -144,13 +170,16 @@ export function assumptionExists(markdown: string | undefined, assumptionText: s
  * Add new assumption to markdown, avoiding duplicates
  */
 export function addAssumption(
-  existingMarkdown: string | undefined,
+  existingMarkdown: string | string[] | undefined,
   newAssumption: string,
   category?: string
 ): string {
   // Check for duplicates
   if (assumptionExists(existingMarkdown, newAssumption)) {
-    return existingMarkdown || '';
+    const text = Array.isArray(existingMarkdown) 
+      ? existingMarkdown.join('\n') 
+      : (existingMarkdown || '');
+    return text;
   }
 
   const parsed = parseAssumptionsMarkdown(existingMarkdown);
@@ -168,9 +197,9 @@ export function addAssumption(
  * Returns list of conflicts found
  */
 export function detectConflicts(
-  systemAssumptions?: string,
-  stepAssumptions?: string,
-  interventionAssumptions?: string
+  systemAssumptions?: string | string[],
+  stepAssumptions?: string | string[],
+  interventionAssumptions?: string | string[]
 ): string[] {
   const conflicts: string[] = [];
 

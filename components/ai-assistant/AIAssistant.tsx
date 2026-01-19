@@ -191,44 +191,6 @@ export default function AIAssistant({
             <div className="empty-card">
               <div className="empty-content">
                 <p className="mb-4">Aucune conversation pour cette valeur.</p>
-                {onCalculate && (
-                  <button
-                    onClick={async () => {
-                      setIsCalculating(true);
-                      try {
-                        await onCalculate();
-                      } finally {
-                        setIsCalculating(false);
-                      }
-                    }}
-                    disabled={isCalculating}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      fontSize: '1rem',
-                      backgroundColor: isCalculating ? '#9ca3af' : '#3b82f6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '0.5rem',
-                      cursor: isCalculating ? 'not-allowed' : 'pointer',
-                      fontWeight: '500',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      margin: '0 auto',
-                    }}
-                  >
-                    {isCalculating ? (
-                      <>
-                        <span>Calcul en cours...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>🤖</span>
-                        <span>Calculer cette valeur</span>
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             </div>
           </div>
@@ -248,13 +210,55 @@ export default function AIAssistant({
         )}
       </div>
 
-      {/* Input - only show if there's a conversation */}
-      {focusedCell && conversation && conversation.length > 0 && (
+      {/* Input - always show if there's a focused cell */}
+      {focusedCell && (
         <div className="message-input">
           <MessageInput 
             onSend={handleSendMessage}
             disabled={isRefining}
           />
+          
+          {/* Calculate/Recalculate button */}
+          {onCalculate && (
+            <button
+              onClick={async () => {
+                setIsCalculating(true);
+                try {
+                  await onCalculate();
+                } finally {
+                  setIsCalculating(false);
+                }
+              }}
+              disabled={isCalculating}
+              style={{
+                padding: '0.75rem 1.5rem',
+                fontSize: '1rem',
+                backgroundColor: isCalculating ? '#9ca3af' : '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                cursor: isCalculating ? 'not-allowed' : 'pointer',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                margin: '0.75rem auto 0',
+                width: '100%',
+                justifyContent: 'center',
+              }}
+            >
+              {isCalculating ? (
+                <>
+                  <span>Calcul en cours...</span>
+                </>
+              ) : (
+                <>
+                  <span>🤖</span>
+                  <span>{valueEntry && valueEntry.value !== null && valueEntry.value !== undefined ? 'Recalculer cet indicateur' : 'Calculer cet indicateur'}</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       )}
     </aside>
