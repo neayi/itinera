@@ -1,15 +1,37 @@
 /**
- * Prompt pour le calcul des coûts d'irrigation (€/ha)
- * 
- * Contexte: L'IA doit estimer le coût d'un apport d'eau d'irrigation en se basant sur:
- * - Le type de système d'irrigation (aspersion, goutte-à-goutte, gravitaire, pivot)
- * - Le volume d'eau apporté (mm ou m³/ha)
- * - Le coût de l'eau et de l'énergie
- * - L'amortissement du matériel
- * - Les pratiques régionales françaises
+ * Irrigation Indicator
+ * Calculates irrigation costs
  */
 
-export const IRRIGATION_PROMPT = `Tu es un expert en irrigation agricole et en économie de l'eau en agriculture française. Ta tâche est d'estimer le **coût d'irrigation** d'une intervention, exprimé en **€/ha**.
+import { BaseIndicator } from './base-indicator';
+
+export class IrrigationIndicator extends BaseIndicator {
+  constructor(context?: any) {
+    super('irrigation', context);
+  }
+
+  getFormattedValue(): string {
+    const rawValue = this.getRawValue();
+    
+    if (rawValue === null || rawValue === undefined) {
+      return '-';
+    }
+    
+    if (this.getStatus() === 'n/a') {
+      return 'N/A';
+    }
+
+    const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    
+    if (isNaN(numValue) || numValue === 0) {
+      return '-';
+    }
+
+    return `${Math.round(numValue)} €`;
+  }
+
+  getSystemPrompt(): string {
+    return `Tu es un expert en irrigation agricole et en économie de l'eau en agriculture française. Ta tâche est d'estimer le **coût d'irrigation** d'une intervention, exprimé en **€/ha**.
 
 ## 📋 INFORMATIONS FOURNIES
 
@@ -50,15 +72,15 @@ Estime le coût total de l'irrigation pour cette intervention en €/ha.
 #### 1. Coût de l'eau (€/m³):
 
 **Eau de réseau / ASA (Association Syndicale Autorisée):**
-- **Redevance volumétrique**: 0.05-0.15 €/m³ (selon région et source)
-- **Abonnement annuel**: 100-300 €/ha irrigable (proratisé sur ha réellement irrigués)
+- **Redevance volumétrique**: 0.05-0.15 €/m³
+- **Abonnement annuel**: 100-300 €/ha irrigable (proratisé)
 
 **Eau de forage privé:**
 - **Coût marginal**: quasi nul (amortissement forage, entretien pompe)
 - **Redevance Agence de l'eau**: 0.02-0.05 €/m³
 
 **Eau de barrage / retenue collinaire:**
-- **Coût stockage**: 0.02-0.08 €/m³ (amortissement ouvrage)
+- **Coût stockage**: 0.02-0.08 €/m³
 
 **Eau gravitaire (canal d'irrigation):**
 - **Redevance tour d'eau**: 20-60 €/tour/ha (volume variable 300-800 m³/ha/tour)
@@ -66,10 +88,8 @@ Estime le coût total de l'irrigation pour cette intervention en €/ha.
 #### 2. Coût énergétique (pompage):
 
 **Électricité:**
-- **Puissance nécessaire**: fonction du débit et hauteur manométrique totale (HMT)
-- Formule: Puissance (kW) = (Débit m³/h × HMT mètres × 2.725) / 1000
-- **Coût électricité**: 0.15-0.20 €/kWh (tarif agricole)
 - **Consommation type**: 15-40 kWh par tour de 30 mm (300 m³/ha)
+- **Coût électricité**: 0.15-0.20 €/kWh
 - **Coût énergétique**: 3-8 €/ha par tour de 30 mm
 
 **GNR (motopompe diesel):**
@@ -80,74 +100,51 @@ Estime le coût total de l'irrigation pour cette intervention en €/ha.
 #### 3. Amortissement matériel (€/ha/an, proratisé par tour):
 
 **Aspersion par enrouleur:**
-- **Investissement**: 25 000-45 000 € (enrouleur + tuyau + canon)
-- **Amortissement**: 2 500-4 500 €/an (durée 10-15 ans)
-- **Surface irriguée**: 40-80 ha/an
 - **Coût amortissement**: 30-110 €/ha/an → **5-18 €/ha par tour** (6-8 tours/an)
 
 **Aspersion intégrale (couverture):**
-- **Investissement**: 1 500-3 000 €/ha (réseau enterré + asperseurs)
-- **Amortissement**: 150-300 €/ha/an (durée 10-15 ans)
-- **Coût par tour**: 25-50 €/ha par tour (6-8 tours/an)
+- **Amortissement**: 150-300 €/ha/an → **25-50 €/ha par tour** (6-8 tours/an)
 
 **Micro-irrigation (goutte-à-goutte):**
-- **Investissement**: 1 200-2 500 €/ha (réseau + goutteurs)
-- **Amortissement**: 150-300 €/ha/an (durée 8-12 ans)
-- **Coût par tour**: 20-40 €/ha par tour (8-12 tours/an)
+- **Amortissement**: 150-300 €/ha/an → **20-40 €/ha par tour** (8-12 tours/an)
 
 **Pivot:**
-- **Investissement**: 2 000-4 000 €/ha (pivot 50-80 ha)
-- **Amortissement**: 200-400 €/ha/an (durée 10-15 ans)
-- **Coût par tour**: 25-60 €/ha par tour (8-10 tours/an)
+- **Amortissement**: 200-400 €/ha/an → **25-60 €/ha par tour** (8-10 tours/an)
 
 **Irrigation gravitaire:**
-- **Investissement**: 500-1 500 €/ha (nivellement, canaux)
-- **Amortissement**: 50-150 €/ha/an (durée 10-20 ans)
-- **Coût par tour**: 10-30 €/ha par tour (5-8 tours/an)
+- **Amortissement**: 50-150 €/ha/an → **10-30 €/ha par tour** (5-8 tours/an)
 
 #### 4. Main d'œuvre:
 
-- **Aspersion enrouleur**: 0.5-1.5 h/ha par tour (déplacement matériel) → 10-30 €/ha
-- **Aspersion intégrale**: 0.1-0.3 h/ha par tour (surveillance) → 2-6 €/ha
-- **Goutte-à-goutte**: 0.1-0.2 h/ha par tour (ouverture/fermeture vannes) → 2-4 €/ha
-- **Pivot**: 0.05-0.1 h/ha par tour (automatisé) → 1-2 €/ha
-- **Gravitaire**: 0.5-1 h/ha par tour (gestion submersion) → 10-20 €/ha
+- **Aspersion enrouleur**: 0.5-1.5 h/ha par tour → 10-30 €/ha
+- **Aspersion intégrale**: 0.1-0.3 h/ha par tour → 2-6 €/ha
+- **Goutte-à-goutte**: 0.1-0.2 h/ha par tour → 2-4 €/ha
+- **Pivot**: 0.05-0.1 h/ha par tour → 1-2 €/ha
+- **Gravitaire**: 0.5-1 h/ha par tour → 10-20 €/ha
 
 ### Coûts moyens par système et par tour (30 mm = 300 m³/ha):
 
 **Aspersion enrouleur (source forage):**
-- Eau: 0.03 €/m³ × 300 m³ = 9 €/ha
+- Eau: 9 €/ha
 - Énergie: 6 €/ha
 - Amortissement: 12 €/ha
 - Main d'œuvre: 20 €/ha
 - **Total: 47 €/ha par tour de 30 mm**
 
 **Aspersion intégrale (source réseau):**
-- Eau: 0.10 €/m³ × 300 m³ = 30 €/ha
+- Eau: 30 €/ha
 - Énergie: 5 €/ha
 - Amortissement: 35 €/ha
 - Main d'œuvre: 4 €/ha
 - **Total: 74 €/ha par tour de 30 mm**
 
 **Goutte-à-goutte (source forage):**
-- Eau: 0.03 €/m³ × 200 m³ = 6 €/ha (dose réduite 20 mm)
-- Énergie: 4 €/ha
-- Amortissement: 25 €/ha
-- Main d'œuvre: 3 €/ha
 - **Total: 38 €/ha par tour de 20 mm**
 
 **Pivot (source forage):**
-- Eau: 0.03 €/m³ × 300 m³ = 9 €/ha
-- Énergie: 7 €/ha
-- Amortissement: 40 €/ha
-- Main d'œuvre: 2 €/ha
 - **Total: 58 €/ha par tour de 30 mm**
 
 **Gravitaire (canal ASA):**
-- Eau: 40 €/tour (redevance ASA)
-- Énergie: 0 €/ha (gravitaire)
-- Amortissement: 15 €/ha
-- Main d'œuvre: 15 €/ha
 - **Total: 70 €/ha par tour (variable 300-800 m³)**
 
 ### Facteurs d'ajustement:
@@ -204,45 +201,6 @@ Estime le coût total de l'irrigation pour cette intervention en €/ha.
 
 Toujours exprimer en €/ha final.
 
-## 📤 FORMAT DE SORTIE
-
-Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant ou après):
-
-\`\`\`json
-{
-  "applicable": true,
-  "value": 50.0,
-  "confidence": "medium",
-  "assumptions": [
-    "Système: aspersion par enrouleur avec canon",
-    "Volume apporté: 30 mm = 300 m³/ha",
-    "Source d'eau: forage privé (profondeur 40 m)",
-    "Pompage électrique (tarif agricole 0.18 €/kWh)",
-    "Surface totale irriguée: 60 ha"
-  ],
-  "calculation_steps": [
-    "Identification: irrigation maïs grain, stade floraison",
-    "Dose: 30 mm = 300 m³/ha",
-    "Coût eau forage: 0.03 €/m³ × 300 m³ = 9 €/ha",
-    "Coût énergie pompage: 20 kWh × 0.18 €/kWh = 3.6 €/ha → arrondi 4 €/ha",
-    "Amortissement enrouleur: 3500 €/an ÷ 60 ha ÷ 6 tours = 9.7 €/ha → 10 €/ha",
-    "Main d'œuvre déplacement: 1 h/ha × 20 €/h = 20 €/ha",
-    "Total: 9 + 4 + 10 + 20 = 43 €/ha",
-    "Arrondi: 50.0 €/ha"
-  ],
-  "sources": [
-    "Barème coûts irrigation Chambres d'Agriculture 2025",
-    "Tarif eau Agence de l'eau Adour-Garonne 2025",
-    "Guide irrigation ARVALIS maïs 2024"
-  ],
-  "caveats": [
-    "Coût variable selon profondeur forage (+30-50% si >60m)",
-    "Dose ajustable selon pluviométrie et stade cultural",
-    "Système goutte-à-goutte: dose réduite mais investissement supérieur",
-    "Coût eau réseau ASA: +20-40 €/ha (redevance volumétrique)"
-  ]
-}
-\`\`\`
 **IMPORTANT** : L'irrigation n'est applicable que pour les interventions d'irrigation (apport d'eau). Pour les cultures non irriguées ou toute autre intervention, retourne {"applicable": false, "value": 0, "reasoning": "L'irrigation ne s'applique qu'aux interventions d'apport d'eau"}
 
 **⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
@@ -256,26 +214,48 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
 - Vérifie que le résultat final est mathématiquement cohérent avec les étapes précédentes de calcul.
 - Si tu obtiens un résultat qui te semble inhabituel, mentionne-le dans "caveats" mais retourne quand même le résultat calculé.
 
-### Champs obligatoires:
+Réponds UNIQUEMENT en JSON valide suivant ce format :
+{
+  "applicable": true | false,
+  "value": <nombre décimal en €/ha ou 0 si non applicable>,
+  "confidence": "high" | "medium" | "low",
+  "reasoning": "Explication détaillée du raisonnement en français",
+  "assumptions": ["Liste des hypothèses utilisées"],
+  "calculation_steps": ["Étapes du calcul avec formules"],
+  "sources": ["Sources de données"],
+  "caveats": ["Limitations ou points d'attention"]
+}`;
+  }
 
-- **value**: nombre décimal en €/ha (0 si pas d'irrigation, null si N/A)
-- **confidence**: "high" (système, dose et source précisés) / "medium" (système clair, paramètres supposés) / "low" (informations vagues)
-- **assumptions**: liste des hypothèses sur système, volume, source d'eau, énergie
-- **calculation_steps**: étapes détaillées du calcul avec conversion mm → m³/ha
-- **sources**: références des barèmes et tarifs utilisés
-- **caveats**: limitations et points d'attention (variabilité selon profondeur, source, fractionnement)
+  getPrompt(): string {
+    const contextSection = this.getContextSection();
 
-### Niveau de confiance:
+    return `
+${contextSection}
 
-- **high**: système, dose et source d'eau clairement mentionnés
-- **medium**: système clair, dose supposée selon besoins culturaux standards
-- **low**: irrigation mentionnée de façon vague, plusieurs scénarios possibles
+# Tâche
 
-## 🌾 CONTEXTE AGRICOLE
+Calculer le coût d'irrigation en €/ha pour cette intervention.
 
-Tu as accès aux informations suivantes:
+# Instructions
 
-{context}
+1. Vérifie d'abord si l'intervention concerne une irrigation
+2. Identifie le système d'irrigation (aspersion, goutte-à-goutte, pivot, gravitaire)
+3. Détermine le volume d'eau apporté (mm ou m³/ha)
+4. Estime les coûts: eau + énergie + amortissement + main d'œuvre
+5. Calcule le coût total par hectare
+6. Prends en compte les hypothèses des 3 niveaux
 
-Utilise ces informations pour affiner ton estimation du coût d'irrigation.
+**⚠️ IMPORTANT** : 
+- Le résultat doit être en **€/ha** (euros par hectare)
+- Conversion: 1 mm = 10 m³/ha
+- Tours multiples → multiplier le coût unitaire
+
+Réponds en JSON valide comme spécifié dans tes instructions système.
 `;
+  }
+
+  getLabel(): string {
+    return 'Irrigation';
+  }
+}

@@ -323,7 +323,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         saveStatus={saveStatus}
       />
 
-      {/* Contenu principal et ChatBot côte à côte en dessous de la TopBar */}
+      {/* Contenu principal et assistant côte à côte en dessous de la TopBar */}
       <div className="flex flex-1 overflow-hidden">
         {/* Main content area */}
         <main className="flex-1 overflow-y-auto px-6 py-6 space-y-6">

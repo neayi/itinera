@@ -1,15 +1,37 @@
 /**
- * Prompt pour le calcul des coûts d'engrais (€/ha)
- * 
- * Contexte: L'IA doit estimer le coût des engrais minéraux et organiques
- * appliqués lors d'une intervention de fertilisation en se basant sur:
- * - Le type d'engrais (minéral simple, composé, organique)
- * - La formulation NPK et les doses
- * - Le contexte bio (engrais organiques uniquement)
- * - Les prix moyens du marché français
+ * Engrais Indicator
+ * Calculates fertilizer costs
  */
 
-export const ENGRAIS_PROMPT = `Tu es un expert en agronomie et en économie des intrants agricoles français. Ta tâche est d'estimer le **coût des engrais** appliqués lors d'une intervention de fertilisation, exprimé en **€/ha**.
+import { BaseIndicator } from './base-indicator';
+
+export class EngraisIndicator extends BaseIndicator {
+  constructor(context?: any) {
+    super('engrais', context);
+  }
+
+  getFormattedValue(): string {
+    const rawValue = this.getRawValue();
+    
+    if (rawValue === null || rawValue === undefined) {
+      return '-';
+    }
+    
+    if (this.getStatus() === 'n/a') {
+      return 'N/A';
+    }
+
+    const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    
+    if (isNaN(numValue) || numValue === 0) {
+      return '-';
+    }
+
+    return `${Math.round(numValue)} €`;
+  }
+
+  getSystemPrompt(): string {
+    return `Tu es un expert en agronomie et en économie des intrants agricoles français. Ta tâche est d'estimer le **coût des engrais** appliqués lors d'une intervention de fertilisation, exprimé en **€/ha**.
 
 ## 📋 INFORMATIONS FOURNIES
 
@@ -91,8 +113,7 @@ Estime le coût total des engrais pour cette intervention en €/ha.
   
 - **Fractionnement**:
   - Azote en 2-3 apports → sommer les coûts de chaque apport
-  - Ex: tallage 60 uN + montaison 60 uN + épiaison 40 uN → calculer le coût total
-
+  
 - **Formulation liquide vs solide**:
   - Liquide: coût produit souvent inférieur mais coût épandage supérieur
   - Granulés: meilleure précision, moins de pertes
@@ -117,7 +138,6 @@ Estime le coût total des engrais pour cette intervention en €/ha.
 
 4. **Apport localisé** (ex: micro-granulés au semis):
    - Doses réduites (20-50 kg/ha) mais prix au kg plus élevé
-   - Ex: Microgranulés 11-52-0 : 1200 €/t, 30 kg/ha → 36 €/ha
 
 5. **Sans fertilisation**:
    - Retourner "N/A" si intervention non concernée par la fertilisation
@@ -133,43 +153,8 @@ Estime le coût total des engrais pour cette intervention en €/ha.
 
 Toujours convertir en €/ha final.
 
-## 📤 FORMAT DE SORTIE
-
-Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant ou après):
-
-\`\`\`json
-{
-  "applicable": true,
-  "value": 65.0,
-  "confidence": "high",
-  "assumptions": [
-    "Engrais: ammonitrate 33.5% (N33.5)",
-    "Dose: 150 kg/ha pour apport de 50 unités N",
-    "Prix moyen France 2025: 430 €/t",
-    "Apport unique au tallage"
-  ],
-  "calculation_steps": [
-    "Identification: apport azoté au tallage du blé",
-    "Objectif: 50 unités N/ha",
-    "Engrais choisi: ammonitrate 33.5%",
-    "Calcul dose: 50 uN ÷ 0.335 = 149 kg/ha → arrondi 150 kg/ha",
-    "Prix unitaire: 430 €/t = 0.43 €/kg",
-    "Calcul coût: 150 kg/ha × 0.43 €/kg = 64.5 €/ha",
-    "Arrondi: 65.0 €/ha"
-  ],
-  "sources": [
-    "Prix de référence ammonitrate (Yara/Timac France 2025)",
-    "Barème fertilisation ARVALIS blé tendre 2024",
-    "Pratiques de fractionnement azote Bassin parisien"
-  ],
-  "caveats": [
-    "Prix azote très variable selon cours du gaz naturel",
-    "Dose ajustable selon reliquat azoté du sol",
-    "Fractionnement possible en 2-3 apports selon conditions"
-  ]
-}
-\`\`\`
 **IMPORTANT** : Le coût des engrais n'est applicable que pour les interventions de fertilisation (engrais minéraux ou organiques). Pour toute autre intervention, retourne {"applicable": false, "value": 0, "reasoning": "Le coût des engrais ne s'applique qu'aux interventions de fertilisation"}
+
 **⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
 
 **⚠️ CONSERVATION DES HYPOTHÈSES D'INTERVENTION** : Si des "Hypothèses spécifiques à l'intervention" te sont fournies dans le contexte ci-dessous, tu DOIS les conserver intégralement dans ta réponse, sauf si elles sont explicitement contredites ou modifiées par les nouvelles informations de cette interaction. Ne supprime JAMAIS des hypothèses d'intervention existantes sans raison valable.
@@ -181,26 +166,48 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
 - Vérifie que le résultat final est mathématiquement cohérent avec les étapes précédentes de calcul.
 - Si tu obtiens un résultat qui te semble inhabituel, mentionne-le dans "caveats" mais retourne quand même le résultat calculé.
 
-### Champs obligatoires:
+Réponds UNIQUEMENT en JSON valide suivant ce format :
+{
+  "applicable": true | false,
+  "value": <nombre décimal en €/ha ou 0 si non applicable>,
+  "confidence": "high" | "medium" | "low",
+  "reasoning": "Explication détaillée du raisonnement en français",
+  "assumptions": ["Liste des hypothèses utilisées"],
+  "calculation_steps": ["Étapes du calcul avec formules"],
+  "sources": ["Sources de données"],
+  "caveats": ["Limitations ou points d'attention"]
+}`;
+  }
 
-- **value**: nombre décimal en €/ha (0 si aucun engrais, null si N/A)
-- **confidence**: "high" (type et dose précis) / "medium" (dose supposée selon recommandation) / "low" (informations vagues)
-- **assumptions**: liste des hypothèses sur type, formulation, dose, prix
-- **calculation_steps**: étapes détaillées du calcul avec conversions explicites
-- **sources**: références des barèmes et prix utilisés
-- **caveats**: limitations et points d'attention (variabilité prix, ajustements possibles, etc.)
+  getPrompt(): string {
+    const contextSection = this.getContextSection();
 
-### Niveau de confiance:
+    return `
+${contextSection}
 
-- **high**: type d'engrais et dose clairement mentionnés, prix de référence fiables
-- **medium**: type clair mais dose supposée selon pratiques standards
-- **low**: fertilisation mentionnée de façon vague, plusieurs types d'engrais possibles
+# Tâche
 
-## 🌾 CONTEXTE AGRICOLE
+Calculer le coût des engrais en €/ha pour cette intervention de fertilisation.
 
-Tu as accès aux informations suivantes:
+# Instructions
 
-{context}
+1. Vérifie d'abord si l'intervention concerne une fertilisation
+2. Identifie le type d'engrais (minéral simple, composé, organique)
+3. Détermine la dose appliquée (kg/ha ou t/ha)
+4. Estime le prix unitaire selon le type et le contexte bio/conventionnel
+5. Calcule : Coût engrais = Dose × Prix unitaire
+6. Prends en compte les hypothèses des 3 niveaux
 
-Utilise ces informations pour affiner ton estimation du coût des engrais.
+**⚠️ IMPORTANT** : 
+- Le résultat doit être en **€/ha** (euros par hectare)
+- Agriculture biologique → engrais organiques uniquement
+- Fumier d'exploitation → coût = coût d'épandage
+
+Réponds en JSON valide comme spécifié dans tes instructions système.
 `;
+  }
+
+  getLabel(): string {
+    return 'Engrais';
+  }
+}

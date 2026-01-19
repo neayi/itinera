@@ -1,6 +1,6 @@
 'use client';
 
-import { getIndicatorLabel } from '@/lib/indicator-labels';
+import { IndicatorFactory } from '@/lib/ai/indicators';
 
 interface CalculationProgressProps {
   current: number;
@@ -50,7 +50,7 @@ export default function CalculationProgress({
             <strong>{stepName}</strong> → {interventionName}
           </div>
           <div>
-            En cours : <strong>{getIndicatorLabel(currentIndicator)}</strong>
+            En cours : <strong>{IndicatorFactory.create(currentIndicator).getLabel()}</strong>
           </div>
         </div>
       )}

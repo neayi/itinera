@@ -13,6 +13,8 @@ import { InterventionRow, InterventionsDataTableProps } from './types';
 import { interventionColumns } from './columns';
 import { EditableDateCell } from './EditableDateCell';
 import { EditableTextCell } from './EditableTextCell';
+import { IndicatorFactory, type FieldKey } from '@/lib/ai/indicators';
+import { calculateStepTotals } from '@/lib/calculate-system-totals';
 import { EditableTextAreaCell } from './EditableTextAreaCell';
 import { EditableNumberCell } from './EditableNumberCell';
 import { EditableStepValueCell } from './EditableStepValueCell';
@@ -26,18 +28,24 @@ export function InterventionsDataTable({
 }: InterventionsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
-  // Fonction utilitaire pour extraire une valeur du tableau values
-  const getValueFromArray = (intervention: any, key: string): number => {
-    if (!intervention.values || !Array.isArray(intervention.values)) return 0;
-    const item = intervention.values.find((v: any) => v.key === key);
-    return item ? (typeof item.value === 'number' ? item.value : 0) : 0;
-  };
+  // Fonction utilitaire pour extraire une valeur via l'indicateur
+  const getValueFromIntervention = (stepIndex: number, interventionIndex: number, key: string): number => {
+    try {
+      const indicator = IndicatorFactory.create(key as FieldKey, {
+        systemData,
+        stepIndex,
+        interventionIndex
+      });
 
-  // Fonction utilitaire pour récupérer une valeur au niveau de l'étape
-  const getStepLevelValue = (step: any, key: string): number | undefined => {
-    if (!step.values || !Array.isArray(step.values)) return undefined;
-    const item = step.values.find((v: any) => v.key === key);
-    return item ? (typeof item.value === 'number' ? item.value : undefined) : undefined;
+      const value = indicator.getRawValue();
+
+      if (value === null)
+        return 0;
+
+      return value;
+    } catch (e) {
+      return 0;
+    }
   };
 
   // Liste des indicateurs éditables au niveau de l'étape
@@ -50,89 +58,8 @@ export function InterventionsDataTable({
     const rows: InterventionRow[] = [];
     
     systemData.steps.forEach((step: any, stepIndex: number) => {
-      // Calculer les totaux pour ce step
-      const stepTotals = {
-        azoteMineral: 0,
-        azoteOrganique: 0,
-        rendementTMS: 0,
-        ift: 0,
-        eiq: 0,
-        ges: 0,
-        tempsTravail: 0,
-        coutsPhytos: 0,
-        semences: 0,
-        engrais: 0,
-        mecanisation: 0,
-        gnr: 0,
-        irrigation: 0,
-        totalProduits: 0,
-        totalCharges: 0,
-        prixVente: 0,
-        margeBrute: 0,
-      };
-
-      // Pour chaque indicateur, vérifier d'abord s'il existe une valeur au niveau de l'étape
-      // Si oui, utiliser cette valeur. Sinon, calculer la somme pondérée.
-      stepLevelEditableFields.forEach((field) => {
-        const stepValue = getStepLevelValue(step, field);
-        if (stepValue !== undefined) {
-          (stepTotals as any)[field] = stepValue;
-        }
-      });
-
-      // Calculer les totaux pondérés par la fréquence (seulement pour les champs sans valeur d'étape)
-      if (step.interventions && Array.isArray(step.interventions)) {
-        step.interventions.forEach((intervention: any) => {
-          const freq = getValueFromArray(intervention, 'frequence') || 1; // Fréquence par défaut = 1
-          
-          stepTotals.azoteMineral += getValueFromArray(intervention, 'azoteMineral') * freq;
-          stepTotals.azoteOrganique += getValueFromArray(intervention, 'azoteOrganique') * freq;
-          stepTotals.ift += getValueFromArray(intervention, 'ift') * freq;
-          stepTotals.eiq += getValueFromArray(intervention, 'eiq') * freq;
-          stepTotals.ges += getValueFromArray(intervention, 'ges') * freq;
-          stepTotals.tempsTravail += getValueFromArray(intervention, 'tempsTravail') * freq;
-          stepTotals.coutsPhytos += getValueFromArray(intervention, 'coutsPhytos') * freq;
-          stepTotals.semences += getValueFromArray(intervention, 'semences') * freq;
-          stepTotals.engrais += getValueFromArray(intervention, 'engrais') * freq;
-          stepTotals.mecanisation += getValueFromArray(intervention, 'mecanisation') * freq;
-          stepTotals.gnr += getValueFromArray(intervention, 'gnr') * freq;
-          stepTotals.margeBrute += getValueFromArray(intervention, 'margeBrute') * freq;
-          
-          // Calculer uniquement si pas de valeur au niveau de l'étape
-          if (getStepLevelValue(step, 'irrigation') === undefined) {
-            stepTotals.irrigation += getValueFromArray(intervention, 'irrigation') * freq;
-          }
-          if (getStepLevelValue(step, 'rendementTMS') === undefined) {
-            stepTotals.rendementTMS += getValueFromArray(intervention, 'rendementTMS') * freq;
-          }
-          if (getStepLevelValue(step, 'prixVente') === undefined) {
-            stepTotals.prixVente += getValueFromArray(intervention, 'prixVente') * freq;
-          }
-        });
-      }
-
-      // Recalculer totalCharges en fonction des composants
-      // (car si irrigation est au niveau de l'étape, totalCharges doit être recalculé)
-      stepTotals.totalCharges = 
-        stepTotals.coutsPhytos +
-        stepTotals.semences +
-        stepTotals.engrais +
-        stepTotals.mecanisation +
-        stepTotals.gnr +
-        stepTotals.irrigation;
-
-      // Calculer totalProduits : si une valeur est forcée au niveau de l'étape, l'utiliser, sinon calculer
-      const forcedTotalProduits = getStepLevelValue(step, 'totalProduits');
-      if (forcedTotalProduits !== undefined && forcedTotalProduits !== 0) {
-        // Valeur forcée non nulle : utiliser cette valeur
-        stepTotals.totalProduits = forcedTotalProduits;
-      } else {
-        // Pas de valeur forcée ou valeur forcée à 0 : calculer rendementTMS * prixVente
-        stepTotals.totalProduits = stepTotals.rendementTMS * stepTotals.prixVente;
-      }
-
-      // Calculer margeBrute : totalProduits - totalCharges
-      stepTotals.margeBrute = stepTotals.totalProduits - stepTotals.totalCharges;
+      // Calculer les totaux pour ce step en utilisant la fonction centralisée
+      const stepTotals = calculateStepTotals(systemData, stepIndex);
 
       // Ajouter la ligne de total pour ce step avec les valeurs calculées
       rows.push({
@@ -143,7 +70,23 @@ export function InterventionsDataTable({
         description: '',
         date: '',
         frequence: 0, // Pas de total de fréquence
-        ...stepTotals,
+        azoteMineral: stepTotals.azoteMineral,
+        azoteOrganique: stepTotals.azoteOrganique,
+        rendementTMS: stepTotals.rendementTMS,
+        ift: stepTotals.ift,
+        eiq: stepTotals.eiq,
+        ges: stepTotals.ges,
+        tempsTravail: stepTotals.tempsTravail,
+        coutsPhytos: stepTotals.coutsPhytos,
+        semences: stepTotals.semences,
+        engrais: stepTotals.engrais,
+        mecanisation: stepTotals.mecanisation,
+        gnr: stepTotals.gnr,
+        irrigation: stepTotals.irrigation,
+        totalProduits: stepTotals.totalProduits,
+        totalCharges: stepTotals.totalCharges,
+        prixVente: stepTotals.prixVente,
+        margeBrute: stepTotals.margeBrute,
         isStepTotal: true,
         stepName: step.name || `Step ${stepIndex + 1}`,
       });
@@ -171,24 +114,24 @@ export function InterventionsDataTable({
             name: intervention.name || '',
             description: intervention.description || '',
             date: dateStr,
-            frequence: getValueFromArray(intervention, 'frequence') || 1, // Fréquence par défaut = 1
-            azoteMineral: getValueFromArray(intervention, 'azoteMineral'),
-            azoteOrganique: getValueFromArray(intervention, 'azoteOrganique'),
-            rendementTMS: getValueFromArray(intervention, 'rendementTMS'),
-            ift: getValueFromArray(intervention, 'ift'),
-            eiq: getValueFromArray(intervention, 'eiq'),
-            ges: getValueFromArray(intervention, 'ges'),
-            tempsTravail: getValueFromArray(intervention, 'tempsTravail'),
-            coutsPhytos: getValueFromArray(intervention, 'coutsPhytos'),
-            semences: getValueFromArray(intervention, 'semences'),
-            engrais: getValueFromArray(intervention, 'engrais'),
-            mecanisation: getValueFromArray(intervention, 'mecanisation'),
-            gnr: getValueFromArray(intervention, 'gnr'),
-            irrigation: getValueFromArray(intervention, 'irrigation'),
+            frequence: getValueFromIntervention(stepIndex, interventionIndex, 'frequence') || 1, // Fréquence par défaut = 1
+            azoteMineral: getValueFromIntervention(stepIndex, interventionIndex, 'azoteMineral'),
+            azoteOrganique: getValueFromIntervention(stepIndex, interventionIndex, 'azoteOrganique'),
+            rendementTMS: getValueFromIntervention(stepIndex, interventionIndex, 'rendementTMS'),
+            ift: getValueFromIntervention(stepIndex, interventionIndex, 'ift'),
+            eiq: getValueFromIntervention(stepIndex, interventionIndex, 'eiq'),
+            ges: getValueFromIntervention(stepIndex, interventionIndex, 'ges'),
+            tempsTravail: getValueFromIntervention(stepIndex, interventionIndex, 'tempsTravail'),
+            coutsPhytos: getValueFromIntervention(stepIndex, interventionIndex, 'coutsPhytos'),
+            semences: getValueFromIntervention(stepIndex, interventionIndex, 'semences'),
+            engrais: getValueFromIntervention(stepIndex, interventionIndex, 'engrais'),
+            mecanisation: getValueFromIntervention(stepIndex, interventionIndex, 'mecanisation'),
+            gnr: getValueFromIntervention(stepIndex, interventionIndex, 'gnr'),
+            irrigation: getValueFromIntervention(stepIndex, interventionIndex, 'irrigation'),
             totalProduits: 0, // totalProduits n'existe qu'au niveau de l'étape
-            totalCharges: getValueFromArray(intervention, 'totalCharges'),
-            prixVente: getValueFromArray(intervention, 'prixVente'),
-            margeBrute: getValueFromArray(intervention, 'margeBrute'),
+            totalCharges: getValueFromIntervention(stepIndex, interventionIndex, 'totalCharges'),
+            prixVente: getValueFromIntervention(stepIndex, interventionIndex, 'prixVente'),
+            margeBrute: getValueFromIntervention(stepIndex, interventionIndex, 'margeBrute'),
             isStepTotal: false,
           });
         });
@@ -325,8 +268,8 @@ export function InterventionsDataTable({
                       textAlign: (cell.column.columnDef.meta as any)?.align || 'left'
                     }}
                   >
-                    {row.original.isStepTotal && stepLevelEditableFields.includes(cell.column.id) ? (
-                      // Pour les lignes de totaux, utiliser EditableStepValueCell pour les champs éditables au niveau étape
+                    {row.original.isStepTotal && (cell.column.columnDef.meta as any)?.fieldType === 'number' ? (
+                      // Pour les lignes de totaux, utiliser EditableStepValueCell pour tous les champs numériques
                       <EditableStepValueCell
                         value={cell.getValue() as number}
                         stepIndex={row.original.stepIndex}

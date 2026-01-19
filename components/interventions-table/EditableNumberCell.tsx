@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { formatValue, FieldKey } from './formatters';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { calculateSystemTotals } from '@/lib/calculate-system-totals';
 import type { ValueStatus, ConfidenceLevel } from '@/lib/types';
+import { IndicatorFactory, type FieldKey } from '@/lib/ai/indicators';
 
 /**
  * T006: Determine CSS class based on status and confidence
@@ -56,6 +56,15 @@ export function EditableNumberCell({
 
   // T006: Get CSS class based on status and confidence
   const cellClassName = getCellClassName(status, confidence);
+
+  // Create indicator instance for formatting
+  const indicator = useMemo(() => {
+    return IndicatorFactory.create(fieldKey, {
+      systemData,
+      stepIndex,
+      interventionIndex
+    });
+  }, [fieldKey, systemData, stepIndex, interventionIndex]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -270,7 +279,7 @@ export function EditableNumberCell({
       className={cellClassName}
       title="Cliquer pour éditer"
     >
-      <span style={{ flex: 1 }}>{formatValue(value, fieldKey)}</span>    
+      <span style={{ flex: 1 }}>{indicator.getFormattedValue()}</span>    
     </span>
   );
 }

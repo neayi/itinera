@@ -1,9 +1,37 @@
-// Frequence Indicator Prompt
-// Determines the annual frequency of an agricultural intervention
+/**
+ * Frequence Indicator
+ * Determines the annual frequency of an agricultural intervention
+ */
 
-import { buildContextSection } from './utils';
+import { BaseIndicator } from './base-indicator';
 
-export const FREQUENCE_SYSTEM_PROMPT = `Tu es un assistant expert en agronomie française spécialisé dans l'analyse des itinéraires techniques.
+export class FrequenceIndicator extends BaseIndicator {
+  constructor(context?: any) {
+    super('frequence', context);
+  }
+
+  getFormattedValue(): string {
+    const rawValue = this.getRawValue();
+    
+    if (rawValue === null || rawValue === undefined) {
+      return '-';
+    }
+    
+    if (this.getStatus() === 'n/a') {
+      return 'N/A';
+    }
+
+    const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    
+    if (isNaN(numValue) || numValue === 0) {
+      return '-';
+    }
+
+    return numValue.toFixed(1);
+  }
+
+  getSystemPrompt(): string {
+    return `Tu es un assistant expert en agronomie française spécialisé dans l'analyse des itinéraires techniques.
 
 Ta tâche est de déterminer la fréquence annuelle d'une intervention agricole en analysant son nom et sa description.
 
@@ -54,27 +82,12 @@ Réponds UNIQUEMENT en JSON valide suivant ce format :
 }
 
 IMPORTANT : Si l'indicateur n'est pas applicable à cette intervention spécifique (par exemple, pas d'azote pour une culture non fertilisée, pas d'irrigation pour une culture pluviale, etc.), retourne {"applicable": false, "value": 0, "reasoning": "explication pourquoi non applicable"}. Sinon, retourne {"applicable": true, ...}`;
+  }
 
-export function buildFrequencePrompt(context: {
-  intervention: any;
-  step: any;
-  systemData: any;
-  systemAssumptions: string[];
-  stepAssumptions: string[];
-  interventionAssumptions: string[];
-}): string {
-  const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+  getPrompt(): string {
+    const contextSection = this.getContextSection();
 
-  const contextSection = buildContextSection(
-    systemAssumptions,
-    step,
-    stepAssumptions,
-    interventionAssumptions,
-    intervention,
-    'frequence'
-  );
-
-  return `
+    return `
 ${contextSection}
 
 # Tâche
@@ -90,4 +103,17 @@ Détermine la **fréquence annuelle** de cette intervention (nombre de passages 
 
 Réponds en JSON valide comme spécifié dans tes instructions système.
 `;
+  }
+
+  /**
+   * Override: frequence is not expressed per hectare
+   * @returns false
+   */
+  isPerHectare(): boolean {
+    return false;
+  }
+
+  getLabel(): string {
+    return 'Fréquence';
+  }
 }

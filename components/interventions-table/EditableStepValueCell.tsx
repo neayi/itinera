@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { formatValue, FieldKey } from './formatters';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { ValueStatus, ConfidenceLevel } from '@/lib/types';
+import { IndicatorFactory, type FieldKey } from '@/lib/ai/indicators';
 
 /**
  * T009: Determine CSS class based on status and confidence (same as EditableNumberCell)
@@ -49,6 +49,15 @@ export function EditableStepValueCell({
   // T009: Get CSS class based on status and confidence
   const cellClassName = getCellClassName(status, confidence);
 
+  // Create indicator instance for formatting (step level - no interventionIndex)
+  const indicator = useMemo(() => {
+    return IndicatorFactory.create(fieldKey, {
+      systemData,
+      stepIndex,
+      // No interventionIndex - values are at step level
+    });
+  }, [fieldKey, systemData, stepIndex]);
+
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
@@ -93,11 +102,16 @@ export function EditableStepValueCell({
       const existingIndex = step.values.findIndex((v: any) => v.key === fieldKey);
       
       if (existingIndex >= 0) {
-        // Mettre à jour la valeur existante
+        // Mettre à jour la valeur existante avec status='user'
         step.values[existingIndex].value = finalValue;
+        step.values[existingIndex].status = 'user';
       } else {
-        // Ajouter une nouvelle entrée
-        step.values.push({ key: fieldKey, value: finalValue });
+        // Ajouter une nouvelle entrée avec status='user'
+        step.values.push({ 
+          key: fieldKey, 
+          value: finalValue,
+          status: 'user'
+        });
       }
 
       console.log('Storing system data');
@@ -203,7 +217,7 @@ export function EditableStepValueCell({
       className={cellClassName}
       title="Cliquer pour éditer la valeur au niveau de l'étape"
     >
-      {formatValue(value, fieldKey)}
+      {indicator.getFormattedValue()}
     </span>
   );
 }

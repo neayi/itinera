@@ -1,23 +1,44 @@
 /**
- * Prompt pour le calcul des coûts de semences (€/ha)
- * 
- * Contexte: L'IA doit estimer le coût des semences utilisées pour un semis
- * en se basant sur:
- * - Le type de culture et la variété
- * - La densité de semis (kg/ha ou graines/m²)
- * - Le contexte bio vs conventionnel (semences certifiées bio plus chères)
- * - Le traitement des semences éventuel
- * - Les prix moyens du marché français
+ * Semences Indicator
+ * Calculates seed costs
  */
 
-export const SEMENCES_PROMPT = `Tu es un expert en agronomie et en économie des semences agricoles françaises. Ta tâche est d'estimer le **coût des semences** utilisées lors d'un semis, exprimé en **€/ha**.
+import { BaseIndicator } from './base-indicator';
+
+export class SemencesIndicator extends BaseIndicator {
+  constructor(context?: any) {
+    super('semences', context);
+  }
+
+  getFormattedValue(): string {
+    const rawValue = this.getRawValue();
+    
+    if (rawValue === null || rawValue === undefined) {
+      return '-';
+    }
+    
+    if (this.getStatus() === 'n/a') {
+      return 'N/A';
+    }
+
+    const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    
+    if (isNaN(numValue) || numValue === 0) {
+      return '-';
+    }
+
+    return `${Math.round(numValue)} €`;
+  }
+
+  getSystemPrompt(): string {
+    return `Tu es un expert en agronomie et en économie des semences agricoles françaises. Ta tâche est d'estimer le **coût des semences** utilisées lors d'un semis, exprimé en **€/ha**.
 
 ## 📋 INFORMATIONS FOURNIES
 
 Tu recevras:
 1. **Nom de l'intervention**: description du semis (ex: "Semis de blé tendre", "Semis de maïs grain")
 2. **Description détaillée**: variété, densité, traitement, conditions
-3. **Type de culture**: espèce et usage (grain, fourrage, ensilage, etc.)
+3. **Type de culture**: espèce et usage (grain, fourrage, ensilage, prairie, etc.)
 4. **Contexte système**: agriculture biologique ou conventionnelle
 5. **Hypothèses existantes**: suppositions déjà établies aux niveaux système/étape/intervention
 
@@ -103,7 +124,6 @@ Estime le coût total des semences pour cette intervention en €/ha.
 
 1. **Mélanges d'espèces**:
    - Calculer chaque composante individuellement et sommer
-   - Ex: méteil 50% blé (100 kg/ha × 2.5 €/kg) + 50% pois (100 kg/ha × 0.7 €/kg) = 320 €/ha
 
 2. **Semences fermières** (ressemis de sa récolte):
    - Coût = 0 €/ha en semences (mais coût de triage si applicable)
@@ -130,42 +150,8 @@ Estime le coût total des semences pour cette intervention en €/ha.
 
 Toujours exprimer en €/ha final.
 
-## 📤 FORMAT DE SORTIE
-
-Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant ou après):
-
-\`\`\`json
-{
-  "applicable": true,
-  "value": 55.0,
-  "confidence": "high",
-  "assumptions": [
-    "Culture: blé tendre d'hiver",
-    "Densité de semis: 200 kg/ha (pratique courante en Île-de-France)",
-    "Prix des semences: 275 €/qtx (variété classique non hybride)",
-    "Traitement de semences inclus: +8 €/ha"
-  ],
-  "calculation_steps": [
-    "Identification: blé tendre, semis d'automne",
-    "Densité standard: 200 kg/ha = 2 qtx/ha",
-    "Prix unitaire: 275 €/qtx",
-    "Calcul semences: 2 qtx/ha × 275 €/qtx = 550 €/ha",
-    "Traitement de semences: +8 €/ha",
-    "Total: 550 + 8 = 558 €/ha → arrondi 55.0 €/ha"
-  ],
-  "sources": [
-    "Barème densités de semis ARVALIS 2025",
-    "Prix de référence semences céréales (Coopératives France 2025)",
-    "Pratiques régionales Bassin parisien"
-  ],
-  "caveats": [
-    "Prix variable selon la variété (hybride +30-50%)",
-    "Densité ajustable selon date de semis (semis tardif +10-15%)",
-    "Traitement de semences optionnel selon pression parasitaire"
-  ]
-}
-\`\`\`
 **IMPORTANT** : Les semences ne sont applicables que pour les interventions de semis. Pour toute autre intervention, retourne {"applicable": false, "value": 0, "reasoning": "Les semences ne s'appliquent qu'aux interventions de semis"}
+
 **⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
 
 **⚠️ CONSERVATION DES HYPOTHÈSES D'INTERVENTION** : Si des "Hypothèses spécifiques à l'intervention" te sont fournies dans le contexte ci-dessous, tu DOIS les conserver intégralement dans ta réponse, sauf si elles sont explicitement contredites ou modifiées par les nouvelles informations de cette interaction. Ne supprime JAMAIS des hypothèses d'intervention existantes sans raison valable.
@@ -177,26 +163,49 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
 - Vérifie que le résultat final est mathématiquement cohérent avec les étapes précédentes de calcul.
 - Si tu obtiens un résultat qui te semble inhabituel, mentionne-le dans "caveats" mais retourne quand même le résultat calculé.
 
-### Champs obligatoires:
+Réponds UNIQUEMENT en JSON valide suivant ce format :
+{
+  "applicable": true | false,
+  "value": <nombre décimal en €/ha ou 0 si non applicable>,
+  "confidence": "high" | "medium" | "low",
+  "reasoning": "Explication détaillée du raisonnement en français",
+  "assumptions": ["Liste des hypothèses utilisées"],
+  "calculation_steps": ["Étapes du calcul avec formules"],
+  "sources": ["Sources de données"],
+  "caveats": ["Limitations ou points d'attention"]
+}`;
+  }
 
-- **value**: nombre décimal en €/ha (0 si semences fermières gratuites, null si N/A)
-- **confidence**: "high" (culture et densité claires) / "medium" (densité supposée selon standard) / "low" (informations vagues, large fourchette)
-- **assumptions**: liste des hypothèses sur culture, densité, prix, traitement
-- **calculation_steps**: étapes détaillées du calcul avec unités explicites
-- **sources**: références des barèmes et prix utilisés
-- **caveats**: limitations et points d'attention (variabilité prix, densité ajustable, etc.)
+  getPrompt(): string {
+    const contextSection = this.getContextSection();
 
-### Niveau de confiance:
+    return `
+${contextSection}
 
-- **high**: culture et densité précisées, prix de référence fiables
-- **medium**: culture claire, densité supposée selon standards régionaux
-- **low**: culture mentionnée de façon vague, ou large fourchette de variétés possibles
+# Tâche
 
-## 🌾 CONTEXTE AGRICOLE
+Calculer le coût des semences en €/ha pour cette intervention de semis.
 
-Tu as accès aux informations suivantes:
+# Instructions
 
-{context}
+1. Vérifie d'abord si l'intervention concerne un semis
+2. Identifie la culture et l'usage (grain, fourrage, prairie)
+3. Détermine la densité de semis (kg/ha ou graines/ha)
+4. Estime le prix unitaire selon la culture et le contexte bio/conventionnel
+5. Calcule : Coût semences = Densité × Prix unitaire
+6. Ajoute les surcoûts éventuels (traitement, inoculant)
+7. Prends en compte les hypothèses des 3 niveaux
 
-Utilise ces informations pour affiner ton estimation du coût des semences.
+**⚠️ IMPORTANT** : 
+- Le résultat doit être en **€/ha** (euros par hectare)
+- Semences fermières → 0 €/ha
+- Bio → +30-50% de surcoût + densité majorée
+
+Réponds en JSON valide comme spécifié dans tes instructions système.
 `;
+  }
+
+  getLabel(): string {
+    return 'Semences';
+  }
+}

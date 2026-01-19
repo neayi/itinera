@@ -1,9 +1,37 @@
-// Azote Organique Indicator Prompt
-// Calculates organic nitrogen application for an agricultural intervention
+/**
+ * Azote Organique Indicator
+ * Calculates organic nitrogen inputs (manure, compost, etc.)
+ */
 
-import { buildContextSection } from './utils';
+import { BaseIndicator } from './base-indicator';
 
-export const AZOTE_ORGANIQUE_SYSTEM_PROMPT = `Tu es un assistant expert en agronomie française spécialisé dans la gestion de la fertilisation organique.
+export class AzoteOrganiqueIndicator extends BaseIndicator {
+  constructor(context?: any) {
+    super('azoteOrganique', context);
+  }
+
+  getFormattedValue(): string {
+    const rawValue = this.getRawValue();
+    
+    if (rawValue === null || rawValue === undefined) {
+      return '-';
+    }
+    
+    if (this.getStatus() === 'n/a') {
+      return 'N/A';
+    }
+
+    const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    
+    if (isNaN(numValue) || numValue === 0) {
+      return '-';
+    }
+
+    return `${numValue % 1 === 0 ? numValue.toFixed(0) : numValue.toFixed(1)} uN`;
+  }
+
+  getSystemPrompt(): string {
+    return `Tu es un assistant expert en agronomie française spécialisé dans la gestion de la fertilisation organique.
 
 Ta tâche est de calculer la quantité d'azote organique apportée par une intervention en unités d'azote par hectare (uN/ha).
 
@@ -100,53 +128,13 @@ Réponds UNIQUEMENT en JSON valide suivant ce format :
 }
 
 **IMPORTANT** : Si l'azote organique n'est pas applicable à cette intervention (ex: intervention sans fertilisation organique, ou déjà comptabilisé ailleurs), retourne {"applicable": false, "value": 0, "reasoning": "explication de la non-applicabilité"}`;
+  }
 
-export function buildAzoteOrganiquePrompt(context: {
-  intervention: any;
-  step: any;
-  systemData: any;
-  systemAssumptions: string[];
-  stepAssumptions: string[];
-  interventionAssumptions: string[];
-}): string {
-  const { intervention, step, systemData, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+  getPrompt(): string {
+    const contextSection = this.getContextSection();
 
-  // Calculate intervention date (DD/MM format)
-  const getInterventionDate = () => {
-    try {
-      const startDate = new Date(step.startDate);
-      const interventionDate = new Date(startDate);
-      interventionDate.setDate(startDate.getDate() + parseInt(intervention.day || 0));
-      const day = String(interventionDate.getDate()).padStart(2, '0');
-      const month = String(interventionDate.getMonth() + 1).padStart(2, '0');
-      return `${day}/${month}`;
-    } catch {
-      return 'non calculable';
-    }
-  };
-
-  return `
-# Contexte du système de culture
-
-${systemAssumptions.length > 0 ? `## Caractéristiques générales du système\n${systemAssumptions.map(a => `- ${a}`).join('\n')}\n` : ''}
-
-## Étape de culture
-
-**Nom de l'étape** : ${step.name}
-**Description de l'étape** : ${step.description || 'Non spécifiée'}
-**Période** : ${step.startDate} → ${step.endDate}
-
-${stepAssumptions.length > 0 ? `**Hypothèses de l'étape** :\n${stepAssumptions.map(a => `- ${a}`).join('\n')}\n` : ''}
-
-${interventionAssumptions.length > 0 ? `## Hypothèses spécifiques à l'intervention\n${interventionAssumptions.map(a => `- ${a}`).join('\n')}\n` : ''}
-
-# Intervention à analyser
-
-**Nom de l'intervention** : ${intervention.name}
-**Description** : ${intervention.description || 'Non spécifiée'}
-**Type d'intervention** : ${intervention.type}
-**Date de l'intervention** : ${getInterventionDate()}
-**Jour relatif** : Jour ${intervention.day} après le début de l'étape
+    return `
+${contextSection}
 
 # Tâche
 
@@ -169,4 +157,9 @@ Calculer la quantité **d'azote organique en uN/ha** apportée par cette interve
 
 Réponds en JSON valide comme spécifié dans tes instructions système.
 `;
+  }
+
+  getLabel(): string {
+    return 'Azote organique';
+  }
 }

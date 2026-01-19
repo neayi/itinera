@@ -1,14 +1,37 @@
 /**
- * Prompt pour le calcul de l'IFT (Indicateur de Fréquence de Traitement)
- * 
- * Contexte: L'IA doit estimer l'IFT d'une intervention phytosanitaire en se basant sur:
- * - L'identification du produit utilisé (nom commercial ou matière active)
- * - La dose appliquée par rapport à la dose homologuée
- * - Le type de produit (herbicide, fongicide, insecticide, etc.)
- * - Les références françaises IFT par culture et région
+ * IFT Indicator
+ * Calculates Treatment Frequency Index (Indicateur de Fréquence de Traitement)
  */
 
-export const IFT_PROMPT = `Tu es un expert en protection des cultures et en réglementation phytosanitaire française. Ta tâche est d'estimer l'**IFT (Indicateur de Fréquence de Traitement)** d'une intervention phytosanitaire.
+import { BaseIndicator } from './base-indicator';
+
+export class IftIndicator extends BaseIndicator {
+  constructor(context?: any) {
+    super('ift', context);
+  }
+
+  getFormattedValue(): string {
+    const rawValue = this.getRawValue();
+    
+    if (rawValue === null || rawValue === undefined) {
+      return '-';
+    }
+    
+    if (this.getStatus() === 'n/a') {
+      return 'N/A';
+    }
+
+    const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    
+    if (isNaN(numValue) || numValue === 0) {
+      return '-';
+    }
+
+    return numValue.toFixed(1);
+  }
+
+  getSystemPrompt(): string {
+    return `Tu es un expert en protection des cultures et en réglementation phytosanitaire française. Ta tâche est d'estimer l'**IFT (Indicateur de Fréquence de Traitement)** d'une intervention phytosanitaire.
 
 ## 📋 INFORMATIONS FOURNIES
 
@@ -159,45 +182,8 @@ Estime l'IFT pour cette intervention phytosanitaire.
    - Si "75% dose" → IFT × 0.75
    - Toujours ajuster proportionnellement
 
-## 📤 FORMAT DE SORTIE
-
-Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant ou après):
-
-\`\`\`json
-{
-  "applicable": true,
-  "value": 1.0,
-  "confidence": "medium",
-  "assumptions": [
-    "Produit identifié: glyphosate (Roundup)",
-    "Dose appliquée supposée: 3.0 L/ha",
-    "Dose de référence: 3.6 L/ha (dose maximale homologuée)",
-    "Type: herbicide foliaire systémique",
-    "Application pré-semis ou inter-culture"
-  ],
-  "calculation_steps": [
-    "Identification du produit: glyphosate (mention 'Roundup' dans description)",
-    "Type de produit: herbicide foliaire systémique (IFT-H)",
-    "Dose de référence glyphosate: 3.6 L/ha (e-phy)",
-    "Dose appliquée supposée: 3.0 L/ha (dose standard pré-semis)",
-    "Calcul IFT: 3.0 / 3.6 = 0.83",
-    "Arrondi: 0.8",
-    "Valeur finale: 1.0 (arrondi standard pleine dose)"
-  ],
-  "sources": [
-    "Base e-phy ANSES (catalogue produits phytosanitaires)",
-    "Référentiel IFT national France 2023",
-    "Guide pratique IFT grandes cultures - Ministère Agriculture"
-  ],
-  "caveats": [
-    "IFT calculé sur dose supposée, peut varier selon dose réelle",
-    "Produit Roundup regroupe plusieurs formulations (360g/L, 450g/L)",
-    "Usage glyphosate réglementé, autorisation requise",
-    "Si mélange avec autre herbicide, IFT total sera supérieur"
-  ]
-}
-\`\`\`
 **IMPORTANT** : L'IFT n'est applicable que pour les interventions phytosanitaires (traitements herbicides, fongicides, insecticides). Pour toute autre intervention, retourne {"applicable": false, "value": 0, "reasoning": "L'IFT ne s'applique qu'aux interventions phytosanitaires"}
+
 **⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
 
 **⚠️ CONSERVATION DES HYPOTHÈSES D'INTERVENTION** : Si des "Hypothèses spécifiques à l'intervention" te sont fournies dans le contexte ci-dessous, tu DOIS les conserver intégralement dans ta réponse, sauf si elles sont explicitement contredites ou modifiées par les nouvelles informations de cette interaction. Ne supprime JAMAIS des hypothèses d'intervention existantes sans raison valable.
@@ -209,43 +195,50 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
 - Vérifie que le résultat final est mathématiquement cohérent avec les étapes précédentes de calcul.
 - Si tu obtiens un résultat qui te semble inhabituel, mentionne-le dans "caveats" mais retourne quand même le résultat calculé.
 
-### Champs obligatoires:
+Réponds UNIQUEMENT en JSON valide suivant ce format :
+{
+  "applicable": true | false,
+  "value": <nombre décimal (ex: 0.8, 1.0, 1.5) ou 0 si non applicable>,
+  "confidence": "high" | "medium" | "low",
+  "reasoning": "Explication détaillée du raisonnement en français",
+  "assumptions": ["Liste des hypothèses utilisées"],
+  "calculation_steps": ["Étapes du calcul avec formules"],
+  "sources": ["Sources de données"],
+  "caveats": ["Limitations ou points d'attention"]
+}`;
+  }
 
-- **value**: nombre décimal (ex: 0.8, 1.0, 1.5) ou "N/A" si pas de phyto
-- **confidence**: 
-  - "high": produit clairement identifié avec dose précise
-  - "medium": produit identifiable, dose supposée selon usage courant
-  - "low": produit vague, IFT moyen estimé par catégorie
-- **assumptions**: liste des hypothèses sur produit, dose, type de traitement
-- **calculation_steps**: détail du calcul (identification → dose référence → dose appliquée → IFT)
-- **sources**: références réglementaires (e-phy, référentiel IFT national)
-- **caveats**: limitations, variabilité selon formulation/dose, réglementation
+  getPrompt(): string {
+    const contextSection = this.getContextSection();
 
-### Niveau de confiance:
+    return `
+${contextSection}
 
-- **high**: 
-  - Produit identifié précisément (nom commercial ou matière active)
-  - Dose mentionnée explicitement dans description
-  - Calcul IFT basé sur dose réelle vs dose de référence connue
-  
-- **medium**: 
-  - Produit identifiable par type (herbicide, fongicide, insecticide)
-  - Dose non précisée, supposée selon pratiques courantes
-  - IFT estimé à 1.0 (pleine dose standard)
-  
-- **low**: 
-  - Intervention vague ("traitement", "protection")
-  - Produit non identifiable
-  - IFT moyen par catégorie utilisé
+# Tâche
 
-## 🌾 CONTEXTE AGRICOLE
+Calculer l'IFT (Indicateur de Fréquence de Traitement) pour cette intervention phytosanitaire.
 
-Tu as accès aux informations suivantes:
+# Instructions
 
-{context}
+1. Vérifie d'abord si l'intervention concerne un traitement phytosanitaire
+2. Identifie le produit (nom commercial ou matière active)
+3. Détermine le type (herbicide, fongicide, insecticide)
+4. Estime la dose appliquée (L/ha ou kg/ha)
+5. Identifie la dose de référence (base e-phy)
+6. Calcule : IFT = Dose appliquée / Dose de référence
+7. Si mélange de produits, somme les IFT individuels
+8. Prends en compte les hypothèses des 3 niveaux
 
-Utilise ces informations pour:
-- Affiner l'identification du produit selon la culture et les ravageurs cibles
-- Adapter les doses selon le contexte bio/conventionnel
-- Vérifier la cohérence avec le système de culture (bio = produits autorisés limités)
+**⚠️ IMPORTANT** : 
+- Le résultat doit être un nombre décimal (ex: 0.8, 1.0, 1.5)
+- Désherbage mécanique → IFT = 0
+- Demi-dose → IFT × 0.5
+
+Réponds en JSON valide comme spécifié dans tes instructions système.
 `;
+  }
+
+  getLabel(): string {
+    return 'IFT';
+  }
+}

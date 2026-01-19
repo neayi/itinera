@@ -1,9 +1,37 @@
-// Rendement Indicator Prompt  
-// Estimates crop yield for harvest interventions
+/**
+ * Rendement Indicator
+ * Calculates yield (rendementTMS or rendement)
+ */
 
-import { buildContextSection } from './utils';
+import { BaseIndicator } from './base-indicator';
 
-export const RENDEMENT_SYSTEM_PROMPT = `Tu es un assistant expert en agronomie française spécialisé dans l'estimation des rendements des cultures.
+export class RendementIndicator extends BaseIndicator {
+  constructor(context?: any) {
+    super('rendementTMS', context); // Default to rendementTMS
+  }
+
+  getFormattedValue(): string {
+    const rawValue = this.getRawValue();
+    
+    if (rawValue === null || rawValue === undefined) {
+      return '-';
+    }
+    
+    if (this.getStatus() === 'n/a') {
+      return 'N/A';
+    }
+
+    const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    
+    if (isNaN(numValue) || numValue === 0) {
+      return '-';
+    }
+
+    return `${Math.round(numValue)} qtx`;
+  }
+
+  getSystemPrompt(): string {
+    return `Tu es un assistant expert en agronomie française spécialisé dans l'estimation des rendements des cultures.
 
 Ta tâche est d'estimer le rendement d'une culture en quintaux par hectare (qtx/ha) lors de l'intervention de récolte.
 
@@ -114,27 +142,13 @@ Réponds UNIQUEMENT en JSON valide suivant ce format :
 }
 
 **IMPORTANT** : Le rendement n'est applicable QUE pour les interventions de récolte/moisson/fauche. Pour toute autre intervention, retourne {"applicable": false, "value": 0, "reasoning": "Le rendement ne s'applique qu'aux interventions de récolte"}`;
+  }
 
-export function buildRendementPrompt(context: {
-  intervention: any;
-  step: any;
-  systemData: any;
-  systemAssumptions: string[];
-  stepAssumptions: string[];
-  interventionAssumptions: string[];
-}): string {
-  const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+  getPrompt(): string {
+    const contextSection = this.getContextSection();
+    const step = this.systemData.steps[this.stepIndex!];
 
-  const contextSection = buildContextSection(
-    systemAssumptions,
-    step,
-    stepAssumptions,
-    interventionAssumptions,
-    intervention,
-    'rendement'
-  );
-
-  return `
+    return `
 ${contextSection}
 
 # Tâche
@@ -164,4 +178,29 @@ Estimer le **rendement en quintaux par hectare (qtx/ha)** pour cette interventio
 
 Réponds en JSON valide comme spécifié dans tes instructions système.
 `;
+  }
+
+  /**
+   * Override to check if intervention is a harvest/moisson type
+   */
+  isApplicable(intervention: any): boolean {
+    const interventionName = intervention.name?.toLowerCase() || '';
+    const interventionDesc = intervention.description?.toLowerCase() || '';
+    
+    return (
+      interventionName.includes('moisson') ||
+      interventionName.includes('récolte') ||
+      interventionName.includes('récolté') ||
+      interventionName.includes('fauche') ||
+      interventionName.includes('vendange') ||
+      interventionDesc.includes('moisson') ||
+      interventionDesc.includes('récolte') ||
+      interventionDesc.includes('fauche') ||
+      interventionDesc.includes('vendange')
+    );
+  }
+
+  getLabel(): string {
+    return 'Rendement';
+  }
 }

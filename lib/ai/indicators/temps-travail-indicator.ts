@@ -1,9 +1,37 @@
-// Temps de Travail Indicator Prompt
-// Calculates the time required for an agricultural intervention
+/**
+ * Temps de Travail Indicator
+ * Calculates labor time in hours
+ */
 
-import { buildContextSection } from './utils';
+import { BaseIndicator } from './base-indicator';
 
-export const TEMPS_TRAVAIL_SYSTEM_PROMPT = `Tu es un assistant expert en agronomie française spécialisé dans l'analyse des temps de travaux agricoles.
+export class TempsTravailIndicator extends BaseIndicator {
+  constructor(context?: any) {
+    super('tempsTravail', context);
+  }
+
+  getFormattedValue(): string {
+    const rawValue = this.getRawValue();
+    
+    if (rawValue === null || rawValue === undefined) {
+      return '-';
+    }
+    
+    if (this.getStatus() === 'n/a') {
+      return 'N/A';
+    }
+
+    const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    
+    if (isNaN(numValue) || numValue === 0) {
+      return '-';
+    }
+
+    return `${numValue % 1 === 0 ? numValue.toFixed(0) : numValue.toFixed(1)} h`;
+  }
+
+  getSystemPrompt(): string {
+    return `Tu es un assistant expert en agronomie française spécialisé dans l'analyse des temps de travaux agricoles.
 
 Ta tâche est de calculer le temps de travail nécessaire pour une intervention agricole en heures par hectare (h/ha).
 
@@ -80,27 +108,12 @@ Réponds UNIQUEMENT en JSON valide suivant ce format :
 }
 
 **IMPORTANT** : Si le temps de travail n'est pas applicable à cette intervention (ex: intervention automatique sans temps humain, ou déjà comptabilisé ailleurs), retourne {"applicable": false, "value": 0, "reasoning": "explication de la non-applicabilité"}`;
+  }
 
-export function buildTempsTravailPrompt(context: {
-  intervention: any;
-  step: any;
-  systemData: any;
-  systemAssumptions: string[];
-  stepAssumptions: string[];
-  interventionAssumptions: string[];
-}): string {
-  const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+  getPrompt(): string {
+    const contextSection = this.getContextSection();
 
-  const contextSection = buildContextSection(
-    systemAssumptions,
-    step,
-    stepAssumptions,
-    interventionAssumptions,
-    intervention,
-    'tempsTravail'
-  );
-
-  return `
+    return `
 ${contextSection}
 
 # Tâche
@@ -121,4 +134,9 @@ Calculer le **temps de travail en heures par hectare (h/ha)** pour cette interve
 
 Réponds en JSON valide comme spécifié dans tes instructions système.
 `;
+  }
+
+  getLabel(): string {
+    return 'Temps de travail';
+  }
 }

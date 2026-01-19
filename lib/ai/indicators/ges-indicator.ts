@@ -1,9 +1,37 @@
-// GES (Gaz à Effet de Serre) Indicator Prompt
-// Calculates greenhouse gas emissions for an agricultural intervention
+/**
+ * GES Indicator
+ * Calculates greenhouse gas emissions (GHG)
+ */
 
-import { buildContextSection } from './utils';
+import { BaseIndicator } from './base-indicator';
 
-export const GES_SYSTEM_PROMPT = `Tu es un assistant expert en agronomie française spécialisé dans le calcul des émissions de gaz à effet de serre (GES).
+export class GesIndicator extends BaseIndicator {
+  constructor(context?: any) {
+    super('ges', context);
+  }
+
+  getFormattedValue(): string {
+    const rawValue = this.getRawValue();
+    
+    if (rawValue === null || rawValue === undefined) {
+      return '-';
+    }
+    
+    if (this.getStatus() === 'n/a') {
+      return 'N/A';
+    }
+
+    const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    
+    if (isNaN(numValue) || numValue === 0) {
+      return '-';
+    }
+
+    return `${Math.round(numValue)} kg`;
+  }
+
+  getSystemPrompt(): string {
+    return `Tu es un assistant expert en agronomie française spécialisé dans le calcul des émissions de gaz à effet de serre (GES).
 
 Ta tâche est de calculer les émissions de GES d'une intervention agricole en kilogrammes équivalent CO2 par hectare (kg CO2e/ha).
 
@@ -86,27 +114,12 @@ Réponds UNIQUEMENT en JSON valide suivant ce format :
 }
 
 IMPORTANT : Si l'indicateur GES n'est pas applicable à cette intervention (par exemple, une intervention sans intrants, sans carburant, sans mécanisation), retourne {"applicable": false, "value": 0}. Sinon, retourne {"applicable": true, ...}`;
+  }
 
-export function buildGesPrompt(context: {
-  intervention: any;
-  step: any;
-  systemData: any;
-  systemAssumptions: string[];
-  stepAssumptions: string[];
-  interventionAssumptions: string[];
-}): string {
-  const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
+  getPrompt(): string {
+    const contextSection = this.getContextSection();
 
-  const contextSection = buildContextSection(
-    systemAssumptions,
-    step,
-    stepAssumptions,
-    interventionAssumptions,
-    intervention,
-    'ges'
-  );
-
-  return `
+    return `
 ${contextSection}
 
 # Tâche
@@ -131,4 +144,9 @@ Calculer les **émissions de gaz à effet de serre en kg CO2e/ha** pour cette in
 
 Réponds en JSON valide comme spécifié dans tes instructions système.
 `;
+  }
+
+  getLabel(): string {
+    return 'GES';
+  }
 }

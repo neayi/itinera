@@ -1,22 +1,7 @@
 // Base Indicator Calculator Class
 import { callGPT } from './openai-client';
 import { CalculationContext, CalculationResult, ConversationMessage, ConfidenceLevel } from './types';
-import { buildFrequencePrompt, FREQUENCE_SYSTEM_PROMPT } from './prompts/frequence';
-import { buildTempsTravailPrompt, TEMPS_TRAVAIL_SYSTEM_PROMPT } from './prompts/temps-travail';
-import { buildGesPrompt, GES_SYSTEM_PROMPT } from './prompts/ges';
-import { buildAzoteMineralPrompt, AZOTE_MINERAL_SYSTEM_PROMPT } from './prompts/azote-mineral';
-import { buildAzoteOrganiquePrompt, AZOTE_ORGANIQUE_SYSTEM_PROMPT } from './prompts/azote-organique';
-import { buildRendementPrompt, RENDEMENT_SYSTEM_PROMPT } from './prompts/rendement';
-import { buildContextSection } from './prompts/utils';
-import { COUTS_PHYTOS_PROMPT } from './prompts/couts-phytos';
-import { SEMENCES_PROMPT } from './prompts/semences';
-import { ENGRAIS_PROMPT } from './prompts/engrais';
-import { MECANISATION_PROMPT } from './prompts/mecanisation';
-import { GNR_PROMPT } from './prompts/gnr';
-import { IRRIGATION_PROMPT } from './prompts/irrigation';
-import { IFT_PROMPT } from './prompts/ift';
-import { EIQ_PROMPT } from './prompts/eiq';
-import { PRIX_VENTE_PROMPT } from './prompts/prix-vente';
+import { IndicatorFactory } from './indicators';
 
 /**
  * Clean JSON response from OpenAI (remove markdown code blocks)
@@ -68,35 +53,16 @@ export class IndicatorCalculator {
       throw new Error('Invalid step or intervention index');
     }
 
-    // Build hierarchical assumptions
-    // Support both array (new format) and string (old format) for backward compatibility
-    const systemAssumptions = systemData.assumptions || [];
-    const stepAssumptions = step.assumptions || [];
-    const interventionAssumptions = intervention.assumptions || [];
-
-    // Convert to arrays if they're still stored as strings (backward compatibility)
-    const systemAssumptionsArray = Array.isArray(systemAssumptions) 
-      ? systemAssumptions 
-      : (systemAssumptions ? systemAssumptions.split('\n').filter(Boolean) : []);
-    const stepAssumptionsArray = Array.isArray(stepAssumptions) 
-      ? stepAssumptions 
-      : (stepAssumptions ? stepAssumptions.split('\n').filter(Boolean) : []);
-    const interventionAssumptionsArray = Array.isArray(interventionAssumptions) 
-      ? interventionAssumptions 
-      : (interventionAssumptions ? interventionAssumptions.split('\n').filter(Boolean) : []);
-
-    // Get appropriate prompt for this indicator
-    const prompt = this.buildPrompt(indicatorKey, {
-      intervention,
-      step,
+    // Create indicator instance using factory
+    const indicator = IndicatorFactory.create(indicatorKey, {
       systemData,
-      systemAssumptions: systemAssumptionsArray,
-      stepAssumptions: stepAssumptionsArray,
-      interventionAssumptions: interventionAssumptionsArray,
+      stepIndex,
+      interventionIndex,
     });
 
-    // Call OpenAI with indicator-specific system prompt
-    const systemMessage = this.getSystemPrompt(indicatorKey);
+    // Get prompts from indicator instance (no context needed - all extracted from class properties)
+    const systemMessage = indicator.getSystemPrompt();
+    const prompt = indicator.getPrompt();
     
     const messages = [
       { role: 'system' as const, content: systemMessage },
@@ -302,232 +268,6 @@ export class IndicatorCalculator {
       calculatedCount: 0,
       summary: [],
     };
-  }
-
-  /**
-   * Build a prompt for a specific indicator type
-   * @param indicatorKey - The indicator to calculate
-   * @param context - Context information
-   * @returns Formatted prompt string
-   */
-  private buildPrompt(
-    indicatorKey: string,
-    context: {
-      intervention: any;
-      step: any;
-      systemData: any;
-      systemAssumptions: string[];
-      stepAssumptions: string[];
-      interventionAssumptions: string[];
-    }
-  ): string {
-    // Route to specific prompt based on indicator type
-    switch (indicatorKey) {
-      case 'frequence':
-        return buildFrequencePrompt(context);
-      
-      case 'tempsTravail':
-        return buildTempsTravailPrompt(context);
-      
-      case 'ges':
-        return buildGesPrompt(context);
-      
-      case 'azoteMineral':
-        return buildAzoteMineralPrompt(context);
-      
-      case 'azoteOrganique':
-        return buildAzoteOrganiquePrompt(context);
-      
-      case 'rendementTMS':
-      case 'rendement':
-        return buildRendementPrompt(context);
-      
-      case 'coutsPhytos':
-        return this.buildContextualPrompt(COUTS_PHYTOS_PROMPT, context);
-      
-      case 'semences':
-        return this.buildContextualPrompt(SEMENCES_PROMPT, context);
-      
-      case 'engrais':
-        return this.buildContextualPrompt(ENGRAIS_PROMPT, context);
-      
-      case 'mecanisation':
-        return this.buildContextualPrompt(MECANISATION_PROMPT, context);
-      
-      case 'gnr':
-        return this.buildContextualPrompt(GNR_PROMPT, context);
-      
-      case 'irrigation':
-        return this.buildContextualPrompt(IRRIGATION_PROMPT, context);
-      
-      case 'ift':
-        return this.buildContextualPrompt(IFT_PROMPT, context);
-      
-      case 'eiq':
-        return this.buildContextualPrompt(EIQ_PROMPT, context);
-      
-      case 'prixVente':
-        // Special handling for prixVente: only applicable to harvest/moisson/fauche interventions
-        const interventionName = context.intervention.name?.toLowerCase() || '';
-        const interventionDesc = context.intervention.description?.toLowerCase() || '';
-        const isHarvestRelated = 
-          interventionName.includes('moisson') ||
-          interventionName.includes('récolte') ||
-          interventionName.includes('récolté') ||
-          interventionName.includes('fauche') ||
-          interventionName.includes('vendange') ||
-          interventionDesc.includes('moisson') ||
-          interventionDesc.includes('récolte') ||
-          interventionDesc.includes('fauche') ||
-          interventionDesc.includes('vendange');
-        
-        if (!isHarvestRelated) {
-          // Return early with N/A result for non-harvest interventions
-          return `Cette intervention n'est pas une récolte/moisson/fauche. Le prix de vente n'est applicable que pour les interventions de récolte. Réponds en JSON: {"value": "N/A", "confidence": "high", "assumptions": ["Intervention de type ${context.intervention.type}", "Pas de production à vendre"], "calculation_steps": ["Identification: intervention '${context.intervention.name}'", "Type: ${context.intervention.type}", "Conclusion: pas de récolte → prix de vente N/A"], "sources": [], "caveats": ["Le prix de vente ne s'applique qu'aux interventions de récolte/moisson/fauche"]}`;
-        }
-        
-        return this.buildContextualPrompt(PRIX_VENTE_PROMPT, context);
-      
-      // Add more indicators as they are implemented
-      default:
-        // Fallback to generic prompt - use shared context builder
-        const { intervention, step, systemData, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
-
-        // Build context section using shared utility
-        const contextString = buildContextSection(
-          systemAssumptions,
-          step,
-          stepAssumptions,
-          interventionAssumptions,
-          intervention
-        );
-
-        // Determine if this indicator should be per hectare
-        const isPerHectare = 'frequence' != indicatorKey;
-        
-        return `${contextString}
-
-# Tâche
-
-Calculer l'indicateur **"${indicatorKey}"** pour cette intervention.
-
-${isPerHectare ? `\n**⚠️ IMPORTANT - CALCUL PAR HECTARE** : L'indicateur "${indicatorKey}" doit être exprimé **PAR HECTARE**. Toutes les valeurs doivent être ramenées à l'hectare (€/ha, kg/ha, h/ha, TeqCO2/ha, etc.). Si tu disposes de valeurs totales ou par surface différente, divise par la surface pour obtenir la valeur par hectare.\n` : ''}
-# Format de réponse
-
-Réponds en JSON valide avec cette structure :
-\`\`\`json
-{
-  "value": <nombre ou "N/A">,
-  "confidence": "high" | "medium" | "low",
-  "reasoning": "Explication détaillée du calcul en français. COMMENCE TOUJOURS par annoncer la valeur calculée : 'J'ai calculé une valeur de X${isPerHectare ? ' €/ha' : ''}. Voici pourquoi : ...'",
-  "assumptions": ["Liste des hypothèses prises"],
-  "calculation_steps": ["Étapes du calcul"],
-  "sources": ["Sources de données utilisées"],
-  "caveats": ["Limitations ou avertissements"]
-}
-\`\`\`
-
-**Important** : Si l'indicateur n'est pas applicable à cette intervention, retourne "N/A" comme valeur et explique pourquoi dans reasoning.
-`;
-    }
-  }
-
-  /**
-   * Get system prompt for a specific indicator type
-   * @param indicatorKey - The indicator type
-   * @returns System prompt string
-   */
-  private getSystemPrompt(indicatorKey: string): string {
-    switch (indicatorKey) {
-      case 'frequence':
-        return FREQUENCE_SYSTEM_PROMPT;
-      
-      case 'tempsTravail':
-        return TEMPS_TRAVAIL_SYSTEM_PROMPT;
-      
-      case 'ges':
-        return GES_SYSTEM_PROMPT;
-      
-      case 'azoteMineral':
-        return AZOTE_MINERAL_SYSTEM_PROMPT;
-      
-      case 'azoteOrganique':
-        return AZOTE_ORGANIQUE_SYSTEM_PROMPT;
-      
-      case 'rendementTMS':
-      case 'rendement':
-        return RENDEMENT_SYSTEM_PROMPT;
-      
-      case 'coutsPhytos':
-      case 'semences':
-      case 'engrais':
-      case 'mecanisation':
-      case 'gnr':
-      case 'irrigation':
-        return `Tu es un expert en économie agricole française et en analyse des coûts de production. Réponds toujours en JSON valide.`;
-      
-      case 'ift':
-        return `Tu es un expert en protection des cultures et en réglementation phytosanitaire française. Réponds toujours en JSON valide.`;
-      
-      case 'eiq':
-        return `Tu es un expert en écotoxicologie agricole et en évaluation de l'impact environnemental des pesticides. Réponds toujours en JSON valide.`;
-      
-      case 'prixVente':
-        return `Tu es un expert en économie agricole et en marchés des produits agricoles français. Réponds toujours en JSON valide.`;
-      
-      // Add more indicators as they are implemented
-      default:
-        // Determine if this indicator should be per hectare
-       
-        return `Tu es un assistant expert en agronomie française. Tu dois analyser les données agricoles et calculer des indicateurs avec précision.
-        
-**⚠️ RÈGLE CRITIQUE - CALCUL PAR HECTARE** : L'indicateur "${indicatorKey}" doit TOUJOURS être exprimé **PAR HECTARE**. Peu importe les données sources (totales, par parcelle, etc.), tu dois RAMENER le résultat final à l'hectare. Les unités attendues sont : €/ha, kg/ha, h/ha, kg CO2e/ha, uN/ha, qtx/ha selon l'indicateur.
-
-Si tu disposes de :
-- Valeurs totales pour une surface S : divise par S pour obtenir /ha
-- Valeurs par parcelle de X ha : divise par X
-- Valeurs en /100m² : multiplie par 100
-- Valeurs en /are : multiplie par 100
-
-Exemples :
-- Coût total de semences 180 € pour 15 ha → 180/15 = 12 €/ha ✓
-- Temps de travail 8h pour 20 ha → 8/20 = 0.4 h/ha ✓
-- GES 150 kg pour 10 ha → 150/10 = 15 kg CO2e/ha ✓
-
-Réponds toujours en JSON valide.`;
-    }
-  }
-
-  /**
-   * Build a contextual prompt by injecting context into a template
-   * @param template - Prompt template with {context} placeholder
-   * @param context - Context information
-   * @returns Formatted prompt with context injected
-   */
-  private buildContextualPrompt(
-    template: string,
-    context: {
-      intervention: any;
-      step: any;
-      systemData: any;
-      systemAssumptions: string[];
-      stepAssumptions: string[];
-      interventionAssumptions: string[];
-    }
-  ): string {
-    const { intervention, step, systemAssumptions, stepAssumptions, interventionAssumptions } = context;
-
-    // Use shared context builder from utils
-    const contextString = buildContextSection(
-      systemAssumptions,
-      step,
-      stepAssumptions,
-      interventionAssumptions,
-      intervention
-    );
-
-    // Replace {context} placeholder
-    return template.replace('{context}', contextString);
   }
 
   /**

@@ -1,15 +1,37 @@
 /**
- * Prompt pour le calcul des coûts de produits phytosanitaires (€/ha)
- * 
- * Contexte: L'IA doit estimer le coût des produits phytosanitaires appliqués
- * lors d'une intervention en se basant sur:
- * - Le type de produit (herbicide, fongicide, insecticide)
- * - La dose appliquée
- * - Les prix moyens en agriculture française (bio vs conventionnel)
- * - Le type de culture et la pression des bioagresseurs
+ * Coûts Phytos Indicator
+ * Calculates phytosanitary product costs
  */
 
-export const COUTS_PHYTOS_PROMPT = `Tu es un expert en agronomie et en économie agricole française. Ta tâche est d'estimer le **coût des produits phytosanitaires** appliqués lors d'une intervention, exprimé en **€/ha**.
+import { BaseIndicator } from './base-indicator';
+
+export class CoutsPhytosIndicator extends BaseIndicator {
+  constructor(context?: any) {
+    super('coutsPhytos', context);
+  }
+
+  getFormattedValue(): string {
+    const rawValue = this.getRawValue();
+    
+    if (rawValue === null || rawValue === undefined) {
+      return '-';
+    }
+   
+    if (this.getStatus() === 'n/a') {
+      return 'N/A';
+    }
+
+    const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
+    
+    if (isNaN(numValue) || numValue === 0) {
+      return '-';
+    }
+
+    return `${Math.round(numValue)} €`;
+  }
+
+  getSystemPrompt(): string {
+    return `Tu es un expert en agronomie et en économie agricole française. Ta tâche est d'estimer le **coût des produits phytosanitaires** appliqués lors d'une intervention, exprimé en **€/ha**.
 
 ## 📋 INFORMATIONS FOURNIES
 
@@ -121,41 +143,6 @@ Estime le coût total des produits phytosanitaires pour cette intervention en �
 
 Toujours diviser les coûts totaux par la surface pour obtenir €/ha.
 
-## 📤 FORMAT DE SORTIE
-
-Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant ou après):
-
-\`\`\`json
-{
-  "applicable": true,
-  "value": 35.5,
-  "confidence": "medium",
-  "assumptions": [
-    "Produit: glyphosate 360 g/L à 6€/L",
-    "Dose: 5 L/ha pour un désherbage total",
-    "Prix moyen France 2025: 6€/L",
-    "Aucun adjuvant ajouté"
-  ],
-  "calculation_steps": [
-    "Identification produit: glyphosate (herbicide total)",
-    "Dose standard désherbage pré-semis: 5 L/ha",
-    "Prix unitaire: 6 €/L",
-    "Calcul: 5 L/ha × 6 €/L = 30 €/ha",
-    "Ajout mouillant (+10%): 30 × 1.10 = 33 €/ha",
-    "Arrondi: 35.5 €/ha"
-  ],
-  "sources": [
-    "Prix de référence glyphosate (Agrodistribution France 2025)",
-    "Barème doses IFT INRAE 2024",
-    "Pratiques courantes désherbage pré-semis"
-  ],
-  "caveats": [
-    "Prix variable selon le fournisseur et le volume acheté",
-    "Certaines zones ont des restrictions sur l'usage du glyphosate",
-    "Un adjuvant mouillant est souvent recommandé"
-  ]
-}
-\`\`\`
 **IMPORTANT** : Le coût des phytos n'est applicable que pour les interventions phytosanitaires (traitements herbicides, fongicides, insecticides). Pour toute autre intervention, retourne {"applicable": false, "value": 0, "reasoning": "Le coût des phytos ne s'applique qu'aux interventions phytosanitaires"}
 
 **⚠️ IMPORTANT sur le champ "assumptions"** : Retourne la liste COMPLÈTE de TOUTES les hypothèses pertinentes pour cette intervention (pas seulement les nouvelles). Ces hypothèses remplaceront les précédentes stockées pour cette intervention.
@@ -169,26 +156,48 @@ Réponds UNIQUEMENT avec un objet JSON structuré comme suit (pas de texte avant
 - Vérifie que le résultat final est mathématiquement cohérent avec les étapes précédentes de calcul.
 - Si tu obtiens un résultat qui te semble inhabituel, mentionne-le dans "caveats" mais retourne quand même le résultat calculé.
 
-### Champs obligatoires:
+Réponds UNIQUEMENT en JSON valide suivant ce format :
+{
+  "applicable": true | false,
+  "value": <nombre décimal en €/ha ou 0 si non applicable>,
+  "confidence": "high" | "medium" | "low",
+  "reasoning": "Explication détaillée du raisonnement en français",
+  "assumptions": ["Liste des hypothèses utilisées"],
+  "calculation_steps": ["Étapes du calcul avec formules"],
+  "sources": ["Sources de données"],
+  "caveats": ["Limitations ou points d'attention"]
+}`;
+  }
 
-- **value**: nombre décimal en €/ha (0 si aucun phyto utilisé, null si N/A)
-- **confidence**: "high" (informations précises) / "medium" (estimation basée sur pratiques standards) / "low" (manque d'informations détaillées)
-- **assumptions**: liste des hypothèses sur produits, doses, prix
-- **calculation_steps**: étapes détaillées du calcul
-- **sources**: références des données utilisées
-- **caveats**: limitations et points d'attention
+  getPrompt(): string {
+    const contextSection = this.getContextSection();
 
-### Niveau de confiance:
+    return `
+${contextSection}
 
-- **high**: produit et dose clairement mentionnés, prix de référence fiables
-- **medium**: type de traitement clair, mais dose ou produit exact supposé
-- **low**: intervention vague, plusieurs produits possibles, large fourchette de prix
+# Tâche
 
-## 🌾 CONTEXTE AGRICOLE
+Calculer le coût des produits phytosanitaires en €/ha pour cette intervention.
 
-Tu as accès aux informations suivantes:
+# Instructions
 
-{context}
+1. Vérifie d'abord si l'intervention concerne un traitement phytosanitaire
+2. Identifie le type de produit (herbicide, fongicide, insecticide, biocontrôle)
+3. Détermine la dose appliquée (L/ha ou kg/ha)
+4. Estime le prix unitaire selon le type de produit et le contexte bio/conventionnel
+5. Calcule : Coût phytos = Dose × Prix unitaire
+6. Prends en compte les hypothèses des 3 niveaux
 
-Utilise ces informations pour affiner ton estimation des coûts phytosanitaires.
+**⚠️ IMPORTANT** : 
+- Le résultat doit être en **€/ha** (euros par hectare)
+- N'inclure QUE les produits phytosanitaires (pas les engrais)
+- Désherbage mécanique → 0 €/ha en phytos
+
+Réponds en JSON valide comme spécifié dans tes instructions système.
 `;
+  }
+
+  getLabel(): string {
+    return 'Coûts phytos';
+  }
+}
