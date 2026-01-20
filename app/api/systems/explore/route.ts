@@ -8,6 +8,9 @@ interface ExploreSystem {
   description: string;
   system_type: string;
   productions: string;
+  eiq: number | null;
+  gross_margin: number | null;
+  duration: number | null;
   created_at: Date;
   updated_at: Date;
   town: string;
@@ -32,6 +35,9 @@ export async function GET(request: NextRequest) {
         s.description,
         s.system_type,
         s.productions,
+        s.eiq,
+        s.gross_margin,
+        s.duration,
         s.created_at,
         s.updated_at,
         f.town

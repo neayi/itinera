@@ -105,7 +105,7 @@ export abstract class BaseIndicator {
     }
 
     /** Returns the weighted value for this indicator, with frequency applied if applicable (1 by default), and always returns a number (0 if not applicable)
-     * 
+     *
      * @returns Weighted numeric value
      */
     getWeightedValue(): number {

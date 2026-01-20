@@ -42,10 +42,16 @@ CREATE TABLE systems (
     productions TEXT,
     gps_location VARCHAR(255),
     json JSON,
+    eiq DECIMAL(10,2) DEFAULT NULL COMMENT 'Environmental Impact Quotient calculé',
+    gross_margin DECIMAL(10,2) DEFAULT NULL COMMENT 'Marge brute en euros',
+    duration INT DEFAULT NULL COMMENT 'Durée du système en années',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_farm_id (farm_id),
     INDEX idx_user_id (user_id),
+    INDEX idx_eiq (eiq),
+    INDEX idx_gross_margin (gross_margin),
+    INDEX idx_duration (duration),
     FOREIGN KEY (farm_id) REFERENCES farms(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

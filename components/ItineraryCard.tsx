@@ -160,11 +160,11 @@ export function ItineraryCard({
               <span>EIQ</span>
             </div>
             <div className={eiq <= 20 ? 'text-green-600' : eiq <= 40 ? 'text-orange-600' : 'text-red-600'}>
-              {eiq.toFixed(1)}
+              {Number(eiq || 0).toFixed(1)}
             </div>
           </div>
           <div>
-            <div className="text-gray-600 text-sm mb-1">Période</div>
+            <div className="text-gray-600 text-sm mb-1">Durée</div>
             <div>{nbAnnees} {nbAnnees > 1 ? 'ans' : 'an'}</div>
           </div>
         </div>

@@ -26,6 +26,9 @@ export interface System {
   productions?: string;
   gps_location?: string;
   json?: any;
+  eiq?: number;
+  gross_margin?: number;
+  duration?: number;
   created_at: Date;
   updated_at: Date;
 }

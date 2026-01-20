@@ -12,22 +12,27 @@ export class FrequenceIndicator extends BaseIndicator {
 
   getFormattedValue(): string {
     const rawValue = this.getRawValue();
-    
-    if (rawValue === null || rawValue === undefined) {
-      return '-';
+
+    // At step level, there's no such thing as frequency
+    if (this.interventionIndex === undefined) {
+        return '';
     }
-    
+
+    if (rawValue === null || rawValue === undefined) {
+      return '1';
+    }
+
     if (this.getStatus() === 'n/a') {
       return 'N/A';
     }
 
     const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
-    
+
     if (isNaN(numValue) || numValue === 0) {
-      return '-';
+      return '1';
     }
 
-    return numValue.toFixed(1);
+    return '1';
   }
 
   getSystemPrompt(): string {

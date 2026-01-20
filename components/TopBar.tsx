@@ -87,7 +87,7 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
                 <LocationMapIcon />
               </div>
               <div className="flex flex-col">
-                <span className="text-white text-xl leading-tight">Itinéra</span>
+                <span className="text-white text-xl leading-tight">Itinera</span>
                 <span className="text-white/80 text-xs">simulateur d'itinéraire technique</span>
               </div>
             </div>

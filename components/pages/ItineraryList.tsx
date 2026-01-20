@@ -46,7 +46,7 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
     const fetchSystems = async () => {
       try {
         setIsLoading(true);
-        
+
         // Fetch user's own systems
         const response = await fetch('/api/systems');
         if (!response.ok) throw new Error('Failed to fetch systems');
@@ -62,9 +62,9 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
           ville: system.town || '',
           departement: '',
           dateModification: new Date(system.updated_at),
-          margeBrute: 0,
-          eiq: 0,
-          nbAnnees: 0,
+          margeBrute: system.gross_margin || 0,
+          eiq: system.eiq || 0,
+          nbAnnees: system.duration || 0,
           productions: system.productions ? system.productions.split(',').map((p: string) => p.trim()) : [],
           cahierDesCharges: system.system_type || '',
           description: system.description || '',
@@ -77,7 +77,7 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
         const exploreResponse = await fetch('/api/systems/explore');
         if (exploreResponse.ok) {
           const exploreSystems = await exploreResponse.json();
-          
+
           const exploreTransformedData: Itinerary[] = exploreSystems.map((system: any) => ({
             id: system.id.toString(),
             name: system.name || 'Système sans nom',
@@ -87,15 +87,15 @@ export function ItineraryList({ onNavigateToProject, onNavigateToWizard }: Itine
             ville: system.town || '',
             departement: '',
             dateModification: new Date(system.updated_at),
-            margeBrute: 0,
-            eiq: 0,
-            nbAnnees: 0,
+            margeBrute: system.gross_margin || 0,
+            eiq: system.eiq || 0,
+            nbAnnees: system.duration || 0,
             productions: system.productions ? system.productions.split(',').map((p: string) => p.trim()) : [],
             cahierDesCharges: system.system_type || '',
             description: system.description || '',
             nbVariantes: 0
           }));
-          
+
           setExploreItineraries(exploreTransformedData);
         }
 

@@ -107,7 +107,7 @@ export function calculateStepTotals(systemData: any, stepIndex: number) {
 
   Object.entries(stepTotals).forEach(([key, value]) => {
     const existingIndex = step.values.findIndex((v: any) => v.key === key);
-    
+
     if (existingIndex >= 0) {
       // Only update if not user/ia/n/a status
       const existingStatus = step.values[existingIndex].status;
@@ -135,7 +135,7 @@ export function calculateStepTotals(systemData: any, stepIndex: number) {
  * 2. Step-level totals (weighted sums + totalProduits, totalCharges, margeBrute)
  * 3. System-level totals (sum across all steps)
  * 4. System-level indicators per ha per year
- * 
+ *
  * Can be used both client-side and server-side.
  * Returns updated systemData without saving to database.
  */
@@ -280,6 +280,7 @@ export function calculateSystemTotals(systemData: any) {
     tempsTravail: systemTotals.tempsTravail,
     ges: systemTotals.ges,
     ift: systemTotals.ift,
+    eiq: systemTotals.eiq,
     azoteMineral: systemTotals.azoteMineral,
     azoteOrganique: systemTotals.azoteOrganique,
     azoteTotal: systemTotals.azoteMineral + systemTotals.azoteOrganique,
@@ -292,6 +293,7 @@ export function calculateSystemTotals(systemData: any) {
     tempsTravailParHaParAn: systemTotals.tempsTravail / nbYears,
     gesParHaParAn: systemTotals.ges / nbYears,
     iftMoyenParAn: systemTotals.ift / nbYears,
+    eiqParHaParAn: systemTotals.eiq / nbYears,
     azoteTotalParHaParAn: (systemTotals.azoteMineral + systemTotals.azoteOrganique) / nbYears,
     semencesParHaParAn: systemTotals.semences / nbYears,
     chargesParHaParAn: systemTotals.totalCharges / nbYears,
