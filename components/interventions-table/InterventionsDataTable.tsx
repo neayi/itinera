@@ -383,10 +383,14 @@ export function InterventionsDataTable({
                           onEditingChange={setEditingCell}
                         />
                       ) : (
-                        flexRender(cell.column.columnDef.cell, cell.getContext())
+                      <div className="editable-cell">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </div>
                       )
                     ) : (
-                      flexRender(cell.column.columnDef.cell, cell.getContext())
+                      <div className="editable-cell">
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </div>
                     )}
                   </td>
                   );
