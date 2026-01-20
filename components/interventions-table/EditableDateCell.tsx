@@ -9,30 +9,25 @@ interface EditableDateCellProps {
   systemId: string;
   systemData: any;
   onUpdate?: (updatedSystemData?: any) => void;
+  onRequestEdit?: (startEdit: () => void) => void;
 }
 
-export function EditableDateCell({ 
-  value, 
-  stepIndex, 
-  interventionIndex, 
+export function EditableDateCell({
+  value,
+  stepIndex,
+  interventionIndex,
   systemId,
   systemData,
-  onUpdate 
+  onUpdate,
+  onRequestEdit
 }: EditableDateCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isEditing]);
-
-  const handleClick = () => {
-    if (interventionIndex === -1) return; // Ne pas éditer les lignes de total
-    
+  const startEditing = () => {
+    if (interventionIndex === -1) return;
     // Convertir la date affichée (dd/mm/yyyy) en format ISO (yyyy-mm-dd) pour l'input
     if (value && value !== '-') {
       const parts = value.split('/');
@@ -44,6 +39,18 @@ export function EditableDateCell({
     setIsEditing(true);
   };
 
+  useEffect(() => {
+    if (onRequestEdit) {
+      onRequestEdit(startEditing);
+    }
+  }, [onRequestEdit]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditing]);
+
   const handleSave = async () => {
     if (!editValue || isSaving) return;
 
@@ -53,7 +60,7 @@ export function EditableDateCell({
       const newDate = new Date(editValue);
       const step = systemData.steps[stepIndex];
       const startDate = new Date(step.startDate);
-      
+
       // Calculer la différence en jours
       const diffTime = newDate.getTime() - startDate.getTime();
       const newDay = Math.round(diffTime / (1000 * 60 * 60 * 24));
@@ -111,7 +118,7 @@ export function EditableDateCell({
 
   if (isEditing) {
     return (
-      <div className="editable-date-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+      <div className="editable-date-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="date"
@@ -161,18 +168,10 @@ export function EditableDateCell({
   }
 
   return (
-    <span
-      onClick={handleClick}
-      style={{
-        cursor: 'pointer',
-        padding: '0.25rem',
-        borderRadius: '4px',
-        display: 'inline-block',
-        minWidth: '80px',
-      }}
-      className="hover:bg-gray-100"
-    >
-      {value || '-'}
-    </span>
+    <div className="editable-cell">
+      <span>
+        {value || '-'}
+      </span>
+    </div>
   );
 }

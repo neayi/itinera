@@ -9,20 +9,34 @@ interface EditableTextAreaCellProps {
   systemId: string;
   systemData: any;
   onUpdate?: (updatedSystemData?: any) => void;
+  onRequestEdit?: (startEdit: () => void) => void;
 }
 
-export function EditableTextAreaCell({ 
-  value, 
-  stepIndex, 
-  interventionIndex, 
+export function EditableTextAreaCell({
+  value,
+  stepIndex,
+  interventionIndex,
   systemId,
   systemData,
-  onUpdate 
+  onUpdate,
+  onRequestEdit
 }: EditableTextAreaCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || '');
   const [isSaving, setIsSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const startEditing = () => {
+    if (interventionIndex === -1) return;
+    setEditValue(value || '');
+    setIsEditing(true);
+  };
+
+  useEffect(() => {
+    if (onRequestEdit) {
+      onRequestEdit(startEditing);
+    }
+  }, [onRequestEdit]);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -30,12 +44,6 @@ export function EditableTextAreaCell({
       textareaRef.current.select();
     }
   }, [isEditing]);
-
-  const handleClick = () => {
-    if (interventionIndex === -1) return; // Pas d'édition pour les lignes de totaux
-    setEditValue(value || '');
-    setIsEditing(true);
-  };
 
   const handleCancel = () => {
     setEditValue(value || '');
@@ -52,12 +60,12 @@ export function EditableTextAreaCell({
     try {
       // Créer une copie des données système
       const updatedSystemData = JSON.parse(JSON.stringify(systemData));
-      
+
       // Mettre à jour la description
       updatedSystemData.steps[stepIndex].interventions[interventionIndex].description = editValue;
 
       console.log('Storing system data');
-      
+
       // Envoyer la mise à jour à l'API
       const response = await fetch(`/api/systems/${systemId}`, {
         method: 'PATCH',
@@ -101,7 +109,7 @@ export function EditableTextAreaCell({
 
   if (isEditing) {
     return (
-      <div className="editable-textarea-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'flex-start', width: '100%' }}>
+      <div className="editable-textarea-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'flex-start', width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <textarea
           ref={textareaRef}
           value={editValue}
@@ -162,19 +170,10 @@ export function EditableTextAreaCell({
   }
 
   return (
-    <span
-      onClick={handleClick}
-      style={{
-        cursor: 'pointer',
-        display: 'block',
-        padding: '0.25rem 0',
-        minHeight: '1.5rem',
-        whiteSpace: 'pre-wrap',
-        wordBreak: 'break-word',
-      }}
-      title="Cliquer pour éditer (Ctrl+Enter pour sauvegarder)"
-    >
-      {value || '-'}
-    </span>
+    <div className="editable-cell">
+      <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+        {value || '-'}
+      </span>
+    </div>
   );
 }

@@ -29,17 +29,19 @@ interface EditableStepValueCellProps {
   status?: ValueStatus;
   confidence?: ConfidenceLevel;
   onUpdate?: (updatedSystemData?: any) => void;
+  onRequestEdit?: (startEdit: () => void) => void;
 }
 
-export function EditableStepValueCell({ 
-  value, 
-  stepIndex, 
+export function EditableStepValueCell({
+  value,
+  stepIndex,
   systemId,
   systemData,
   fieldKey,
   status,
   confidence,
-  onUpdate 
+  onUpdate,
+  onRequestEdit
 }: EditableStepValueCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value?.toString() || '');
@@ -65,10 +67,16 @@ export function EditableStepValueCell({
     }
   }, [isEditing]);
 
-  const handleClick = () => {
+  const startEditing = () => {
     setEditValue(value?.toString() || '');
     setIsEditing(true);
   };
+
+  useEffect(() => {
+    if (onRequestEdit) {
+      onRequestEdit(startEditing);
+    }
+  }, [onRequestEdit]);
 
   const handleCancel = () => {
     setEditValue(value?.toString() || '');
@@ -77,7 +85,7 @@ export function EditableStepValueCell({
 
   const handleSave = async () => {
     const numValue = parseFloat(editValue);
-    
+
     // Vérifier si la valeur est valide
     if (editValue !== '' && isNaN(numValue)) {
       alert('Veuillez entrer un nombre valide');
@@ -90,25 +98,25 @@ export function EditableStepValueCell({
     try {
       // Créer une copie des données système
       const updatedSystemData = JSON.parse(JSON.stringify(systemData));
-      
+
       const step = updatedSystemData.steps[stepIndex];
-      
+
       // S'assurer que le tableau values existe
       if (!step.values) {
         step.values = [];
       }
-      
+
       // Chercher si la clé existe déjà
       const existingIndex = step.values.findIndex((v: any) => v.key === fieldKey);
-      
+
       if (existingIndex >= 0) {
         // Mettre à jour la valeur existante avec status='user'
         step.values[existingIndex].value = finalValue;
         step.values[existingIndex].status = 'user';
       } else {
         // Ajouter une nouvelle entrée avec status='user'
-        step.values.push({ 
-          key: fieldKey, 
+        step.values.push({
+          key: fieldKey,
           value: finalValue,
           status: 'user'
         });
@@ -155,7 +163,7 @@ export function EditableStepValueCell({
 
   if (isEditing) {
     return (
-      <div className="editable-number-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }}>
+      <div className="editable-step-value-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="number"
@@ -211,13 +219,8 @@ export function EditableStepValueCell({
   }
 
   return (
-    <span 
-      onClick={handleClick}
-      style={{ cursor: 'pointer' }}
-      className={cellClassName}
-      title="Cliquer pour éditer la valeur au niveau de l'étape"
-    >
-      {indicator.getFormattedValue()}
-    </span>
+    <div className={`editable-cell ${cellClassName}`}>
+      <span>{indicator.getFormattedValue()}</span>
+    </div>
   );
 }

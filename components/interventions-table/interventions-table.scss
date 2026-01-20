@@ -19,10 +19,10 @@ $shadow-sm       : 0 1px 3px rgba(0, 0, 0, 0.1);
 $shadow-sticky   : 2px 0 4px rgba(0, 0, 0, 0.05);
 
 // Status color classes (T005)
-$color-ai-high   : #dbeafe;  // bleu clair pour IA haute confiance
-$color-ai-medium : #fef3c7;  // jaune pour IA confiance moyenne
-$color-ai-low    : #fef3c7;  // jaune pour IA confiance basse
-$color-na        : #f3f4f6;  // gris pour non applicable
+$color-ai-high   : #dbeafe; // bleu clair pour IA haute confiance
+$color-ai-medium : #fef3c7; // jaune pour IA confiance moyenne
+$color-ai-low    : #fef3c7; // jaune pour IA confiance basse
+$color-na        : #f3f4f6; // gris pour non applicable
 
 // Container
 .interventions-table-container {
@@ -146,25 +146,6 @@ $color-na        : #f3f4f6;  // gris pour non applicable
         }
     }
 
-    td {
-        // Classes appliquées aux cellules selon leur statut
-        &:has(.status-na) {
-            background-color: $color-na !important; // gris pour non applicable
-        }
-
-        &:has(.status-ia-high) {
-            background-color: $color-ai-high !important; // bleu clair pour IA haute confiance
-        }
-
-        &:has(.status-ia-medium) {
-            background-color: $color-ai-medium !important; // jaune pour IA confiance moyenne
-        }
-
-        &:has(.status-ia-low) {
-            background-color: $color-ai-low !important; // jaune pour IA confiance basse
-        }        
-    }
-
     // Sortable header
     .sortable-header {
         cursor     : pointer;
@@ -224,9 +205,41 @@ $color-na        : #f3f4f6;  // gris pour non applicable
     }
 
     // Cells
+
     td {
-        padding: 0.75rem 1rem;
         color  : $color-gray-600;
+        padding: 0; // Retirer le padding du td pour le mettre sur .editable-cell
+        height : auto; // Permettre à la cellule de s'adapter à son contenu
+
+        // Classes appliquées aux cellules selon leur statut
+        &:has(.status-na) {
+            background-color: $color-na !important; // gris pour non applicable
+        }
+
+        &:has(.status-ia-high) {
+            background-color: $color-ai-high !important; // bleu clair pour IA haute confiance
+        }
+
+        &:has(.status-ia-medium) {
+            background-color: $color-ai-medium !important; // jaune pour IA confiance moyenne
+        }
+
+        &:has(.status-ia-low) {
+            background-color: $color-ai-low !important; // jaune pour IA confiance basse
+        }
+
+        &:has(.editable-cell) {
+            cursor    : pointer;
+            transition: background-color $transition-speed ease;
+            &:hover {
+                background-color: #efefef !important;
+            }
+        }
+
+        .editable-cell {
+            padding   : 0.75rem 1rem;
+            min-height: 100%; // Prend au minimum 100% de la hauteur
+        }
 
         // Text wrapping for cells with max-width
         &[style*="max-width"] {
@@ -279,4 +292,3 @@ $color-na        : #f3f4f6;  // gris pour non applicable
         }
     }
 }
-

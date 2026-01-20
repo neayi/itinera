@@ -10,21 +10,36 @@ interface EditableTextCellProps {
   systemData: any;
   fieldName: 'name' | 'description';
   onUpdate?: (updatedSystemData?: any) => void;
+  onRequestEdit?: (startEdit: () => void) => void;
 }
 
-export function EditableTextCell({ 
-  value, 
-  stepIndex, 
-  interventionIndex, 
+export function EditableTextCell({
+  value,
+  stepIndex,
+  interventionIndex,
   systemId,
   systemData,
   fieldName,
-  onUpdate 
+  onUpdate,
+  onRequestEdit
 }: EditableTextCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || '');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const startEditing = () => {
+    if (interventionIndex === -1) return;
+    setEditValue(value || '');
+    setIsEditing(true);
+  };
+
+  // Passer la fonction startEditing au parent
+  useEffect(() => {
+    if (onRequestEdit) {
+      onRequestEdit(startEditing);
+    }
+  }, [onRequestEdit]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -32,12 +47,6 @@ export function EditableTextCell({
       inputRef.current.select();
     }
   }, [isEditing]);
-
-  const handleClick = () => {
-    if (interventionIndex === -1) return; // Pas d'édition pour les lignes de totaux
-    setEditValue(value || '');
-    setIsEditing(true);
-  };
 
   const handleCancel = () => {
     setEditValue(value || '');
@@ -54,12 +63,12 @@ export function EditableTextCell({
     try {
       // Créer une copie des données système
       const updatedSystemData = JSON.parse(JSON.stringify(systemData));
-      
+
       // Mettre à jour le champ approprié
       updatedSystemData.steps[stepIndex].interventions[interventionIndex][fieldName] = editValue;
 
       console.log('Storing system data');
-      
+
       // Envoyer la mise à jour à l'API
       const response = await fetch(`/api/systems/${systemId}`, {
         method: 'PATCH',
@@ -103,7 +112,7 @@ export function EditableTextCell({
 
   if (isEditing) {
     return (
-      <div className="editable-text-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }}>
+      <div className="editable-text-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="text"
@@ -159,17 +168,10 @@ export function EditableTextCell({
   }
 
   return (
-    <span
-      onClick={handleClick}
-      style={{
-        cursor: 'pointer',
-        display: 'block',
-        padding: '0.25rem 0',
-        minHeight: '1.5rem',
-      }}
-      title="Cliquer pour éditer"
-    >
-      {value || '-'}
-    </span>
+    <div className="editable-cell">
+      <span>
+        {value || '-'}
+      </span>
+    </div>
   );
 }

@@ -35,19 +35,21 @@ interface EditableNumberCellProps {
   confidence?: 'high' | 'medium' | 'low';
   onUpdate?: (updatedSystemData?: any) => void;
   onCellFocus?: (stepIndex: number, interventionIndex: number, indicatorKey: string) => void;
+  onRequestEdit?: (startEdit: () => void) => void;
 }
 
-export function EditableNumberCell({ 
-  value, 
-  stepIndex, 
-  interventionIndex, 
+export function EditableNumberCell({
+  value,
+  stepIndex,
+  interventionIndex,
   systemId,
   systemData,
   fieldKey,
   status,
   confidence,
   onUpdate,
-  onCellFocus
+  onCellFocus,
+  onRequestEdit
 }: EditableNumberCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value?.toString() || '');
@@ -80,13 +82,11 @@ export function EditableNumberCell({
     }
   }, [value, isEditing]);
 
-  const handleClick = () => {
-    if (interventionIndex === -1) return; // Pas d'édition pour les lignes de totaux
-    
+  const startEditing = () => {
+    if (interventionIndex === -1) return;
     // Open edit mode immediately (synchronous)
     setEditValue(value?.toString() || '');
     setIsEditing(true);
-    
     // Open AI Assistant asynchronously after editor is rendered
     if (onCellFocus) {
       setTimeout(() => {
@@ -94,6 +94,12 @@ export function EditableNumberCell({
       }, 0);
     }
   };
+
+  useEffect(() => {
+    if (onRequestEdit) {
+      onRequestEdit(startEditing);
+    }
+  }, [onRequestEdit]);
 
   const handleOpenAssistant = (e: React.MouseEvent) => {
     e.stopPropagation(); // Empêcher l'ouverture de l'éditeur
@@ -109,7 +115,7 @@ export function EditableNumberCell({
 
   const handleSave = async () => {
     const numValue = parseFloat(editValue);
-    
+
     // Vérifier si la valeur est valide
     if (editValue !== '' && isNaN(numValue)) {
       alert('Veuillez entrer un nombre valide');
@@ -125,21 +131,21 @@ export function EditableNumberCell({
     try {
       // Créer une copie des données système
       const updatedSystemData = JSON.parse(JSON.stringify(systemData));
-      
+
       const intervention = updatedSystemData.steps[stepIndex].interventions[interventionIndex];
-      
+
       // S'assurer que le tableau values existe
       if (!intervention.values) {
         intervention.values = [];
       }
-      
+
       // Mettre à jour la valeur modifiée avec status='user'
       const idx = intervention.values.findIndex((v: any) => v.key === fieldKey);
       if (idx >= 0) {
         const oldValue = intervention.values[idx].value;
         intervention.values[idx].value = finalValue;
         intervention.values[idx].status = 'user';
-        
+
         // If there's an existing conversation and the value changed, add a manual edit message
         if (intervention.values[idx].conversation && intervention.values[idx].conversation.length > 0 && valueChanged) {
           intervention.values[idx].conversation.push({
@@ -149,9 +155,9 @@ export function EditableNumberCell({
           });
         }
       } else {
-        intervention.values.push({ 
-          key: fieldKey, 
-          value: finalValue, 
+        intervention.values.push({
+          key: fieldKey,
+          value: finalValue,
           status: 'user'
         });
       }
@@ -189,7 +195,7 @@ export function EditableNumberCell({
 
   if (isEditing) {
     return (
-      <div className="editable-number-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }}>
+      <div className="editable-number-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="number"
@@ -249,37 +255,15 @@ export function EditableNumberCell({
   // Show clickable span for empty cells (calculation now triggered from AI Assistant panel)
   if (isEmpty) {
     return (
-      <span
-        onClick={handleClick}
-        style={{
-          cursor: 'pointer',
-          padding: '0.25rem 0',
-          minHeight: '1.5rem',
-          display: 'inline-block',
-        }}
-        title="Cliquer pour ouvrir l'assistant IA"
-      >
-        -
-      </span>
+      <div className="editable-cell">
+        <span>-</span>
+      </div>
     );
   }
 
   return (
-    <span
-      onClick={handleClick}
-      style={{
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.25rem',
-        padding: '0.25rem 0',
-        minHeight: '1.5rem',
-        borderRadius: '0.25rem',
-      }}
-      className={cellClassName}
-      title="Cliquer pour éditer"
-    >
-      <span style={{ flex: 1 }}>{indicator.getFormattedValue()}</span>    
-    </span>
+    <div className={`editable-cell ${cellClassName}`}>
+      <span>{indicator.getFormattedValue()}</span>
+    </div>
   );
 }

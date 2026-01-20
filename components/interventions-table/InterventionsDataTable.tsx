@@ -20,11 +20,11 @@ import { EditableNumberCell } from './EditableNumberCell';
 import { EditableStepValueCell } from './EditableStepValueCell';
 import './interventions-table.scss';
 
-export function InterventionsDataTable({ 
-  systemData, 
-  systemId, 
+export function InterventionsDataTable({
+  systemData,
+  systemId,
   onUpdate,
-  onCellFocus 
+  onCellFocus
 }: InterventionsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -56,7 +56,7 @@ export function InterventionsDataTable({
     if (!systemData?.steps) return [];
 
     const rows: InterventionRow[] = [];
-    
+
     systemData.steps.forEach((step: any, stepIndex: number) => {
       // Calculer les totaux pour ce step en utilisant la fonction centralisée
       const stepTotals = calculateStepTotals(systemData, stepIndex);
@@ -173,7 +173,7 @@ export function InterventionsDataTable({
                   if (header.column.id === 'agronomie' || header.column.parent?.id === 'agronomie') groupClass += ' group-agronomie';
                   else if (header.column.id === 'environnemental' || header.column.parent?.id === 'environnemental') groupClass += ' group-environnemental';
                   else if (header.column.id === 'economique' || header.column.parent?.id === 'economique') groupClass += ' group-economique';
-                  
+
                   if (header.column.parent != undefined) {
                     groupClass += ' sub-header';
 
@@ -187,7 +187,7 @@ export function InterventionsDataTable({
                   }
 
                   return (
-                  <th 
+                  <th
                     key={header.id}
                     colSpan={header.colSpan}
                     className={groupClass}
@@ -222,7 +222,7 @@ export function InterventionsDataTable({
           </thead>
           <tbody>
             {table.getRowModel().rows.map((row) => (
-              <tr 
+              <tr
                 key={row.id}
                 className={row.original.isStepTotal ? 'step-total-row' : ''}
               >
@@ -230,7 +230,7 @@ export function InterventionsDataTable({
                   // Récupérer le statut confidence et status pour les cellules numériques éditables
                   let confidenceLevel: 'high' | 'medium' | 'low' | undefined = undefined;
                   let valueStatus: 'user' | 'calculated' | 'ia' | 'n/a' | undefined = undefined;
-                  
+
                   // Pour les cellules intervention-level
                   if ((cell.column.columnDef.meta as any)?.fieldType === 'number' && !row.original.isStepTotal) {
                     const intervention = systemData.steps[row.original.stepIndex]?.interventions[row.original.interventionIndex];
@@ -244,7 +244,7 @@ export function InterventionsDataTable({
                       }
                     }
                   }
-                  
+
                   // Pour les cellules step-level (totaux)
                   if (row.original.isStepTotal && stepLevelEditableFields.includes(cell.column.id)) {
                     const step = systemData.steps[row.original.stepIndex];
@@ -259,14 +259,21 @@ export function InterventionsDataTable({
                     }
                   }
 
+                  // Handler pour le clic sur la cellule éditable
+                  let editHandler: (() => void) | undefined;
+                  const handleCellClick = (cell.column.columnDef.meta as any)?.editable && !row.original.isStepTotal
+                    ? () => { if (editHandler) editHandler(); }
+                    : undefined;
+
                   return (
-                  <td 
+                  <td
                     key={cell.id}
                     style={{
                       width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined,
                       maxWidth: cell.column.columnDef.maxSize,
                       textAlign: (cell.column.columnDef.meta as any)?.align || 'left'
                     }}
+                    onClick={handleCellClick}
                   >
                     {row.original.isStepTotal && (cell.column.columnDef.meta as any)?.fieldType === 'number' ? (
                       // Pour les lignes de totaux, utiliser EditableStepValueCell pour tous les champs numériques
@@ -279,6 +286,7 @@ export function InterventionsDataTable({
                         status={valueStatus}
                         confidence={confidenceLevel}
                         onUpdate={onUpdate}
+                        onRequestEdit={(fn) => { editHandler = fn; }}
                       />
                     ) : (cell.column.columnDef.meta as any)?.editable && !row.original.isStepTotal ? (
                       (cell.column.columnDef.meta as any)?.fieldType === 'number' ? (
@@ -293,6 +301,7 @@ export function InterventionsDataTable({
                           confidence={confidenceLevel}
                           onUpdate={onUpdate}
                           onCellFocus={onCellFocus}
+                          onRequestEdit={(fn) => { editHandler = fn; }}
                         />
                       ) : cell.column.id === 'date' ? (
                         <EditableDateCell
@@ -302,6 +311,7 @@ export function InterventionsDataTable({
                           systemId={systemId}
                           systemData={systemData}
                           onUpdate={onUpdate}
+                          onRequestEdit={(fn) => { editHandler = fn; }}
                         />
                       ) : cell.column.id === 'description' ? (
                         <EditableTextAreaCell
@@ -311,6 +321,7 @@ export function InterventionsDataTable({
                           systemId={systemId}
                           systemData={systemData}
                           onUpdate={onUpdate}
+                          onRequestEdit={(fn) => { editHandler = fn; }}
                         />
                       ) : cell.column.id === 'name' ? (
                         <EditableTextCell
@@ -321,6 +332,7 @@ export function InterventionsDataTable({
                           systemData={systemData}
                           fieldName="name"
                           onUpdate={onUpdate}
+                          onRequestEdit={(fn) => { editHandler = fn; }}
                         />
                       ) : (
                         flexRender(cell.column.columnDef.cell, cell.getContext())
