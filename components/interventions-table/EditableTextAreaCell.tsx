@@ -6,22 +6,27 @@ interface EditableTextAreaCellProps {
   value: string;
   stepIndex: number;
   interventionIndex: number;
-  systemId: string;
   systemData: any;
-  onUpdate?: (updatedSystemData?: any) => void;
+  triggerSave: (systemData: any) => void;
   onRequestEdit?: (startEdit: () => void) => void;
+  tdRef?: React.RefObject<HTMLTableCellElement>;
+  cellId: string;
+  isEditing: boolean;
+  onEditingChange: (cellId: string | null) => void;
 }
 
 export function EditableTextAreaCell({
   value,
   stepIndex,
   interventionIndex,
-  systemId,
   systemData,
-  onUpdate,
-  onRequestEdit
+  triggerSave,
+  onRequestEdit,
+  tdRef,
+  cellId,
+  isEditing,
+  onEditingChange
 }: EditableTextAreaCellProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || '');
   const [isSaving, setIsSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -29,7 +34,17 @@ export function EditableTextAreaCell({
   const startEditing = () => {
     if (interventionIndex === -1) return;
     setEditValue(value || '');
-    setIsEditing(true);
+    onEditingChange(cellId);
+    // Scroller vers la cellule
+    setTimeout(() => {
+      if (tdRef?.current) {
+        tdRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
   };
 
   useEffect(() => {
@@ -47,12 +62,12 @@ export function EditableTextAreaCell({
 
   const handleCancel = () => {
     setEditValue(value || '');
-    setIsEditing(false);
+    onEditingChange(null);
   };
 
   const handleSave = async () => {
     if (editValue === value) {
-      setIsEditing(false);
+      onEditingChange(null);
       return;
     }
 
@@ -64,28 +79,10 @@ export function EditableTextAreaCell({
       // Mettre à jour la description
       updatedSystemData.steps[stepIndex].interventions[interventionIndex].description = editValue;
 
-      console.log('Storing system data');
+      // Sauvegarder avec debounce
+      triggerSave(updatedSystemData);
 
-      // Envoyer la mise à jour à l'API
-      const response = await fetch(`/api/systems/${systemId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          json: updatedSystemData,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update intervention description');
-      }
-
-      // Recharger les données depuis l'API
-      if (onUpdate) {
-        onUpdate();
-      }
-      setIsEditing(false);
+      onEditingChange(null);
     } catch (error) {
       console.error('Error saving description:', error);
       alert('Erreur lors de la sauvegarde de la description');

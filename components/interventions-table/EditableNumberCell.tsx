@@ -28,30 +28,35 @@ interface EditableNumberCellProps {
   value: number | string;
   stepIndex: number;
   interventionIndex: number;
-  systemId: string;
   systemData: any;
   fieldKey: FieldKey;
   status?: ValueStatus;
   confidence?: 'high' | 'medium' | 'low';
-  onUpdate?: (updatedSystemData?: any) => void;
+  triggerSave: (systemData: any) => void;
   onCellFocus?: (stepIndex: number, interventionIndex: number, indicatorKey: string) => void;
   onRequestEdit?: (startEdit: () => void) => void;
+  tdRef?: React.RefObject<HTMLTableCellElement>;
+  cellId: string;
+  isEditing: boolean;
+  onEditingChange: (cellId: string | null) => void;
 }
 
 export function EditableNumberCell({
   value,
   stepIndex,
   interventionIndex,
-  systemId,
   systemData,
   fieldKey,
   status,
   confidence,
-  onUpdate,
+  triggerSave,
   onCellFocus,
-  onRequestEdit
+  onRequestEdit,
+  tdRef,
+  cellId,
+  isEditing,
+  onEditingChange
 }: EditableNumberCellProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value?.toString() || '');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -86,12 +91,20 @@ export function EditableNumberCell({
     if (interventionIndex === -1) return;
     // Open edit mode immediately (synchronous)
     setEditValue(value?.toString() || '');
-    setIsEditing(true);
+    onEditingChange(cellId);
     // Open AI Assistant asynchronously after editor is rendered
     if (onCellFocus) {
       setTimeout(() => {
         onCellFocus(stepIndex, interventionIndex, fieldKey);
-      }, 0);
+        // Scroller vers la cellule après l'ouverture de l'assistant
+        if (tdRef?.current) {
+          tdRef.current.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'nearest'
+          });
+        }
+      }, 100);
     }
   };
 
@@ -110,7 +123,7 @@ export function EditableNumberCell({
 
   const handleCancel = () => {
     setEditValue(value?.toString() || '');
-    setIsEditing(false);
+    onEditingChange(null);
   };
 
   const handleSave = async () => {
@@ -163,11 +176,9 @@ export function EditableNumberCell({
       }
 
       // Update UI immediately with calculated data (no server round-trip)
-      if (onUpdate) {
-        onUpdate(updatedSystemData);
-      }
+      triggerSave(updatedSystemData);
 
-      setIsEditing(false);
+      onEditingChange(null);
     } catch (error) {
       console.error('Error saving value:', error);
       alert('Erreur lors de la sauvegarde de la valeur');

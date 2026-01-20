@@ -23,27 +23,32 @@ function getCellClassName(status?: ValueStatus, confidence?: ConfidenceLevel): s
 interface EditableStepValueCellProps {
   value: number;
   stepIndex: number;
-  systemId: string;
   systemData: any;
   fieldKey: FieldKey;
   status?: ValueStatus;
   confidence?: ConfidenceLevel;
-  onUpdate?: (updatedSystemData?: any) => void;
+  triggerSave: (systemData: any) => void;
   onRequestEdit?: (startEdit: () => void) => void;
+  tdRef?: React.RefObject<HTMLTableCellElement>;
+  cellId: string;
+  isEditing: boolean;
+  onEditingChange: (cellId: string | null) => void;
 }
 
 export function EditableStepValueCell({
   value,
   stepIndex,
-  systemId,
   systemData,
   fieldKey,
   status,
   confidence,
-  onUpdate,
-  onRequestEdit
+  triggerSave,
+  onRequestEdit,
+  tdRef,
+  cellId,
+  isEditing,
+  onEditingChange
 }: EditableStepValueCellProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value?.toString() || '');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +74,17 @@ export function EditableStepValueCell({
 
   const startEditing = () => {
     setEditValue(value?.toString() || '');
-    setIsEditing(true);
+    onEditingChange(cellId);
+    // Scroller vers la cellule
+    setTimeout(() => {
+      if (tdRef?.current) {
+        tdRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
   };
 
   useEffect(() => {
@@ -80,7 +95,7 @@ export function EditableStepValueCell({
 
   const handleCancel = () => {
     setEditValue(value?.toString() || '');
-    setIsEditing(false);
+    onEditingChange(null);
   };
 
   const handleSave = async () => {
@@ -124,26 +139,10 @@ export function EditableStepValueCell({
 
       console.log('Storing system data');
 
-      // Envoyer la mise à jour à l'API
-      const response = await fetch(`/api/systems/${systemId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          json: updatedSystemData,
-        }),
-      });
+      // Sauvegarder avec debounce
+      triggerSave(updatedSystemData);
 
-      if (!response.ok) {
-        throw new Error('Failed to update step value');
-      }
-
-      // Recharger les données depuis l'API pour obtenir les totaux recalculés
-      if (onUpdate) {
-        onUpdate();
-      }
-      setIsEditing(false);
+      onEditingChange(null);
     } catch (error) {
       console.error('Error saving step value:', error);
       alert('Erreur lors de la sauvegarde de la valeur');

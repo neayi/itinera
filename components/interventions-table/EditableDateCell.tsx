@@ -6,22 +6,27 @@ interface EditableDateCellProps {
   value: string;
   stepIndex: number;
   interventionIndex: number;
-  systemId: string;
   systemData: any;
-  onUpdate?: (updatedSystemData?: any) => void;
+  triggerSave: (systemData: any) => void;
   onRequestEdit?: (startEdit: () => void) => void;
+  tdRef?: React.RefObject<HTMLTableCellElement>;
+  cellId: string;
+  isEditing: boolean;
+  onEditingChange: (cellId: string | null) => void;
 }
 
 export function EditableDateCell({
   value,
   stepIndex,
   interventionIndex,
-  systemId,
   systemData,
-  onUpdate,
-  onRequestEdit
+  triggerSave,
+  onRequestEdit,
+  tdRef,
+  cellId,
+  isEditing,
+  onEditingChange
 }: EditableDateCellProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -36,7 +41,17 @@ export function EditableDateCell({
         setEditValue(isoDate);
       }
     }
-    setIsEditing(true);
+    onEditingChange(cellId);
+    // Scroller vers la cellule
+    setTimeout(() => {
+      if (tdRef?.current) {
+        tdRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
   };
 
   useEffect(() => {
@@ -69,28 +84,10 @@ export function EditableDateCell({
       const updatedSystemData = JSON.parse(JSON.stringify(systemData));
       updatedSystemData.steps[stepIndex].interventions[interventionIndex].day = newDay;
 
-      console.log('Storing system data');
+      // Sauvegarder avec debounce
+      triggerSave(updatedSystemData);
 
-      // Envoyer la mise à jour à l'API
-      const response = await fetch(`/api/systems/${systemId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          json: updatedSystemData,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update intervention date');
-      }
-
-      // Recharger les données depuis l'API
-      if (onUpdate) {
-        onUpdate();
-      }
-      setIsEditing(false);
+      onEditingChange(null);
     } catch (error) {
       console.error('Error saving date:', error);
       alert('Erreur lors de la sauvegarde de la date');
@@ -100,7 +97,7 @@ export function EditableDateCell({
   };
 
   const handleCancel = () => {
-    setIsEditing(false);
+    onEditingChange(null);
     setEditValue('');
   };
 

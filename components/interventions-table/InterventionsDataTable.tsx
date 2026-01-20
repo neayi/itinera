@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -18,6 +18,7 @@ import { calculateStepTotals } from '@/lib/calculate-system-totals';
 import { EditableTextAreaCell } from './EditableTextAreaCell';
 import { EditableNumberCell } from './EditableNumberCell';
 import { EditableStepValueCell } from './EditableStepValueCell';
+import { useDebouncedSave } from '@/lib/hooks/useDebouncedSave';
 import './interventions-table.scss';
 
 export function InterventionsDataTable({
@@ -27,6 +28,32 @@ export function InterventionsDataTable({
   onCellFocus
 }: InterventionsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [editingCell, setEditingCell] = useState<string | null>(null);
+
+  // Configuration du hook de sauvegarde avec debounce
+  const { triggerSave } = useDebouncedSave({
+    systemId,
+    onSave: useCallback(async (data: any) => {
+      const response = await fetch(`/api/systems/${systemId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          json: data,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update system');
+      }
+
+      // Appeler onUpdate après la sauvegarde
+      if (onUpdate) {
+        onUpdate();
+      }
+    }, [systemId, onUpdate]),
+  });
 
   // Fonction utilitaire pour extraire une valeur via l'indicateur
   const getValueFromIntervention = (stepIndex: number, interventionIndex: number, key: string): number => {
@@ -261,12 +288,18 @@ export function InterventionsDataTable({
 
                   // Handler pour le clic sur la cellule éditable
                   let editHandler: (() => void) | undefined;
+                  const tdRef = useRef<HTMLTableCellElement>(null);
+
+                  // Générer un ID unique pour cette cellule
+                  const cellId = `${row.original.stepIndex}-${row.original.interventionIndex}-${cell.column.id}`;
+
                   const handleCellClick = (cell.column.columnDef.meta as any)?.editable && !row.original.isStepTotal
                     ? () => { if (editHandler) editHandler(); }
                     : undefined;
 
                   return (
                   <td
+                    ref={tdRef}
                     key={cell.id}
                     style={{
                       width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined,
@@ -280,13 +313,16 @@ export function InterventionsDataTable({
                       <EditableStepValueCell
                         value={cell.getValue() as number}
                         stepIndex={row.original.stepIndex}
-                        systemId={systemId}
                         systemData={systemData}
                         fieldKey={cell.column.id as any}
                         status={valueStatus}
                         confidence={confidenceLevel}
-                        onUpdate={onUpdate}
+                        triggerSave={triggerSave}
                         onRequestEdit={(fn) => { editHandler = fn; }}
+                        tdRef={tdRef}
+                        cellId={cellId}
+                        isEditing={editingCell === cellId}
+                        onEditingChange={setEditingCell}
                       />
                     ) : (cell.column.columnDef.meta as any)?.editable && !row.original.isStepTotal ? (
                       (cell.column.columnDef.meta as any)?.fieldType === 'number' ? (
@@ -294,45 +330,57 @@ export function InterventionsDataTable({
                           value={cell.getValue() as number}
                           stepIndex={row.original.stepIndex}
                           interventionIndex={row.original.interventionIndex}
-                          systemId={systemId}
                           systemData={systemData}
                           fieldKey={cell.column.id as any}
                           status={valueStatus}
                           confidence={confidenceLevel}
-                          onUpdate={onUpdate}
+                          triggerSave={triggerSave}
                           onCellFocus={onCellFocus}
                           onRequestEdit={(fn) => { editHandler = fn; }}
+                          tdRef={tdRef}
+                          cellId={cellId}
+                          isEditing={editingCell === cellId}
+                          onEditingChange={setEditingCell}
                         />
                       ) : cell.column.id === 'date' ? (
                         <EditableDateCell
                           value={cell.getValue() as string}
                           stepIndex={row.original.stepIndex}
                           interventionIndex={row.original.interventionIndex}
-                          systemId={systemId}
                           systemData={systemData}
-                          onUpdate={onUpdate}
+                          triggerSave={triggerSave}
                           onRequestEdit={(fn) => { editHandler = fn; }}
+                          tdRef={tdRef}
+                          cellId={cellId}
+                          isEditing={editingCell === cellId}
+                          onEditingChange={setEditingCell}
                         />
                       ) : cell.column.id === 'description' ? (
                         <EditableTextAreaCell
                           value={cell.getValue() as string}
                           stepIndex={row.original.stepIndex}
                           interventionIndex={row.original.interventionIndex}
-                          systemId={systemId}
                           systemData={systemData}
-                          onUpdate={onUpdate}
+                          triggerSave={triggerSave}
                           onRequestEdit={(fn) => { editHandler = fn; }}
+                          tdRef={tdRef}
+                          cellId={cellId}
+                          isEditing={editingCell === cellId}
+                          onEditingChange={setEditingCell}
                         />
                       ) : cell.column.id === 'name' ? (
                         <EditableTextCell
                           value={cell.getValue() as string}
                           stepIndex={row.original.stepIndex}
                           interventionIndex={row.original.interventionIndex}
-                          systemId={systemId}
                           systemData={systemData}
                           fieldName="name"
-                          onUpdate={onUpdate}
+                          triggerSave={triggerSave}
                           onRequestEdit={(fn) => { editHandler = fn; }}
+                          tdRef={tdRef}
+                          cellId={cellId}
+                          isEditing={editingCell === cellId}
+                          onEditingChange={setEditingCell}
                         />
                       ) : (
                         flexRender(cell.column.columnDef.cell, cell.getContext())

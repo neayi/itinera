@@ -6,24 +6,29 @@ interface EditableTextCellProps {
   value: string;
   stepIndex: number;
   interventionIndex: number;
-  systemId: string;
   systemData: any;
   fieldName: 'name' | 'description';
-  onUpdate?: (updatedSystemData?: any) => void;
+  triggerSave: (systemData: any) => void;
   onRequestEdit?: (startEdit: () => void) => void;
+  tdRef?: React.RefObject<HTMLTableCellElement>;
+  cellId: string;
+  isEditing: boolean;
+  onEditingChange: (cellId: string | null) => void;
 }
 
 export function EditableTextCell({
   value,
   stepIndex,
   interventionIndex,
-  systemId,
   systemData,
   fieldName,
-  onUpdate,
-  onRequestEdit
+  triggerSave,
+  onRequestEdit,
+  tdRef,
+  cellId,
+  isEditing,
+  onEditingChange
 }: EditableTextCellProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value || '');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +36,17 @@ export function EditableTextCell({
   const startEditing = () => {
     if (interventionIndex === -1) return;
     setEditValue(value || '');
-    setIsEditing(true);
+    onEditingChange(cellId);
+    // Scroller vers la cellule
+    setTimeout(() => {
+      if (tdRef?.current) {
+        tdRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest'
+        });
+      }
+    }, 100);
   };
 
   // Passer la fonction startEditing au parent
@@ -50,12 +65,12 @@ export function EditableTextCell({
 
   const handleCancel = () => {
     setEditValue(value || '');
-    setIsEditing(false);
+    onEditingChange(null);
   };
 
   const handleSave = async () => {
     if (editValue === value) {
-      setIsEditing(false);
+      onEditingChange(null);
       return;
     }
 
@@ -67,41 +82,9 @@ export function EditableTextCell({
       // Mettre à jour le champ approprié
       updatedSystemData.steps[stepIndex].interventions[interventionIndex][fieldName] = editValue;
 
-      console.log('Storing system data');
+      // Sauvegarder avec debounce
+      triggerSave(updatedSystemData);
 
-      // Envoyer la mise à jour à l'API
-      const response = await fetch(`/api/systems/${systemId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          json: updatedSystemData,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update intervention ${fieldName}`);
-      }
-
-      // Recharger les données depuis l'API
-      if (onUpdate) {
-        onUpdate();
-      }
-      setIsEditing(false);
-    } catch (error) {
-      console.error(`Error saving ${fieldName}:`, error);
-      alert(`Erreur lors de la sauvegarde du ${fieldName === 'name' ? 'nom' : 'champ'}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSave();
-    } else if (e.key === 'Escape') {
       handleCancel();
     }
   };
