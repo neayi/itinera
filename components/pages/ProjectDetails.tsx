@@ -355,13 +355,13 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
               </button>
               <button className="group flex items-center gap-0 hover:gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-all duration-300 text-sm">
                 <Settings className="size-4" />
-                <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap">
+                <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap group-hover:ml-1">
                   Réglages
                 </span>
               </button>
               <button className="group flex items-center gap-0 hover:gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-red-600 transition-all duration-300 text-sm">
                 <Trash2 className="size-4" />
-                <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap">
+                <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap group-hover:ml-1">
                   Tout effacer
                 </span>
               </button>
