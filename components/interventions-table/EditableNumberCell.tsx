@@ -137,7 +137,7 @@ export function EditableNumberCell({
 
     const finalValue = editValue === '' ? 0 : numValue;
 
-    // Même si la valeur n'a pas changé, on doit sauvegarder pour mettre reviewed = true
+    // Même si la valeur n'a pas changé, on doit sauvegarder pour mettre status = user
     const valueChanged = finalValue !== value;
 
     setIsSaving(true);
