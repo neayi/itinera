@@ -29,7 +29,6 @@ interface EditableStepValueCellProps {
   confidence?: ConfidenceLevel;
   triggerSave: (systemData: any) => void;
   onRequestEdit?: (startEdit: () => void) => void;
-  tdRef?: React.RefObject<HTMLTableCellElement>;
   cellId: string;
   isEditing: boolean;
   onEditingChange: (cellId: string | null) => void;
@@ -44,7 +43,6 @@ export function EditableStepValueCell({
   confidence,
   triggerSave,
   onRequestEdit,
-  tdRef,
   cellId,
   isEditing,
   onEditingChange
@@ -52,6 +50,7 @@ export function EditableStepValueCell({
   const [editValue, setEditValue] = useState(value?.toString() || '');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // T009: Get CSS class based on status and confidence
   const cellClassName = getCellClassName(status, confidence);
@@ -75,16 +74,6 @@ export function EditableStepValueCell({
   const startEditing = () => {
     setEditValue(value?.toString() || '');
     onEditingChange(cellId);
-    // Scroller vers la cellule
-    setTimeout(() => {
-      if (tdRef?.current) {
-        tdRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest'
-        });
-      }
-    }, 100);
   };
 
   useEffect(() => {
@@ -157,7 +146,7 @@ export function EditableStepValueCell({
 
   if (isEditing) {
     return (
-      <div className="editable-step-value-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+      <div ref={containerRef} className="editable-number-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="number"

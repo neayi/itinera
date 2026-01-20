@@ -35,7 +35,6 @@ interface EditableNumberCellProps {
   triggerSave: (systemData: any) => void;
   onCellFocus?: (stepIndex: number, interventionIndex: number, indicatorKey: string) => void;
   onRequestEdit?: (startEdit: () => void) => void;
-  tdRef?: React.RefObject<HTMLTableCellElement>;
   cellId: string;
   isEditing: boolean;
   onEditingChange: (cellId: string | null) => void;
@@ -52,7 +51,6 @@ export function EditableNumberCell({
   triggerSave,
   onCellFocus,
   onRequestEdit,
-  tdRef,
   cellId,
   isEditing,
   onEditingChange
@@ -60,6 +58,7 @@ export function EditableNumberCell({
   const [editValue, setEditValue] = useState(value?.toString() || '');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // T006: Get CSS class based on status and confidence
   const cellClassName = getCellClassName(status, confidence);
@@ -96,14 +95,6 @@ export function EditableNumberCell({
     if (onCellFocus) {
       setTimeout(() => {
         onCellFocus(stepIndex, interventionIndex, fieldKey);
-        // Scroller vers la cellule après l'ouverture de l'assistant
-        if (tdRef?.current) {
-          tdRef.current.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-            inline: 'nearest'
-          });
-        }
       }, 100);
     }
   };
@@ -206,7 +197,7 @@ export function EditableNumberCell({
 
   if (isEditing) {
     return (
-      <div className="editable-number-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+      <div ref={containerRef} className="editable-number-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="number"

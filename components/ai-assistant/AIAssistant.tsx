@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ConversationMessage } from '@/lib/types';
 import { IndicatorFactory } from '@/lib/ai/indicators';
 import ConversationHistory from './ConversationHistory';
@@ -62,6 +62,37 @@ export default function AIAssistant({
 }: AIAssistantProps) {
   const [isRefining, setIsRefining] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Scroller vers la cellule éditée quand l'assistant s'ouvre
+  useEffect(() => {
+    if (isOpen && focusedCell) {
+      // Attendre que la transition CSS soit terminée (0.3s) + un peu de marge
+      setTimeout(() => {
+        // Trouver le premier TD contenant une div avec une classe editable
+        const editableClasses = [
+          'editable-number-cell',
+          'editable-text-cell',
+          'editable-textarea-cell',
+          'editable-date-cell'
+        ];
+
+        for (const className of editableClasses) {
+          const editableDiv = document.querySelector(`.${className}`);
+          if (editableDiv) {
+            const td = editableDiv.closest('td');
+            if (td) {
+              td.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'nearest'
+              });
+              break;
+            }
+          }
+        }
+      }, 400); // 300ms transition + 100ms marge
+    }
+  }, [isOpen, focusedCell]);
 
   // Helper function to format estimated time
   const formatEstimatedTime = (seconds: number): string => {
@@ -188,20 +219,20 @@ export default function AIAssistant({
                   <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
                     Temps estimé : <strong>{formatEstimatedTime(recalculateAll ? batchEstimation.estimatedSecondsAll : batchEstimation.estimatedSeconds)}</strong>
                   </p>
-                  
+
                   {/* Checkbox to recalculate all */}
                   {batchEstimation.totalCalculableIndicators > batchEstimation.indicatorsWithoutValue && (
-                    <label style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '0.5rem', 
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
                       marginTop: '1rem',
                       fontSize: '0.875rem',
                       cursor: 'pointer',
                       color: '#475569'
                     }}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={recalculateAll}
                         onChange={(e) => onRecalculateAllChange?.(e.target.checked)}
                         style={{ cursor: 'pointer', width: '16px', height: '16px' }}

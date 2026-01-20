@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -25,35 +25,45 @@ export function InterventionsDataTable({
   systemData,
   systemId,
   onUpdate,
-  onCellFocus
+  onCellFocus,
+  columnVisibility,
+  onColumnVisibilityChange
 }: InterventionsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [editingCell, setEditingCell] = useState<string | null>(null);
 
+  // Définir le callback de sauvegarde en dehors pour éviter les problèmes de hooks
+  const handleSave = useCallback(async (data: any) => {
+    const response = await fetch(`/api/systems/${systemId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        json: data,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update system');
+    }
+  }, [systemId]);
+
   // Configuration du hook de sauvegarde avec debounce
   const { triggerSave } = useDebouncedSave({
     systemId,
-    onSave: useCallback(async (data: any) => {
-      const response = await fetch(`/api/systems/${systemId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          json: data,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update system');
-      }
-
-      // Appeler onUpdate après la sauvegarde
-      if (onUpdate) {
-        onUpdate();
-      }
-    }, [systemId, onUpdate]),
+    onSave: handleSave,
   });
+
+  // Fonction wrapper pour mettre à jour l'UI immédiatement ET sauvegarder en base
+  const updateSystemData = useCallback((updatedData: any) => {
+    // 1. Mettre à jour l'UI immédiatement
+    if (onUpdate) {
+      onUpdate(updatedData);
+    }
+    // 2. Déclencher la sauvegarde en base (debounced)
+    triggerSave(updatedData);
+  }, [onUpdate, triggerSave]);
 
   // Fonction utilitaire pour extraire une valeur via l'indicateur
   const getValueFromIntervention = (stepIndex: number, interventionIndex: number, key: string): number => {
@@ -173,8 +183,10 @@ export function InterventionsDataTable({
     columns: interventionColumns,
     state: {
       sorting,
+      ...(columnVisibility && { columnVisibility }),
     },
     onSortingChange: setSorting,
+    ...(onColumnVisibilityChange && { onColumnVisibilityChange }),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
@@ -288,18 +300,21 @@ export function InterventionsDataTable({
 
                   // Handler pour le clic sur la cellule éditable
                   let editHandler: (() => void) | undefined;
-                  const tdRef = useRef<HTMLTableCellElement>(null);
 
                   // Générer un ID unique pour cette cellule
                   const cellId = `${row.original.stepIndex}-${row.original.interventionIndex}-${cell.column.id}`;
 
-                  const handleCellClick = (cell.column.columnDef.meta as any)?.editable && !row.original.isStepTotal
+                  // Déterminer si la cellule est éditable
+                  const isCellEditable = row.original.isStepTotal
+                    ? stepLevelEditableFields.includes(cell.column.id)
+                    : (cell.column.columnDef.meta as any)?.editable;
+
+                  const handleCellClick = isCellEditable
                     ? () => { if (editHandler) editHandler(); }
                     : undefined;
 
                   return (
                   <td
-                    ref={tdRef}
                     key={cell.id}
                     style={{
                       width: cell.column.getSize() !== 150 ? cell.column.getSize() : undefined,
@@ -317,9 +332,8 @@ export function InterventionsDataTable({
                         fieldKey={cell.column.id as any}
                         status={valueStatus}
                         confidence={confidenceLevel}
-                        triggerSave={triggerSave}
+                        triggerSave={updateSystemData}
                         onRequestEdit={(fn) => { editHandler = fn; }}
-                        tdRef={tdRef}
                         cellId={cellId}
                         isEditing={editingCell === cellId}
                         onEditingChange={setEditingCell}
@@ -334,10 +348,9 @@ export function InterventionsDataTable({
                           fieldKey={cell.column.id as any}
                           status={valueStatus}
                           confidence={confidenceLevel}
-                          triggerSave={triggerSave}
+                          triggerSave={updateSystemData}
                           onCellFocus={onCellFocus}
                           onRequestEdit={(fn) => { editHandler = fn; }}
-                          tdRef={tdRef}
                           cellId={cellId}
                           isEditing={editingCell === cellId}
                           onEditingChange={setEditingCell}
@@ -348,9 +361,8 @@ export function InterventionsDataTable({
                           stepIndex={row.original.stepIndex}
                           interventionIndex={row.original.interventionIndex}
                           systemData={systemData}
-                          triggerSave={triggerSave}
+                          triggerSave={updateSystemData}
                           onRequestEdit={(fn) => { editHandler = fn; }}
-                          tdRef={tdRef}
                           cellId={cellId}
                           isEditing={editingCell === cellId}
                           onEditingChange={setEditingCell}
@@ -361,9 +373,8 @@ export function InterventionsDataTable({
                           stepIndex={row.original.stepIndex}
                           interventionIndex={row.original.interventionIndex}
                           systemData={systemData}
-                          triggerSave={triggerSave}
+                          triggerSave={updateSystemData}
                           onRequestEdit={(fn) => { editHandler = fn; }}
-                          tdRef={tdRef}
                           cellId={cellId}
                           isEditing={editingCell === cellId}
                           onEditingChange={setEditingCell}
@@ -375,9 +386,8 @@ export function InterventionsDataTable({
                           interventionIndex={row.original.interventionIndex}
                           systemData={systemData}
                           fieldName="name"
-                          triggerSave={triggerSave}
+                          triggerSave={updateSystemData}
                           onRequestEdit={(fn) => { editHandler = fn; }}
-                          tdRef={tdRef}
                           cellId={cellId}
                           isEditing={editingCell === cellId}
                           onEditingChange={setEditingCell}

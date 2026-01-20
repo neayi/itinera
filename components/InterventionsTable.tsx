@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useReducer, useCallback } from 'react';
 import { ChevronDown, ChevronUp, Columns, Plus, BarChart3, Settings, RefreshCw, Sparkles } from 'lucide-react';
 import { InterventionData } from '@/lib/types';
 import { InterventionsDataTable } from '@/components/interventions-table';
@@ -6,6 +6,7 @@ import { SystemIndicators } from '@/components/SystemIndicators';
 import { getRotationDurationYears } from '@/lib/calculate-rotation-duration';
 import { JsonView, allExpanded, darkStyles, defaultStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
+import { VisibilityState } from '@tanstack/react-table';
 
 interface InterventionsTableProps {
   interventions?: InterventionData[];
@@ -39,9 +40,9 @@ export function InterventionsTable({
 }: InterventionsTableProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [focusedCell, setFocusedCell] = useState<{ interventionId: string; columnName: string; initialValue: any } | null>(null);
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    new Set(['description', 'date', 'frequence', 'azoteMineral', 'azoteOrganique', 'ift', 'eiq', 'ges', 'tempsTravail', 'coutsPhytos', 'semences', 'engrais', 'mecanisation', 'gnr', 'irrigation', 'totalCharges', 'rendementTMS', 'prixVente', 'totalProduits', 'margeBrute'])
-  );
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    // Toutes les colonnes sont visibles par défaut
+  });
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const columnSelectorRef = useRef<HTMLDivElement>(null);
 
@@ -74,15 +75,10 @@ export function InterventionsTable({
   }, [showColumnSelector, showIndicatorSelector]);
 
   const toggleColumn = (columnKey: string) => {
-    setVisibleColumns(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(columnKey)) {
-        newSet.delete(columnKey);
-      } else {
-        newSet.add(columnKey);
-      }
-      return newSet;
-    });
+    setColumnVisibility(prev => ({
+      ...prev,
+      [columnKey]: !(prev[columnKey] ?? true) // Par défaut visible (true)
+    }));
   };
 
   const toggleIndicator = (indicatorKey: string) => {
@@ -194,7 +190,7 @@ export function InterventionsTable({
                         <label key={column.key} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
                           <input
                             type="checkbox"
-                            checked={visibleColumns.has(column.key)}
+                            checked={columnVisibility[column.key] ?? true}
                             onChange={() => toggleColumn(column.key)}
                             className="cursor-pointer"
                           />
@@ -257,6 +253,8 @@ export function InterventionsTable({
           systemId={systemId}
           onUpdate={onUpdate}
           onCellFocus={onCellFocusAI}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
         />
       )}
 

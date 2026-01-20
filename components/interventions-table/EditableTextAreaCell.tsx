@@ -35,16 +35,6 @@ export function EditableTextAreaCell({
     if (interventionIndex === -1) return;
     setEditValue(value || '');
     onEditingChange(cellId);
-    // Scroller vers la cellule
-    setTimeout(() => {
-      if (tdRef?.current) {
-        tdRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest'
-        });
-      }
-    }, 100);
   };
 
   useEffect(() => {
@@ -101,7 +91,7 @@ export function EditableTextAreaCell({
 
   if (isEditing) {
     return (
-      <div className="editable-textarea-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'flex-start', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+      <div ref={containerRef} className="editable-textarea-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'flex-start', width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <textarea
           ref={textareaRef}
           value={editValue}

@@ -42,16 +42,6 @@ export function EditableDateCell({
       }
     }
     onEditingChange(cellId);
-    // Scroller vers la cellule
-    setTimeout(() => {
-      if (tdRef?.current) {
-        tdRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest'
-        });
-      }
-    }, 100);
   };
 
   useEffect(() => {
@@ -110,7 +100,7 @@ export function EditableDateCell({
 
   if (isEditing) {
     return (
-      <div className="editable-date-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+      <div ref={containerRef} className="editable-date-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="date"

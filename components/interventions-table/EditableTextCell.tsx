@@ -10,7 +10,6 @@ interface EditableTextCellProps {
   fieldName: 'name' | 'description';
   triggerSave: (systemData: any) => void;
   onRequestEdit?: (startEdit: () => void) => void;
-  tdRef?: React.RefObject<HTMLTableCellElement>;
   cellId: string;
   isEditing: boolean;
   onEditingChange: (cellId: string | null) => void;
@@ -24,7 +23,6 @@ export function EditableTextCell({
   fieldName,
   triggerSave,
   onRequestEdit,
-  tdRef,
   cellId,
   isEditing,
   onEditingChange
@@ -32,21 +30,12 @@ export function EditableTextCell({
   const [editValue, setEditValue] = useState(value || '');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const startEditing = () => {
     if (interventionIndex === -1) return;
     setEditValue(value || '');
     onEditingChange(cellId);
-    // Scroller vers la cellule
-    setTimeout(() => {
-      if (tdRef?.current) {
-        tdRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest'
-        });
-      }
-    }, 100);
   };
 
   // Passer la fonction startEditing au parent
@@ -95,7 +84,7 @@ export function EditableTextCell({
 
   if (isEditing) {
     return (
-      <div className="editable-text-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+      <div ref={containerRef} className="editable-text-cell" style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', width: '100%' }} onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="text"
