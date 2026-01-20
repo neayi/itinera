@@ -98,7 +98,7 @@ export function EditableStepValueCell({
     onEditingChange(null);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     const numValue = parseFloat(editValue);
 
     // Vérifier si la valeur est valide
@@ -110,45 +110,40 @@ export function EditableStepValueCell({
     const finalValue = editValue === '' ? 0 : numValue;
 
     setIsSaving(true);
-    try {
-      // Créer une copie des données système
-      const updatedSystemData = JSON.parse(JSON.stringify(systemData));
 
-      const step = updatedSystemData.steps[stepIndex];
+    // Créer une copie des données système
+    const updatedSystemData = JSON.parse(JSON.stringify(systemData));
 
-      // S'assurer que le tableau values existe
-      if (!step.values) {
-        step.values = [];
-      }
+    const step = updatedSystemData.steps[stepIndex];
 
-      // Chercher si la clé existe déjà
-      const existingIndex = step.values.findIndex((v: any) => v.key === fieldKey);
-
-      if (existingIndex >= 0) {
-        // Mettre à jour la valeur existante avec status='user'
-        step.values[existingIndex].value = finalValue;
-        step.values[existingIndex].status = 'user';
-      } else {
-        // Ajouter une nouvelle entrée avec status='user'
-        step.values.push({
-          key: fieldKey,
-          value: finalValue,
-          status: 'user'
-        });
-      }
-
-      console.log('Storing system data');
-
-      // Sauvegarder avec debounce
-      triggerSave(updatedSystemData);
-
-      onEditingChange(null);
-    } catch (error) {
-      console.error('Error saving step value:', error);
-      alert('Erreur lors de la sauvegarde de la valeur');
-    } finally {
-      setIsSaving(false);
+    // S'assurer que le tableau values existe
+    if (!step.values) {
+      step.values = [];
     }
+
+    // Chercher si la clé existe déjà
+    const existingIndex = step.values.findIndex((v: any) => v.key === fieldKey);
+
+    if (existingIndex >= 0) {
+      // Mettre à jour la valeur existante avec status='user'
+      step.values[existingIndex].value = finalValue;
+      step.values[existingIndex].status = 'user';
+    } else {
+      // Ajouter une nouvelle entrée avec status='user'
+      step.values.push({
+        key: fieldKey,
+        value: finalValue,
+        status: 'user'
+      });
+    }
+
+    console.log('Storing system data');
+
+    // Sauvegarder avec debounce
+    triggerSave(updatedSystemData);
+
+    onEditingChange(null);
+    setIsSaving(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

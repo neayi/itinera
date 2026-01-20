@@ -26,10 +26,10 @@ function formatInterventionDate(stepStartDate: string, interventionDay: number):
     const startDate = new Date(stepStartDate);
     const interventionDate = new Date(startDate);
     interventionDate.setDate(startDate.getDate() + interventionDay);
-    
+
     const day = String(interventionDate.getDate()).padStart(2, '0');
     const month = String(interventionDate.getMonth() + 1).padStart(2, '0');
-    
+
     return `${day}/${month}`;
   } catch (error) {
     return 'Date non calculable';
@@ -63,7 +63,7 @@ export class IndicatorCalculator {
     // Get prompts from indicator instance (no context needed - all extracted from class properties)
     const systemMessage = indicator.getSystemPrompt();
     const prompt = indicator.getPrompt();
-    
+
     const messages = [
       { role: 'system' as const, content: systemMessage },
       { role: 'user' as const, content: prompt },
@@ -160,7 +160,7 @@ export class IndicatorCalculator {
 
     // Build messages with conversation history
     const systemMessage = `Tu es un assistant expert en agronomie française. L'utilisateur veut affiner un calcul précédent. Prends en compte son message et recalcule si nécessaire. Réponds en JSON valide.`;
-    
+
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       { role: 'system', content: systemMessage },
     ];
@@ -297,8 +297,8 @@ export class IndicatorCalculator {
     }>;
   }> {
     const { maxParallel = 5, onProgress, abortSignal } = options;
-    
-    // Find all missing indicators (null or undefined, reviewed=false)
+
+    // Find all missing indicators (null or undefined, status != user)
     const missingIndicators: Array<{
       stepIndex: number;
       interventionIndex: number;
@@ -319,24 +319,23 @@ export class IndicatorCalculator {
       step.interventions?.forEach((intervention: any, interventionIndex: number) => {
         console.log(`[calculateAllMissing] Intervention ${stepIndex}-${interventionIndex}: ${intervention.name}`);
         console.log(`[calculateAllMissing] Values:`, intervention.values);
-        
+
         indicatorKeys.forEach((indicatorKey) => {
           const valueEntry = intervention.values?.find((v: any) => v.key === indicatorKey);
-          
+
           // Should calculate if:
           // - No value entry exists, OR
           // - Value is null/undefined, OR
-          // - reviewed is not true and not "n/a"
-          const needsCalculation = !valueEntry || 
-            valueEntry.value === null || 
+          // - status is not "user"
+          const needsCalculation = !valueEntry ||
+            valueEntry.value === null ||
             valueEntry.value === undefined ||
-            (valueEntry.reviewed !== true && valueEntry.reviewed !== "n/a");
-          
+            valueEntry.status !== "user";
+
           if (needsCalculation) {
             console.log(`[calculateAllMissing] ✓ Need to calculate ${indicatorKey}:`, {
               exists: !!valueEntry,
-              value: valueEntry?.value,
-              reviewed: valueEntry?.reviewed
+              value: valueEntry?.value
             });
             missingIndicators.push({ stepIndex, interventionIndex, indicatorKey });
           }
@@ -366,7 +365,7 @@ export class IndicatorCalculator {
 
       const batch = missingIndicators.slice(i, i + maxParallel);
       console.log(`[calculateAllMissing] Processing batch ${Math.floor(i / maxParallel) + 1}/${Math.ceil(total / maxParallel)}: ${batch.length} indicators`);
-      
+
       const batchPromises = batch.map(async ({ stepIndex, interventionIndex, indicatorKey }, batchIdx) => {
         try {
           // Get step and intervention names for progress display
@@ -391,18 +390,18 @@ export class IndicatorCalculator {
           // Update system data
           const step = updatedSystemData.steps[stepIndex];
           const intervention = step.interventions[interventionIndex];
-          
+
           if (!intervention.values) {
             intervention.values = [];
           }
 
           const existingIndex = intervention.values.findIndex((v: any) => v.key === indicatorKey);
-          
+
           const valueEntry = {
             key: indicatorKey,
             value: result.value,
             confidence: result.confidence,
-            reviewed: false,
+            status: 'ia',
             conversation: result.conversation,
           };
 

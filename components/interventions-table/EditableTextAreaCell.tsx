@@ -65,30 +65,25 @@ export function EditableTextAreaCell({
     onEditingChange(null);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (editValue === value) {
       onEditingChange(null);
       return;
     }
 
     setIsSaving(true);
-    try {
-      // Créer une copie des données système
-      const updatedSystemData = JSON.parse(JSON.stringify(systemData));
 
-      // Mettre à jour la description
-      updatedSystemData.steps[stepIndex].interventions[interventionIndex].description = editValue;
+    // Créer une copie des données système
+    const updatedSystemData = JSON.parse(JSON.stringify(systemData));
 
-      // Sauvegarder avec debounce
-      triggerSave(updatedSystemData);
+    // Mettre à jour la description
+    updatedSystemData.steps[stepIndex].interventions[interventionIndex].description = editValue;
 
-      onEditingChange(null);
-    } catch (error) {
-      console.error('Error saving description:', error);
-      alert('Erreur lors de la sauvegarde de la description');
-    } finally {
-      setIsSaving(false);
-    }
+    // Sauvegarder avec debounce
+    triggerSave(updatedSystemData);
+
+    onEditingChange(null);
+    setIsSaving(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

@@ -48,7 +48,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         throw new Error('Failed to save system data');
       }
     },
-    debounceMs: 10000, // 10 seconds
+    debounceMs: 5000, // 5 seconds
   });
 
   // S'assurer que le composant est monté côté client
@@ -67,15 +67,15 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     if (updatedData) {
       // Calculate totals client-side
       const calculatedData = calculateSystemTotals(updatedData);
-      
+
       // Update UI immediately with calculated data
       setSystemData(calculatedData);
-      
+
       // Trigger debounced save to server
       triggerSave(calculatedData);
       return;
     }
-    
+
     // Initial load from API
     setIsLoading(true);
     fetch(`/api/systems/${projectId}`)
@@ -115,7 +115,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     interventionIndex: number;
     indicatorKey: string;
   } | undefined>(undefined);
-  
+
   // Ref pour le graphique ItineraireTechnique
   const itineraireTechniqueRef = useRef<ItineraireTechniqueRef>(null);
 
@@ -171,7 +171,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
 
   const handleCalculateAllMissing = async () => {
     console.log('[handleCalculateAllMissing] Starting batch calculation with SSE...');
-    
+
     setIsBatchCalculating(true);
     setIsAIAssistantOpen(true);
     setBatchProgress({ current: 0, total: 0, currentIndicator: '', stepName: '', interventionName: '' });
@@ -209,7 +209,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       // Read stream
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done || abortController.signal.aborted) {
           break;
         }
@@ -237,7 +237,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
                 });
               } else if (data.type === 'complete') {
                 console.log('[handleCalculateAllMissing] Calculation complete:', data);
-                
+
                 // Update final progress
                 setBatchProgress({
                   current: data.calculatedCount,
@@ -403,7 +403,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
               }}
               onCalculateAllMissing={handleCalculateAllMissing}
               isBatchCalculating={isBatchCalculating}
-            />            
+            />
           </section>
 
         </main>

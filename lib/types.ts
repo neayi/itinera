@@ -140,3 +140,22 @@ export interface StepValue {
   confidence?: ConfidenceLevel;
   conversation?: ConversationMessage[];
 }
+
+export interface CalculationContext {
+  systemData: any;
+  stepIndex: number;
+  interventionIndex: number;
+  indicatorKey: string;
+}
+
+export interface CalculationResult {
+  value: number | string;
+  confidence: ConfidenceLevel;
+  conversation: ConversationMessage[];
+  assumptionsMarkdown?: string;
+  assumptionsLevel?: 'system' | 'step' | 'intervention';
+  sources: string[];
+  calculationSteps?: string[];
+  caveats?: string[];
+  status?: ValueStatus;
+}

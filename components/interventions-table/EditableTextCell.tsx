@@ -68,25 +68,25 @@ export function EditableTextCell({
     onEditingChange(null);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (editValue === value) {
       onEditingChange(null);
       return;
     }
 
     setIsSaving(true);
-    try {
-      // Créer une copie des données système
-      const updatedSystemData = JSON.parse(JSON.stringify(systemData));
 
-      // Mettre à jour le champ approprié
-      updatedSystemData.steps[stepIndex].interventions[interventionIndex][fieldName] = editValue;
+    // Créer une copie des données système
+    const updatedSystemData = JSON.parse(JSON.stringify(systemData));
 
-      // Sauvegarder avec debounce
-      triggerSave(updatedSystemData);
+    // Mettre à jour le champ approprié
+    updatedSystemData.steps[stepIndex].interventions[interventionIndex][fieldName] = editValue;
 
-      handleCancel();
-    }
+    // Sauvegarder avec debounce
+    triggerSave(updatedSystemData);
+
+    handleCancel();
+    setIsSaving(false);
   };
 
   if (interventionIndex === -1) {

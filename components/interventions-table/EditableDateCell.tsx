@@ -66,34 +66,29 @@ export function EditableDateCell({
     }
   }, [isEditing]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!editValue || isSaving) return;
 
     setIsSaving(true);
-    try {
-      // Calculer le nouveau day basé sur la nouvelle date et la startDate du step
-      const newDate = new Date(editValue);
-      const step = systemData.steps[stepIndex];
-      const startDate = new Date(step.startDate);
 
-      // Calculer la différence en jours
-      const diffTime = newDate.getTime() - startDate.getTime();
-      const newDay = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    // Calculer le nouveau day basé sur la nouvelle date et la startDate du step
+    const newDate = new Date(editValue);
+    const step = systemData.steps[stepIndex];
+    const startDate = new Date(step.startDate);
 
-      // Créer une copie du systemData et mettre à jour le day
-      const updatedSystemData = JSON.parse(JSON.stringify(systemData));
-      updatedSystemData.steps[stepIndex].interventions[interventionIndex].day = newDay;
+    // Calculer la différence en jours
+    const diffTime = newDate.getTime() - startDate.getTime();
+    const newDay = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-      // Sauvegarder avec debounce
-      triggerSave(updatedSystemData);
+    // Créer une copie du systemData et mettre à jour le day
+    const updatedSystemData = JSON.parse(JSON.stringify(systemData));
+    updatedSystemData.steps[stepIndex].interventions[interventionIndex].day = newDay;
 
-      onEditingChange(null);
-    } catch (error) {
-      console.error('Error saving date:', error);
-      alert('Erreur lors de la sauvegarde de la date');
-    } finally {
-      setIsSaving(false);
-    }
+    // Sauvegarder avec debounce
+    triggerSave(updatedSystemData);
+
+    onEditingChange(null);
+    setIsSaving(false);
   };
 
   const handleCancel = () => {

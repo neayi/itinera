@@ -1,6 +1,7 @@
 'use client';
 
-import { User, ArrowLeft, GitBranch, ChevronDown, LogOut, CloudUpload, CloudCheck } from 'lucide-react';
+import { User, ArrowLeft, GitBranch, ChevronDown, LogOut } from 'lucide-react';
+import '@/app/material-symbols.css';
 import LocationMapIcon from '@/components/imports/LocationMapAppStreetStreamlineMicroLine';
 import { useState, useEffect } from 'react';
 import type { SaveStatus } from '@/lib/hooks/useDebouncedSave';
@@ -118,14 +119,14 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
             {/* User Profile */}
             <div className="flex items-center gap-3 relative">
               <span className="text-white text-sm">Conseiller Agronomique</span>
-              <div 
+              <div
                 className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full pl-3 pr-1 py-1 border border-white/20 hover:bg-white/20 transition-colors cursor-pointer"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
                 <span className="text-white">{userInfo.name}</span>
                 {avatarUrl ? (
-                  <img 
-                    src={avatarUrl} 
+                  <img
+                    src={avatarUrl}
                     alt={userInfo.name}
                     className="rounded-full size-8 object-cover"
                   />
@@ -184,13 +185,19 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
                 {/* Save status icon */}
                 <div className="flex items-center">
                   {saveStatus === 'saved' && (
-                    <CloudCheck className="size-4 text-green-200" aria-label="Toutes les modifications sont sauvegardées" />
+                    <span className="material-symbols-outlined text-green-200" style={{ fontSize: '18px' }} aria-label="Toutes les modifications sont sauvegardées">
+                      cloud_done
+                    </span>
                   )}
                   {(saveStatus === 'pending' || saveStatus === 'saving') && (
-                    <CloudUpload className="size-4 text-yellow-200 animate-pulse" aria-label="Sauvegarde en cours..." />
+                    <span className="material-symbols-outlined text-yellow-200 animate-pulse" style={{ fontSize: '18px' }} aria-label="Sauvegarde en cours...">
+                      cloud_sync
+                    </span>
                   )}
                   {saveStatus === 'error' && (
-                    <CloudUpload className="size-4 text-red-300" aria-label="Erreur lors de la sauvegarde" />
+                    <span className="material-symbols-outlined text-red-300" style={{ fontSize: '18px' }} aria-label="Erreur lors de la sauvegarde">
+                      cloud_sync
+                    </span>
                   )}
                 </div>
                 <ChevronDown className="size-4 text-white" />
@@ -229,14 +236,14 @@ export function TopBar({ variant = 'list', onNavigateToList, currentVariant = 'O
           {/* User Profile */}
           <div className="flex items-center gap-3 relative">
             <span className="text-white text-sm">Conseiller Agronomique</span>
-            <div 
+            <div
               className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full pl-3 pr-1 py-1 border border-white/20 hover:bg-white/20 transition-colors cursor-pointer"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
             >
               <span className="text-white">{userInfo.name}</span>
               {avatarUrl ? (
-                <img 
-                  src={avatarUrl} 
+                <img
+                  src={avatarUrl}
                   alt={userInfo.name}
                   className="rounded-full size-8 object-cover"
                 />
