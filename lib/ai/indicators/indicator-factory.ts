@@ -1,6 +1,6 @@
 /**
  * Factory for creating indicator instances
- * 
+ *
  * Usage:
  * const indicator = IndicatorFactory.create('azoteOrganique', { systemData, stepIndex, interventionIndex });
  * const label = indicator.getLabel();
@@ -13,7 +13,7 @@
  * Indicator field key type
  * Used to identify which indicator is being accessed
  */
-export type FieldKey = 
+export type FieldKey =
   | 'frequence'
   | 'azoteMineral'
   | 'azoteOrganique'
@@ -32,6 +32,29 @@ export type FieldKey =
   | 'totalCharges'
   | 'prixVente'
   | 'margeBrute';
+
+/**
+ * List of indicators that can be calculated by AI
+ * Excludes indicators that are automatically computed from other values
+ * (totalProduits, totalCharges, margeBrute are calculated, not AI-estimated)
+ */
+export const AI_CALCULABLE_INDICATORS: ReadonlyArray<FieldKey> = [
+  'frequence',
+  'gnr',
+  'azoteMineral',
+  'azoteOrganique',
+  'rendementTMS',
+  'ift',
+  'eiq',
+  'ges',
+  'tempsTravail',
+  'coutsPhytos',
+  'semences',
+  'engrais',
+  'mecanisation',
+  'irrigation',
+  'prixVente'
+] as const;
 
 import { BaseIndicator, IndicatorContext } from './base-indicator';
 import { FrequenceIndicator } from './frequence-indicator';
@@ -64,58 +87,58 @@ export class IndicatorFactory {
     switch (indicatorKey) {
       case 'frequence':
         return new FrequenceIndicator(context);
-      
+
       case 'azoteMineral':
         return new AzoteMineralIndicator(context);
-      
+
       case 'azoteOrganique':
         return new AzoteOrganiqueIndicator(context);
-      
+
       case 'ges':
         return new GesIndicator(context);
-      
+
       case 'tempsTravail':
         return new TempsTravailIndicator(context);
-      
+
       case 'rendementTMS':
         return new RendementIndicator(context);
-      
+
       case 'coutsPhytos':
         return new CoutsPhytosIndicator(context);
-      
+
       case 'semences':
         return new SemencesIndicator(context);
-      
+
       case 'engrais':
         return new EngraisIndicator(context);
-      
+
       case 'mecanisation':
         return new MecanisationIndicator(context);
-      
+
       case 'gnr':
         return new GnrIndicator(context);
-      
+
       case 'irrigation':
         return new IrrigationIndicator(context);
-      
+
       case 'ift':
         return new IftIndicator(context);
-      
+
       case 'eiq':
         return new EiqIndicator(context);
-      
+
       case 'prixVente':
         return new PrixVenteIndicator(context);
-      
+
       case 'totalCharges':
         return new TotalChargesIndicator(context);
-      
+
       case 'totalProduits':
         return new TotalProduitsIndicator(context);
-      
+
       case 'margeBrute':
         return new MargeBruteIndicator(context);
-      
+
       default:
         throw new Error(`Unknown indicator key: ${indicatorKey}`);
     }

@@ -1,7 +1,7 @@
 // Base Indicator Calculator Class
 import { callGPT } from './openai-client';
 import { CalculationContext, CalculationResult, ConversationMessage, ConfidenceLevel } from './types';
-import { IndicatorFactory } from './indicators';
+import { IndicatorFactory, AI_CALCULABLE_INDICATORS } from './indicators';
 
 /**
  * Clean JSON response from OpenAI (remove markdown code blocks)
@@ -254,23 +254,6 @@ export class IndicatorCalculator {
   }
 
   /**
-   * Calculate all missing indicators in a system (stub for backward compatibility)
-   * Use the overloaded version with options parameter instead
-   * @param systemData - Full system data
-   * @returns Summary of calculations
-   */
-  async calculateAllMissingLegacy(systemData: any): Promise<{
-    calculatedCount: number;
-    summary: Array<{ stepIndex: number; interventionIndex: number; indicatorKey: string; value: any }>;
-  }> {
-    // Stub implementation - will be implemented in Phase 10
-    return {
-      calculatedCount: 0,
-      summary: [],
-    };
-  }
-
-  /**
    * Calculate all missing indicators in batch with parallel execution
    * @param systemData - Complete system data
    * @param maxParallel - Maximum concurrent calculations (default: 5)
@@ -305,11 +288,8 @@ export class IndicatorCalculator {
       indicatorKey: string;
     }> = [];
 
-    const indicatorKeys = [
-      'frequence', 'azoteMineral', 'azoteOrganique', 'ift', 'eiq', 'ges',
-      'tempsTravail', 'coutsPhytos', 'semences', 'engrais', 'mecanisation',
-      'gnr', 'irrigation', 'rendementTMS', 'prixVente'
-    ];
+    // Use indicators that can be calculated by AI (defined in indicator-factory.ts)
+    const indicatorKeys = AI_CALCULABLE_INDICATORS;
 
     console.log('[calculateAllMissing] Starting detection...');
     console.log('[calculateAllMissing] systemData.steps:', systemData.steps?.length || 0, 'steps');
