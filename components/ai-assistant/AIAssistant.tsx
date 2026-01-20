@@ -31,6 +31,16 @@ interface AIAssistantProps {
   };
   isBatchCalculating?: boolean;
   onCancelBatch?: () => void;
+  isBatchPrepared?: boolean;
+  batchEstimation?: {
+    indicatorsWithoutValue: number;
+    totalCalculableIndicators: number;
+    estimatedSeconds: number;
+    estimatedSecondsAll: number;
+  } | null;
+  onStartCalculation?: () => void;
+  recalculateAll?: boolean;
+  onRecalculateAllChange?: (value: boolean) => void;
 }
 
 export default function AIAssistant({
@@ -44,9 +54,31 @@ export default function AIAssistant({
   batchProgress,
   isBatchCalculating = false,
   onCancelBatch,
+  isBatchPrepared = false,
+  batchEstimation = null,
+  onStartCalculation,
+  recalculateAll = false,
+  onRecalculateAllChange,
 }: AIAssistantProps) {
   const [isRefining, setIsRefining] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
+
+  // Helper function to format estimated time
+  const formatEstimatedTime = (seconds: number): string => {
+    if (seconds < 60) {
+      return `${Math.round(seconds)} seconde${seconds > 1 ? 's' : ''}`;
+    } else if (seconds < 3600) {
+      const minutes = Math.round(seconds / 60);
+      return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+    } else {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.round((seconds % 3600) / 60);
+      if (minutes > 0) {
+        return `${hours} heure${hours > 1 ? 's' : ''} et ${minutes} minute${minutes > 1 ? 's' : ''}`;
+      }
+      return `${hours} heure${hours > 1 ? 's' : ''}`;
+    }
+  };
 
   if (!isOpen) {
     return null;
@@ -142,7 +174,90 @@ export default function AIAssistant({
 
       {/* Messages */}
       <div className="messages">
-        {isBatchCalculating && batchProgress ? (
+        {isBatchPrepared && batchEstimation && !isBatchCalculating ? (
+          <div className="messages-container">
+            <div className="empty-card" style={{ backgroundColor: '#f0f9ff', border: '1px solid #3b82f6' }}>
+              <div className="empty-content">
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: '#1e40af' }}>
+                  Calcul prêt à démarrer
+                </h3>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <p style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>
+                    <strong>{recalculateAll ? batchEstimation.totalCalculableIndicators : batchEstimation.indicatorsWithoutValue}</strong> indicateur{(recalculateAll ? batchEstimation.totalCalculableIndicators : batchEstimation.indicatorsWithoutValue) > 1 ? 's' : ''} à calculer
+                  </p>
+                  <p style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                    Temps estimé : <strong>{formatEstimatedTime(recalculateAll ? batchEstimation.estimatedSecondsAll : batchEstimation.estimatedSeconds)}</strong>
+                  </p>
+                  
+                  {/* Checkbox to recalculate all */}
+                  {batchEstimation.totalCalculableIndicators > batchEstimation.indicatorsWithoutValue && (
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem', 
+                      marginTop: '1rem',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      color: '#475569'
+                    }}>
+                      <input 
+                        type="checkbox" 
+                        checked={recalculateAll}
+                        onChange={(e) => onRecalculateAllChange?.(e.target.checked)}
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                      />
+                      <span>Recalculer tous les {batchEstimation.totalCalculableIndicators} indicateurs</span>
+                    </label>
+                  )}
+                </div>
+                {onStartCalculation && (
+                  <button
+                    onClick={onStartCalculation}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      fontSize: '1rem',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      margin: '0 auto',
+                      justifyContent: 'center',
+                      width: '100%',
+                    }}
+                  >
+                    <Sparkles size={20} />
+                    <span>Démarrer le calcul</span>
+                  </button>
+                )}
+                {onCancelBatch && (
+                  <button
+                    onClick={onCancelBatch}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      fontSize: '0.875rem',
+                      backgroundColor: 'transparent',
+                      color: '#64748b',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      fontWeight: '400',
+                      display: 'block',
+                      margin: '0.5rem auto 0',
+                      width: '100%',
+                    }}
+                  >
+                    Annuler
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : isBatchCalculating && batchProgress ? (
           <div className="messages-container">
             <CalculationProgress
               current={batchProgress.current}
@@ -164,9 +279,9 @@ export default function AIAssistant({
               stepName={step?.name}
               interventionName={intervention?.name}
             />
-            
+
             <ConversationHistory messages={conversation} />
-            
+
             {isRefining && (
               <div className="loading">
                 <div className="loading-dots">
@@ -187,7 +302,7 @@ export default function AIAssistant({
               stepName={step?.name}
               interventionName={intervention?.name}
             />
-            
+
             <div className="empty-card">
               <div className="empty-content">
                 <p className="mb-4">Aucune conversation pour cette valeur.</p>
@@ -213,11 +328,11 @@ export default function AIAssistant({
       {/* Input - always show if there's a focused cell */}
       {focusedCell && (
         <div className="message-input">
-          <MessageInput 
+          <MessageInput
             onSend={handleSendMessage}
             disabled={isRefining}
           />
-          
+
           {/* Calculate/Recalculate button */}
           {onCalculate && (
             <button

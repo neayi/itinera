@@ -21,4 +21,4 @@ export { PrixVenteIndicator } from './prix-vente-indicator';
 export { TotalChargesIndicator } from './total-charges-indicator';
 export { TotalProduitsIndicator } from './total-produits-indicator';
 export { MargeBruteIndicator } from './marge-brute-indicator';
-export { IndicatorFactory, type FieldKey } from './indicator-factory';
+export { IndicatorFactory, AI_CALCULABLE_INDICATORS, type FieldKey } from './indicator-factory';

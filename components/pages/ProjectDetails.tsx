@@ -8,6 +8,7 @@ import CalculationAlert from '@/components/ai-assistant/CalculationAlert';
 import { ItineraireTechnique, ItineraireTechniqueRef } from '@/components/ItineraireTechnique';
 import { useDebouncedSave, SaveStatus } from '@/lib/hooks/useDebouncedSave';
 import { calculateSystemTotals } from '@/lib/calculate-system-totals';
+import { useAuth } from '@/lib/auth';
 
 interface ProjectDetailsProps {
   projectId: string;
@@ -16,6 +17,9 @@ interface ProjectDetailsProps {
 }
 
 export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: ProjectDetailsProps) {
+  // Auth
+  const { user } = useAuth();
+
   // Project configuration
   const projectSurface = 15; // hectares
   const rotationStartYear = 2027;
@@ -29,8 +33,18 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [gpsLocation, setGpsLocation] = useState<string | null>(null);
   const [isBatchCalculating, setIsBatchCalculating] = useState<boolean>(false);
+  const [isBatchPrepared, setIsBatchPrepared] = useState<boolean>(false);
+  const [recalculateAll, setRecalculateAll] = useState<boolean>(false);
+  const [batchEstimation, setBatchEstimation] = useState<{ 
+    indicatorsWithoutValue: number; 
+    totalCalculableIndicators: number; 
+    estimatedSeconds: number;
+    estimatedSecondsAll: number;
+  } | null>(null);
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, currentIndicator: '', stepName: '', interventionName: '' });
   const [batchAbortController, setBatchAbortController] = useState<AbortController | null>(null);
+  const [batchProcessLogId, setBatchProcessLogId] = useState<number | null>(null);
+  const batchProcessLogIdRef = useRef<number | null>(null);
   const [calculationAlert, setCalculationAlert] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
 
   // Setup debounced save with 10 second delay
@@ -169,15 +183,67 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     }
   };
 
+  // Prepare calculation: detect indicators and create log
   const handleCalculateAllMissing = async () => {
-    console.log('[handleCalculateAllMissing] Starting batch calculation with SSE...');
+    console.log('[handleCalculateAllMissing] Preparing batch calculation...');
+
+    setIsAIAssistantOpen(true);
+    setIsBatchPrepared(false);
+    setBatchEstimation(null);
+    setBatchProcessLogId(null);
+    batchProcessLogIdRef.current = null;
+
+    try {
+      const response = await fetch('/api/ai/prepare-calculation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          systemId: projectId,
+          userId: user?.userId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to prepare calculation');
+      }
+
+      const data = await response.json();
+      console.log('[handleCalculateAllMissing] Preparation complete:', data);
+
+      setBatchProcessLogId(data.processLogId);
+      batchProcessLogIdRef.current = data.processLogId;
+      setBatchEstimation({
+        indicatorsWithoutValue: data.indicatorsWithoutValue,
+        totalCalculableIndicators: data.totalCalculableIndicators,
+        estimatedSeconds: data.estimatedSeconds,
+        estimatedSecondsAll: data.estimatedSecondsAll
+      });
+      setRecalculateAll(false); // Default: only without value
+      setIsBatchPrepared(true);
+
+    } catch (error: any) {
+      console.error('[handleCalculateAllMissing] Error:', error);
+      setCalculationAlert({
+        type: 'error',
+        title: 'Erreur',
+        message: `Erreur lors de la préparation: ${error.message}`,
+      });
+      setIsAIAssistantOpen(false);
+    }
+  };
+
+  // Start actual calculation with SSE
+  const handleStartCalculation = async () => {
+    console.log('[handleStartCalculation] Starting batch calculation with SSE...');
 
     setIsBatchCalculating(true);
-    setIsAIAssistantOpen(true);
+    setIsBatchPrepared(false);
     setBatchProgress({ current: 0, total: 0, currentIndicator: '', stepName: '', interventionName: '' });
 
     try {
-      // Use POST request to initiate SSE stream
+      // Use POST request to initiate SSE stream with processLogId
       const response = await fetch('/api/ai/calculate-all-missing-stream', {
         method: 'POST',
         headers: {
@@ -185,6 +251,9 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         },
         body: JSON.stringify({
           systemId: projectId,
+          processLogId: batchProcessLogIdRef.current,
+          userId: user?.userId,
+          recalculateAll,
         }),
       });
 
@@ -201,9 +270,27 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
       setBatchAbortController(abortController);
 
       // Listen for abort
-      abortController.signal.addEventListener('abort', () => {
+      abortController.signal.addEventListener('abort', async () => {
         reader.cancel();
         console.log('[handleCalculateAllMissing] Stream cancelled by user');
+
+        // Call abort API if we have a processLogId (use ref to get current value)
+        const processLogId = batchProcessLogIdRef.current;
+        if (processLogId) {
+          try {
+            console.log('[handleCalculateAllMissing] Calling abort API for processLogId:', processLogId);
+            await fetch('/api/ai/abort-calculation', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ processLogId }),
+            });
+            console.log('[handleCalculateAllMissing] Abort API called successfully');
+          } catch (error) {
+            console.error('[handleCalculateAllMissing] Error calling abort API:', error);
+          }
+        } else {
+          console.warn('[handleCalculateAllMissing] No processLogId available yet for abort');
+        }
       });
 
       // Read stream
@@ -226,7 +313,11 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
             try {
               const data = JSON.parse(line.substring(6));
 
-              if (data.type === 'progress') {
+              if (data.type === 'started') {
+                console.log('[handleCalculateAllMissing] Process started with ID:', data.processLogId);
+                setBatchProcessLogId(data.processLogId);
+                batchProcessLogIdRef.current = data.processLogId;
+              } else if (data.type === 'progress') {
                 console.log(`[handleCalculateAllMissing] Progress: ${data.current}/${data.total} - ${data.stepName} / ${data.interventionName} / ${data.currentIndicator}`);
                 setBatchProgress({
                   current: data.current,
@@ -292,6 +383,8 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     } finally {
       setIsBatchCalculating(false);
       setBatchAbortController(null);
+      setBatchEstimation(null);
+      batchProcessLogIdRef.current = null;
     }
   };
 
@@ -303,6 +396,12 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         title: 'Calcul interrompu',
         message: 'Le calcul en lot a été interrompu.',
       });
+    } else if (isBatchPrepared) {
+      // If cancelling from the preparation phase
+      setIsBatchPrepared(false);
+      setBatchEstimation(null);
+      setRecalculateAll(false);
+      batchProcessLogIdRef.current = null;
     }
   };
 
@@ -423,6 +522,11 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
           batchProgress={batchProgress}
           isBatchCalculating={isBatchCalculating}
           onCancelBatch={handleCancelBatchCalculation}
+          isBatchPrepared={isBatchPrepared}
+          batchEstimation={batchEstimation}
+          onStartCalculation={handleStartCalculation}
+          recalculateAll={recalculateAll}
+          onRecalculateAllChange={setRecalculateAll}
         />
       </div>
 

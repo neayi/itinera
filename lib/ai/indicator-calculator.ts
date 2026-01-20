@@ -2,6 +2,8 @@
 import { callGPT } from './openai-client';
 import { CalculationContext, CalculationResult, ConversationMessage, ConfidenceLevel } from './types';
 import { IndicatorFactory, AI_CALCULABLE_INDICATORS } from './indicators';
+import { query } from '../db';
+import { calculateAndSaveSystemTotals } from '../persist-system';
 
 /**
  * Clean JSON response from OpenAI (remove markdown code blocks)
@@ -37,6 +39,61 @@ function formatInterventionDate(stepStartDate: string, interventionDay: number):
 }
 
 export class IndicatorCalculator {
+  /**
+   * Create a log entry for AI process tracking
+   */
+  private async createProcessLog(
+    systemId: string,
+    intervention: string,
+    indicator: string,
+    totalIndicators?: number,
+    userId?: number
+  ): Promise<number> {
+    const result = await query(
+      'INSERT INTO ai_process_log (system_id, intervention, indicator, user_id, start, status, total_indicators, processed_indicators) VALUES (?, ?, ?, ?, NOW(), "started", ?, 0)',
+      [systemId, intervention, indicator, userId || null, totalIndicators || null]
+    );
+    return (result as any).insertId;
+  }
+
+  /**
+   * Update log entry status
+   */
+  private async updateProcessLog(
+    logId: number,
+    status: 'completed' | 'failed' | 'aborted',
+    errorMessage?: string
+  ): Promise<void> {
+    await query(
+      'UPDATE ai_process_log SET status = ?, end = NOW(), error_message = ? WHERE id = ?',
+      [status, errorMessage || null, logId]
+    );
+  }
+
+  /**
+   * Update processed indicators count
+   */
+  private async updateProcessedCount(
+    logId: number,
+    processedCount: number
+  ): Promise<void> {
+    await query(
+      'UPDATE ai_process_log SET processed_indicators = ? WHERE id = ?',
+      [processedCount, logId]
+    );
+  }
+
+  /**
+   * Check if process has been aborted
+   */
+  private async isProcessAborted(logId: number): Promise<boolean> {
+    const result = await query(
+      'SELECT status FROM ai_process_log WHERE id = ?',
+      [logId]
+    );
+    return result.length > 0 && result[0].status === 'aborted';
+  }
+
   /**
    * Calculate a single indicator value using AI
    * @param context - Calculation context with system data and target cell
@@ -254,20 +311,24 @@ export class IndicatorCalculator {
   }
 
   /**
-   * Calculate all missing indicators in batch with parallel execution
+   * Calculate all missing indicators sequentially with DB persistence after each calculation
    * @param systemData - Complete system data
-   * @param maxParallel - Maximum concurrent calculations (default: 5)
+   * @param systemId - System ID for DB persistence (required)
    * @param onProgress - Callback for progress updates
    * @returns Summary of calculations performed
    */
   async calculateAllMissing(
     systemData: any,
     options: {
-      maxParallel?: number;
+      systemId: string;
+      processLogId?: number;
+      userId?: number;
+      recalculateAll?: boolean;
+      onProcessStarted?: (processLogId: number) => void;
       onProgress?: (current: number, total: number, currentIndicator?: string, stepName?: string, interventionName?: string) => void;
-      abortSignal?: AbortSignal;
-    } = {}
+    }
   ): Promise<{
+    processLogId: number;
     systemData: any;
     calculatedCount: number;
     summary: Array<{
@@ -279,9 +340,11 @@ export class IndicatorCalculator {
       error?: string;
     }>;
   }> {
-    const { maxParallel = 5, onProgress, abortSignal } = options;
+    const { systemId, processLogId: existingProcessLogId, userId, recalculateAll, onProcessStarted, onProgress } = options;
 
-    // Find all missing indicators (null or undefined, status != user)
+    // Find all missing indicators
+    // If recalculateAll = false: only those without value (null/undefined)
+    // If recalculateAll = true: those without value OR status != "user"
     const missingIndicators: Array<{
       stepIndex: number;
       interventionIndex: number;
@@ -291,7 +354,7 @@ export class IndicatorCalculator {
     // Use indicators that can be calculated by AI (defined in indicator-factory.ts)
     const indicatorKeys = AI_CALCULABLE_INDICATORS;
 
-    console.log('[calculateAllMissing] Starting detection...');
+    console.log('[calculateAllMissing] Starting detection... recalculateAll:', recalculateAll);
     console.log('[calculateAllMissing] systemData.steps:', systemData.steps?.length || 0, 'steps');
 
     systemData.steps?.forEach((step: any, stepIndex: number) => {
@@ -303,19 +366,18 @@ export class IndicatorCalculator {
         indicatorKeys.forEach((indicatorKey) => {
           const valueEntry = intervention.values?.find((v: any) => v.key === indicatorKey);
 
-          // Should calculate if:
-          // - No value entry exists, OR
-          // - Value is null/undefined, OR
-          // - status is not "user"
-          const needsCalculation = !valueEntry ||
-            valueEntry.value === null ||
-            valueEntry.value === undefined ||
-            valueEntry.status !== "user";
+          const hasNoValue = !valueEntry || valueEntry.value === null || valueEntry.value === undefined;
+
+          // Logic depends on recalculateAll option
+          const needsCalculation = recalculateAll
+            ? (hasNoValue || valueEntry.status !== "user")  // Recalculate all: include existing values with status != "user"
+            : hasNoValue;  // Default: only without value
 
           if (needsCalculation) {
             console.log(`[calculateAllMissing] ✓ Need to calculate ${indicatorKey}:`, {
               exists: !!valueEntry,
-              value: valueEntry?.value
+              value: valueEntry?.value,
+              recalculateAll
             });
             missingIndicators.push({ stepIndex, interventionIndex, indicatorKey });
           }
@@ -326,100 +388,161 @@ export class IndicatorCalculator {
     console.log('[calculateAllMissing] Total missing indicators:', missingIndicators.length);
 
     const total = missingIndicators.length;
+
+    // Use existing processLogId or create a new one
+    let processLogId: number;
+    if (existingProcessLogId) {
+      processLogId = existingProcessLogId;
+      console.log('[calculateAllMissing] Using existing process log:', processLogId);
+      // Update total_indicators and user_id if needed
+      await query(
+        'UPDATE ai_process_log SET total_indicators = ?, user_id = ? WHERE id = ?',
+        [total, userId, processLogId]
+      );
+    } else {
+      // Create process log entry with total count
+      processLogId = await this.createProcessLog(systemId, 'all', 'all', total, userId);
+      console.log('[calculateAllMissing] Created process log:', processLogId, 'with total:', total);
+    }
+
+    // Notify that process has started with its ID
+    if (onProcessStarted) {
+      await onProcessStarted(processLogId);
+    }
+
     const summary: Array<any> = [];
     let current = 0;
 
     console.log('[calculateAllMissing] Total to calculate:', total);
-    console.log('[calculateAllMissing] Starting batch processing with maxParallel:', maxParallel);
+    console.log('[calculateAllMissing] Starting SEQUENTIAL processing (no parallel execution)');
 
-    // Clone system data to avoid mutations
-    const updatedSystemData = JSON.parse(JSON.stringify(systemData));
+    // Clone system data to work with
+    let updatedSystemData = JSON.parse(JSON.stringify(systemData));
 
-    // Process in batches
-    for (let i = 0; i < missingIndicators.length; i += maxParallel) {
-      // Check for abort
-      if (abortSignal?.aborted) {
-        console.log('[calculateAllMissing] Aborted by user');
+    // Track if calculation was interrupted
+    let wasInterrupted = false;
+
+    // Process indicators one by one sequentially
+    for (let i = 0; i < missingIndicators.length; i++) {
+      // Check for abort in database
+      const isAborted = await this.isProcessAborted(processLogId);
+      if (isAborted) {
+        console.log('[calculateAllMissing] Aborted by user (checked in DB)');
+        wasInterrupted = true;
+        await this.updateProcessLog(processLogId, 'aborted');
         break;
       }
 
-      const batch = missingIndicators.slice(i, i + maxParallel);
-      console.log(`[calculateAllMissing] Processing batch ${Math.floor(i / maxParallel) + 1}/${Math.ceil(total / maxParallel)}: ${batch.length} indicators`);
+      const { stepIndex, interventionIndex, indicatorKey } = missingIndicators[i];
 
-      const batchPromises = batch.map(async ({ stepIndex, interventionIndex, indicatorKey }, batchIdx) => {
-        try {
-          // Get step and intervention names for progress display
-          const stepName = updatedSystemData.steps[stepIndex]?.name || `Étape ${stepIndex + 1}`;
-          const interventionName = updatedSystemData.steps[stepIndex]?.interventions[interventionIndex]?.name || `Intervention ${interventionIndex + 1}`;
+      try {
+        // Get step and intervention names for progress display
+        const stepName = updatedSystemData.steps[stepIndex]?.name || `Étape ${stepIndex + 1}`;
+        const interventionName = updatedSystemData.steps[stepIndex]?.interventions[interventionIndex]?.name || `Intervention ${interventionIndex + 1}`;
 
-          // Calculate current index for this item
-          const itemCurrent = i + batchIdx + 1;
-
-          // Report progress BEFORE starting calculation
-          if (onProgress) {
-            onProgress(itemCurrent, total, indicatorKey, stepName, interventionName);
-          }
-
-          const result = await this.calculateIndicator({
-            systemData: updatedSystemData,
-            stepIndex,
-            interventionIndex,
-            indicatorKey,
-          });
-
-          // Update system data
-          const step = updatedSystemData.steps[stepIndex];
-          const intervention = step.interventions[interventionIndex];
-
-          if (!intervention.values) {
-            intervention.values = [];
-          }
-
-          const existingIndex = intervention.values.findIndex((v: any) => v.key === indicatorKey);
-
-          const valueEntry = {
-            key: indicatorKey,
-            value: result.value,
-            confidence: result.confidence,
-            status: 'ia',
-            conversation: result.conversation,
-          };
-
-          if (existingIndex >= 0) {
-            intervention.values[existingIndex] = valueEntry;
-          } else {
-            intervention.values.push(valueEntry);
-          }
-
-          current++;
-
-          return {
-            stepIndex,
-            interventionIndex,
-            indicatorKey,
-            value: result.value,
-            confidence: result.confidence,
-          };
-        } catch (error: any) {
-          current++;
-
-          return {
-            stepIndex,
-            interventionIndex,
-            indicatorKey,
-            value: null,
-            confidence: 'low' as ConfidenceLevel,
-            error: error.message || 'Calculation failed',
-          };
+        // Report progress BEFORE starting calculation
+        console.log(`[calculateAllMissing] [${i + 1}/${total}] Calculating ${indicatorKey} for ${stepName} / ${interventionName}`);
+        if (onProgress) {
+          onProgress(i + 1, total, indicatorKey, stepName, interventionName);
         }
-      });
 
-      const batchResults = await Promise.all(batchPromises);
-      summary.push(...batchResults);
+        const result = await this.calculateIndicator({
+          systemData: updatedSystemData,
+          stepIndex,
+          interventionIndex,
+          indicatorKey,
+        });
+
+        // Update system data in memory
+        const step = updatedSystemData.steps[stepIndex];
+        const intervention = step.interventions[interventionIndex];
+
+        if (!intervention.values) {
+          intervention.values = [];
+        }
+
+        const existingIndex = intervention.values.findIndex((v: any) => v.key === indicatorKey);
+
+        const valueEntry = {
+          key: indicatorKey,
+          value: result.value,
+          confidence: result.confidence,
+          status: 'ia',
+          conversation: result.conversation,
+        };
+
+        if (existingIndex >= 0) {
+          intervention.values[existingIndex] = valueEntry;
+        } else {
+          intervention.values.push(valueEntry);
+        }
+
+        // Save to DB immediately after each successful calculation
+        console.log(`[calculateAllMissing] [${i + 1}/${total}] Saving to DB...`);
+        await query(
+          'UPDATE systems SET json = ? WHERE id = ?',
+          [JSON.stringify(updatedSystemData), systemId]
+        );
+        console.log(`[calculateAllMissing] [${i + 1}/${total}] ✓ Saved successfully`);
+
+        current++;
+
+        // Update processed count in log
+        await this.updateProcessedCount(processLogId, current);
+
+        summary.push({
+          stepIndex,
+          interventionIndex,
+          indicatorKey,
+          value: result.value,
+          confidence: result.confidence,
+        });
+      } catch (error: any) {
+        console.error(`[calculateAllMissing] [${i + 1}/${total}] ✗ Error calculating ${indicatorKey}:`, error.message);
+        current++;
+
+        summary.push({
+          stepIndex,
+          interventionIndex,
+          indicatorKey,
+          value: null,
+          confidence: 'low' as ConfidenceLevel,
+          error: error.message || 'Calculation failed',
+        });
+      }
     }
 
+    // If interrupted, reload latest data from DB (includes all calculations done before interruption)
+    if (wasInterrupted) {
+      console.log('[calculateAllMissing] Interrupted - reloading latest data from DB...');
+      const latestSystem = await query(
+        'SELECT json FROM systems WHERE id = ?',
+        [systemId]
+      );
+
+      if (latestSystem && latestSystem.length > 0) {
+        let latestSystemData = latestSystem[0].json;
+        if (typeof latestSystemData === 'string') {
+          latestSystemData = JSON.parse(latestSystemData);
+        }
+        updatedSystemData = latestSystemData;
+      }
+      console.log('[calculateAllMissing] ✓ Latest data reloaded');
+    }
+
+    // Calculate system totals and save everything (JSON + eiq, gross_margin, duration columns)
+    console.log('[calculateAllMissing] Calculating system totals and saving final data...');
+    const finalSystemData = await calculateAndSaveSystemTotals(systemId, updatedSystemData);
+    console.log('[calculateAllMissing] ✓ System totals calculated and saved');
+
+    // Update process log with final status
+    const finalStatus = wasInterrupted ? 'aborted' : 'completed';
+    await this.updateProcessLog(processLogId, finalStatus);
+    console.log(`[calculateAllMissing] Process log updated to: ${finalStatus}`);
+
     return {
-      systemData: updatedSystemData,
+      processLogId,
+      systemData: finalSystemData,
       calculatedCount: summary.filter(s => !s.error).length,
       summary,
     };

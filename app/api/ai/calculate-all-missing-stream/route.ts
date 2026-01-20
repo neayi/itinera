@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { queryOne, query } from '@/lib/db';
 import { indicatorCalculator } from '@/lib/ai/indicator-calculator';
-import { calculateAndSaveSystemTotals } from '@/lib/persist-system';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,12 +16,18 @@ export async function POST(request: NextRequest) {
   (async () => {
     try {
       const body = await request.json();
-      const { systemId } = body;
+      const { systemId, processLogId, userId, recalculateAll } = body;
 
-      console.log('[calculate-all-missing-stream] Starting for systemId:', systemId);
+      console.log('[calculate-all-missing-stream] Starting for systemId:', systemId, 'processLogId:', processLogId, 'userId:', userId, 'recalculateAll:', recalculateAll);
 
       if (!systemId) {
         await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'Missing systemId' })}\n\n`));
+        await writer.close();
+        return;
+      }
+
+      if (!processLogId) {
+        await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'Missing processLogId' })}\n\n`));
         await writer.close();
         return;
       }
@@ -46,9 +51,25 @@ export async function POST(request: NextRequest) {
 
       console.log('[calculate-all-missing-stream] System data loaded, steps:', systemData?.steps?.length);
 
-      // Calculate all missing with progress callback
+      // Calculate all missing with progress callback (using existing processLogId)
       const result = await indicatorCalculator.calculateAllMissing(systemData, {
-        maxParallel: 10, // Increased from 5 to 10 for faster processing
+        systemId,
+        processLogId, // Use existing processLogId from prepare step
+        userId,
+        recalculateAll: recalculateAll || false,
+        onProcessStarted: async (processLogId) => {
+          // Send started event with processLogId
+          const startedData = {
+            type: 'started',
+            processLogId
+          };
+          console.log('[calculate-all-missing-stream] Process started:', processLogId);
+          try {
+            await writer.write(encoder.encode(`data: ${JSON.stringify(startedData)}\n\n`));
+          } catch (error) {
+            console.log('[calculate-all-missing-stream] Error writing started event, client likely disconnected');
+          }
+        },
         onProgress: async (current, total, currentIndicator, stepName, interventionName) => {
           // Send progress event
           const progressData = {
@@ -61,18 +82,21 @@ export async function POST(request: NextRequest) {
             percentage: Math.round((current / total) * 100)
           };
           console.log(`[calculate-all-missing-stream] Progress: ${current}/${total} - ${stepName} / ${interventionName} / ${currentIndicator}`);
-          await writer.write(encoder.encode(`data: ${JSON.stringify(progressData)}\n\n`));
+
+          try {
+            await writer.write(encoder.encode(`data: ${JSON.stringify(progressData)}\n\n`));
+          } catch (error) {
+            console.log('[calculate-all-missing-stream] Error writing progress, client likely disconnected');
+          }
         }
       });
 
-      console.log('[calculate-all-missing-stream] Calculation complete, updating database...');
+      console.log('[calculate-all-missing-stream] Calculation complete (system totals already calculated and saved)');
 
-      // Calculate and save step totals
-      const finalSystemData = await calculateAndSaveSystemTotals(systemId, result.systemData);
-
-      // Send completion event
+      // Send completion event with processLogId
       const completionData = {
         type: 'complete',
+        processLogId: result.processLogId,
         calculatedCount: result.calculatedCount,
         total: result.summary.length,
         summary: result.summary

@@ -1,6 +1,5 @@
 import { query } from '@/lib/db';
 import { calculateSystemTotals } from './calculate-system-totals';
-import { getRotationDurationYears } from './calculate-rotation-duration';
 
 /**
  * Save system data to database (SERVER-SIDE ONLY)
