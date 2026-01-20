@@ -26,10 +26,10 @@ interface InterventionsTableProps {
   isBatchCalculating?: boolean;
 }
 
-export function InterventionsTable({ 
-  surface = 15, 
-  startYear = 2027, 
-  endYear = 2033, 
+export function InterventionsTable({
+  surface = 15,
+  startYear = 2027,
+  endYear = 2033,
   systemData,
   systemId,
   onUpdate,
@@ -40,7 +40,7 @@ export function InterventionsTable({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [focusedCell, setFocusedCell] = useState<{ interventionId: string; columnName: string; initialValue: any } | null>(null);
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    new Set(['intervention', 'description', 'produit', 'date', 'frequence', 'semences', 'engrais', 'unitesMineral', 'azoteOrganique', 'oligos', 'phytos', 'ift', 'hri1', 'mecanisation', 'irrigation', 'workTime', 'gnr', 'ges', 'charges', 'prixVente', 'margeBrute'])
+    new Set(['description', 'date', 'frequence', 'azoteMineral', 'azoteOrganique', 'ift', 'eiq', 'ges', 'tempsTravail', 'coutsPhytos', 'semences', 'engrais', 'mecanisation', 'gnr', 'irrigation', 'totalCharges', 'rendementTMS', 'prixVente', 'totalProduits', 'margeBrute'])
   );
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const columnSelectorRef = useRef<HTMLDivElement>(null);
@@ -97,38 +97,26 @@ export function InterventionsTable({
     });
   };
 
-  const showAgronomicColumns = () => {
-    setVisibleColumns(new Set(['intervention', 'description', 'produit', 'date', 'frequence', 'unitesMineral', 'azoteOrganique', 'oligos']));
-  };
-
-  const showEnvironmentalColumns = () => {
-    setVisibleColumns(new Set(['intervention', 'description', 'produit', 'phytos', 'ift', 'hri1', 'ges', 'workTime']));
-  };
-
-  const showFinancialColumns = () => {
-    setVisibleColumns(new Set(['intervention', 'description', 'produit', 'semences', 'engrais', 'mecanisation', 'gnr', 'irrigation', 'charges', 'prixVente', 'margeBrute']));
-  };
-
   const availableColumns = [
     { key: 'description', label: 'Description' },
-    { key: 'produit', label: 'Produits' },
     { key: 'date', label: 'Date' },
     { key: 'frequence', label: 'Fréquence' },
+    { key: 'azoteMineral', label: 'Azote minéral' },
+    { key: 'azoteOrganique', label: 'Azote organique' },
+    { key: 'ift', label: 'IFT' },
+    { key: 'eiq', label: 'EIQ' },
+    { key: 'ges', label: 'GES' },
+    { key: 'tempsTravail', label: 'Temps de travail' },
+    { key: 'coutsPhytos', label: 'Coûts phytos' },
     { key: 'semences', label: 'Semences' },
     { key: 'engrais', label: 'Engrais' },
-    { key: 'unitesMineral', label: 'U. minéral (N)' },
-    { key: 'azoteOrganique', label: 'Azote organique' },
-    { key: 'oligos', label: 'Oligos' },
-    { key: 'phytos', label: 'Phytos' },
-    { key: 'ift', label: 'IFT' },
-    { key: 'hri1', label: 'HRI1' },
     { key: 'mecanisation', label: 'Mécanisation' },
-    { key: 'irrigation', label: 'Irrigation' },
-    { key: 'workTime', label: 'Temps de travail' },
     { key: 'gnr', label: 'GNR' },
-    { key: 'ges', label: 'GES' },
-    { key: 'charges', label: 'Charges' },
+    { key: 'irrigation', label: 'Irrigation' },
+    { key: 'totalCharges', label: 'Charges totales' },
+    { key: 'rendementTMS', label: 'Rendement' },
     { key: 'prixVente', label: 'Prix de vente' },
+    { key: 'totalProduits', label: 'Produits totaux' },
     { key: 'margeBrute', label: 'Marge brute' },
   ];
 
@@ -154,7 +142,7 @@ export function InterventionsTable({
           <h2>Indicateurs technico-économiques</h2>
           <div className="">
             <span className="text-sm text-gray-700">Calculs pour {Math.round(systemSurface)} ha et {Math.round(systemYears)} ans</span>
-          </div>          
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
@@ -163,14 +151,12 @@ export function InterventionsTable({
               role="switch"
               aria-checked={compareVersions}
               onClick={() => setCompareVersions(!compareVersions)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#6b9571] focus:ring-offset-2 ${
-                compareVersions ? 'bg-[#6b9571]' : 'bg-gray-200'
-              }`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#6b9571] focus:ring-offset-2 ${compareVersions ? 'bg-[#6b9571]' : 'bg-gray-200'
+                }`}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  compareVersions ? 'translate-x-6' : 'translate-x-1'
-                }`}
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${compareVersions ? 'translate-x-6' : 'translate-x-1'
+                  }`}
               />
             </button>
           </div>
@@ -201,28 +187,6 @@ export function InterventionsTable({
               <div ref={columnSelectorRef} className="absolute right-0 top-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-50 w-64">
                 <div className="p-4">
                   <h3 className="mb-3">Colonnes visibles</h3>
-
-                  {/* Theme shortcuts */}
-                  <div className="mb-4 flex flex-col gap-2">
-                    <button
-                      onClick={showAgronomicColumns}
-                      className="px-3 py-2 text-sm text-left rounded bg-green-50 hover:bg-green-100 transition-colors border border-green-200"
-                    >
-                      🌱 Agronomique
-                    </button>
-                    <button
-                      onClick={showEnvironmentalColumns}
-                      className="px-3 py-2 text-sm text-left rounded bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-200"
-                    >
-                      🌍 Environnemental et social
-                    </button>
-                    <button
-                      onClick={showFinancialColumns}
-                      className="px-3 py-2 text-sm text-left rounded bg-amber-50 hover:bg-amber-100 transition-colors border border-amber-200"
-                    >
-                      💰 Financier
-                    </button>
-                  </div>
 
                   <div className="border-t border-gray-200 pt-3">
                     <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -279,7 +243,7 @@ export function InterventionsTable({
 
       {/* System Indicators */}
       {systemData && (
-        <SystemIndicators 
+        <SystemIndicators
           systemData={systemData}
           visibleIndicators={visibleIndicators}
           compareMode={compareVersions}
@@ -288,8 +252,8 @@ export function InterventionsTable({
 
       {/* Table des interventions basée sur systemData */}
       {systemData && systemId && onUpdate && onCellFocusAI && (
-        <InterventionsDataTable 
-          systemData={systemData} 
+        <InterventionsDataTable
+          systemData={systemData}
           systemId={systemId}
           onUpdate={onUpdate}
           onCellFocus={onCellFocusAI}
