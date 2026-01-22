@@ -3,6 +3,25 @@ import { validateDiscourseSSO } from '@/lib/discourse-sso';
 import { findOrCreateUser } from '@/lib/user';
 import { SignJWT } from 'jose';
 
+/**
+ * Get the base URL for the application (handles proxy/Traefik scenarios)
+ */
+function getBaseUrl(request: NextRequest): string {
+  // Priority 1: Environment variables
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (process.env.APP_URL) return process.env.APP_URL;
+
+  // Priority 2: Forwarded headers (from proxy like Traefik)
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  if (forwardedProto && forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  // Fallback: request URL (won't work correctly behind proxy)
+  return new URL(request.url).origin;
+}
+
 async function generateToken(userId: number, email: string, name: string, username: string): Promise<string> {
   const secret = new TextEncoder().encode(
     process.env.SESSION_SECRET || 'default_secret_change_me'
@@ -31,7 +50,7 @@ export async function GET(request: NextRequest) {
   if (!sso || !sig) {
     console.error('[SSO Callback] Missing SSO or signature parameters');
     return NextResponse.redirect(
-      new URL('/logout.html', request.url)
+      new URL('/logout.html', getBaseUrl(request))
     );
   }
 
@@ -42,12 +61,12 @@ export async function GET(request: NextRequest) {
     if (!payload) {
       console.error('[SSO Callback] Invalid SSO payload - validation failed');
       return NextResponse.redirect(
-        new URL('/logout.html', request.url)
+        new URL('/logout.html', getBaseUrl(request))
       );
     }
 
-    console.log('[SSO Callback] Valid payload received:', { 
-      external_id: payload.external_id, 
+    console.log('[SSO Callback] Valid payload received:', {
+      external_id: payload.external_id,
       email: payload.email,
       username: payload.username,
       name: payload.name
@@ -70,7 +89,7 @@ export async function GET(request: NextRequest) {
 
     // Créer la réponse avec redirection
     const response = NextResponse.redirect(
-      new URL(returnUrl, request.url)
+      new URL(returnUrl, getBaseUrl(request))
     );
 
     // Définir le cookie de session
@@ -87,7 +106,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error during SSO callback:', error);
     return NextResponse.redirect(
-      new URL('/logout.html', request.url)
+      new URL('/logout.html', getBaseUrl(request))
     );
   }
 }

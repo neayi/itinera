@@ -1,9 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 /**
  * Get the base URL for the application (handles proxy/Traefik scenarios)
+ *
+ * This function resolves the correct public-facing URL of the application,
+ * even when running behind a reverse proxy like Traefik.
+ *
+ * Priority order:
+ * 1. NEXT_PUBLIC_APP_URL or APP_URL environment variables
+ * 2. x-forwarded-proto and x-forwarded-host headers (from reverse proxy)
+ * 3. request.url origin (fallback, won't work correctly behind proxy)
+ *
+ * @param request - The Next.js request object
+ * @returns The base URL (e.g., "https://dev.itinera.ag")
  */
-function getBaseUrl(request: NextRequest): string {
+export function getBaseUrl(request: NextRequest): string {
   // Priority 1: Environment variables
   if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
   if (process.env.APP_URL) return process.env.APP_URL;
@@ -17,24 +28,4 @@ function getBaseUrl(request: NextRequest): string {
 
   // Fallback: request URL (won't work correctly behind proxy)
   return new URL(request.url).origin;
-}
-
-export async function POST(request: NextRequest) {
-  const response = NextResponse.json({ success: true });
-
-  // Supprimer le cookie de session
-  response.cookies.delete('auth_token');
-
-  return response;
-}
-
-export async function GET(request: NextRequest) {
-  const response = NextResponse.redirect(
-    new URL('/logout.html', getBaseUrl(request))
-  );
-
-  // Supprimer le cookie de session
-  response.cookies.delete('auth_token');
-
-  return response;
 }

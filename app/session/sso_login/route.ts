@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getBaseUrl } from '@/lib/url-helpers';
 
 /**
  * Route de compatibilité pour Discourse
@@ -14,18 +15,11 @@ export async function GET(request: NextRequest) {
 
   if (!sso || !sig) {
     console.error('[SSO Compat] Missing SSO parameters, redirecting to logout');
-    return NextResponse.redirect(new URL('/logout.html', request.url));
+    return NextResponse.redirect(new URL('/logout.html', getBaseUrl(request)));
   }
 
-  // Utiliser l'URL publique configurée ou construire depuis les headers
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ||
-                 process.env.APP_URL ||
-                 request.headers.get('x-forwarded-proto') && request.headers.get('x-forwarded-host')
-                   ? `${request.headers.get('x-forwarded-proto')}://${request.headers.get('x-forwarded-host')}`
-                   : request.url;
-
   // Rediriger vers notre vrai callback en préservant tous les paramètres
-  const callbackUrl = new URL('/api/auth/callback', appUrl);
+  const callbackUrl = new URL('/api/auth/callback', getBaseUrl(request));
   callbackUrl.searchParams.set('sso', sso);
   callbackUrl.searchParams.set('sig', sig);
 
