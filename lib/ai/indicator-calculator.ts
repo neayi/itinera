@@ -1,6 +1,6 @@
 // Base Indicator Calculator Class
 import { callGPT } from './openai-client';
-import { CalculationContext, CalculationResult, ConversationMessage, ConfidenceLevel } from './types';
+import { CalculationContext, CalculationResult, ConversationMessage, ConfidenceLevel } from '../types';
 import { IndicatorFactory, AI_CALCULABLE_INDICATORS } from './indicators';
 import { query } from '../db';
 import { calculateAndSaveSystemTotals } from '../persist-system';

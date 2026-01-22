@@ -30,6 +30,7 @@ export function EditableTextAreaCell({
   const [editValue, setEditValue] = useState(value || '');
   const [isSaving, setIsSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const startEditing = () => {
     if (interventionIndex === -1) return;

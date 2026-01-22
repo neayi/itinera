@@ -57,6 +57,14 @@ export function EditableTextCell({
     onEditingChange(null);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
+
   const handleSave = () => {
     if (editValue === value) {
       onEditingChange(null);

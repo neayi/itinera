@@ -4,7 +4,7 @@ import { jwtVerify } from 'jose';
 
 const PUBLIC_PATHS = ['/logout.html', '/api/auth/login', '/api/auth/callback', '/api/health', '/session/sso_login'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Autoriser les chemins publics
