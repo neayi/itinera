@@ -15,13 +15,13 @@ export function SystemIndicators({
   compareMode = false,
   variantData,
 }: SystemIndicatorsProps) {
-  
+
   // Use pre-calculated indicators from systemData.systemIndicators
   // These values are computed server-side by calculate-system-totals.ts
   // and stored in the database, eliminating runtime recalculation.
   // See specs/003-indicators-ergonomics-rules/spec.md
   const indicators = systemData.systemIndicators || {};
-  
+
   // Destructure all needed values with fallback to 0
   const {
     tempsTravailParHaParAn = 0,
@@ -112,7 +112,7 @@ export function SystemIndicators({
           )}
           {visibleIndicators.has('margeBrute') && (
             <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="text-sm text-gray-600">Marge brute</div>
+              <div className="text-sm text-gray-600">Marge</div>
               <div className="text-2xl mt-1">
                 {margeBruteParHaParAn.toFixed(0)} € <span className="text-sm text-gray-600">/ha/an</span>
               </div>

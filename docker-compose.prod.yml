@@ -16,6 +16,20 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-itinera_password}
       - DB_NAME=${DB_NAME:-itinera_db}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - APP_URL=${APP_URL:-http://localhost:3000}
+      - DISCOURSE_SSO_URL=${DISCOURSE_SSO_URL}
+      - DISCOURSE_SSO_SECRET=${DISCOURSE_SSO_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      # OpenAI Configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - OPENAI_MAX_TOKENS=${OPENAI_MAX_TOKENS:-2000}
+      - OPENAI_TEMPERATURE=${OPENAI_TEMPERATURE:-0.3}
+      # Feature Flags
+      - AI_ASSISTANT_ENABLED=${AI_ASSISTANT_ENABLED:-true}
+      - NEXT_PUBLIC_AI_ASSISTANT_ENABLED=${NEXT_PUBLIC_AI_ASSISTANT_ENABLED:-true}
+      - AI_AUTO_CALCULATE=${AI_AUTO_CALCULATE:-false}
+      - AI_MAX_CONVERSATIONS_LENGTH=${AI_MAX_CONVERSATIONS_LENGTH:-10}
     depends_on:
       mysql:
         condition: service_healthy

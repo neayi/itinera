@@ -12,7 +12,7 @@ export class MargeBruteIndicator extends BaseIndicator {
 
   getFormattedValue(): string {
     const rawValue = this.getRawValue();
-    
+
     if (rawValue === null || rawValue === undefined) {
       return '-';
     }
@@ -22,7 +22,7 @@ export class MargeBruteIndicator extends BaseIndicator {
     }
 
     const numValue = typeof rawValue === 'string' ? parseFloat(rawValue) : rawValue;
-    
+
     if (isNaN(numValue) || numValue === 0) {
       return '-';
     }
@@ -39,6 +39,6 @@ export class MargeBruteIndicator extends BaseIndicator {
   }
 
   getLabel(): string {
-    return 'Marge brute';
+    return 'Marge';
   }
 }

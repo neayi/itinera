@@ -113,7 +113,7 @@ export function InterventionsTable({
     { key: 'rendementTMS', label: 'Rendement' },
     { key: 'prixVente', label: 'Prix de vente' },
     { key: 'totalProduits', label: 'Produits totaux' },
-    { key: 'margeBrute', label: 'Marge brute' },
+    { key: 'margeBrute', label: 'Marge' },
   ];
 
   const availableIndicators = [
@@ -123,7 +123,7 @@ export function InterventionsTable({
     { key: 'ift', label: 'IFT moyen' },
     { key: 'azote', label: 'Azote total' },
     { key: 'semences', label: 'Semences' },
-    { key: 'margeBrute', label: 'Marge brute' },
+    { key: 'margeBrute', label: 'Marge' },
   ];
 
 

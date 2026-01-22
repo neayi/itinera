@@ -150,7 +150,7 @@ export function ItineraryCard({
           <div>
             <div className="flex items-center gap-1 text-gray-600 text-sm mb-1">
               <TrendingUp className="size-4" />
-              <span>Marge brute</span>
+              <span>Marge</span>
             </div>
             <div className="text-[#6b9571]">{margeBrute.toLocaleString()} €</div>
           </div>
