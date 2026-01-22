@@ -30,6 +30,7 @@ export function EditableDateCell({
   const [editValue, setEditValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const startEditing = () => {
     if (interventionIndex === -1) return;
