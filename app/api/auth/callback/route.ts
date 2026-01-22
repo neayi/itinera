@@ -1,26 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateDiscourseSSO } from '@/lib/discourse-sso';
 import { findOrCreateUser } from '@/lib/user';
+import { getBaseUrl } from '@/lib/url-helpers';
 import { SignJWT } from 'jose';
-
-/**
- * Get the base URL for the application (handles proxy/Traefik scenarios)
- */
-function getBaseUrl(request: NextRequest): string {
-  // Priority 1: Environment variables
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-  if (process.env.APP_URL) return process.env.APP_URL;
-
-  // Priority 2: Forwarded headers (from proxy like Traefik)
-  const forwardedProto = request.headers.get('x-forwarded-proto');
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  if (forwardedProto && forwardedHost) {
-    return `${forwardedProto}://${forwardedHost}`;
-  }
-
-  // Fallback: request URL (won't work correctly behind proxy)
-  return new URL(request.url).origin;
-}
 
 async function generateToken(userId: number, email: string, name: string, username: string): Promise<string> {
   const secret = new TextEncoder().encode(
