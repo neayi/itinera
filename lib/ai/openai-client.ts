@@ -1,10 +1,17 @@
 // OpenAI Client Wrapper
 import OpenAI from 'openai';
 
-// Initialize OpenAI client
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization of OpenAI client
+let _openai: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return _openai;
+}
 
 // Configuration
 const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
@@ -38,6 +45,7 @@ export async function callGPT(
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
+      const openai = getOpenAIClient();
       const response = await openai.chat.completions.create({
         model,
         messages,
@@ -53,7 +61,7 @@ export async function callGPT(
       return content;
     } catch (error: any) {
       lastError = error;
-      
+
       // Don't retry on client errors (4xx)
       if (error?.status >= 400 && error?.status < 500) {
         throw new Error(`OpenAI API error: ${error.message}`);

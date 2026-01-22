@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { queryOne, query } from '@/lib/db';
 import { AI_CALCULABLE_INDICATORS } from '@/lib/ai/indicators';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

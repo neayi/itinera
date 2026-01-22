@@ -4,6 +4,8 @@ import { queryOne, query } from '@/lib/db';
 import { indicatorCalculator } from '@/lib/ai/indicator-calculator';
 import { System } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

@@ -4,6 +4,9 @@ import { queryOne, query } from '@/lib/db';
 import { indicatorCalculator } from '@/lib/ai/indicator-calculator';
 import { System } from '@/lib/types';
 
+// Force dynamic rendering to avoid build-time evaluation
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
