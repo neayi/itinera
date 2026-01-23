@@ -46,7 +46,7 @@ services:
       - ./components:/app/components
       - ./lib:/app/lib
       - ./public:/app/public
-      - ./middleware.ts:/app/middleware.ts
+      - ./proxy.ts:/app/proxy.ts
       # Exclude node_modules and .next from host
       - /app/node_modules
       - /app/.next
