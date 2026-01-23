@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "mkdir -p public/fonts && cp node_modules/material-symbols/material-symbols-outlined.woff2 public/fonts/ || true"
+    "postinstall": "bash scripts/postinstall.sh"
   },
   "dependencies": {
     "@osfarm/itineraire-technique": "^1.1.19",
