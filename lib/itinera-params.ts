@@ -108,7 +108,7 @@ export class ItineraParams {
    * Récupère tous les paramètres
    */
   static async getAll(): Promise<ItineraParamRow[]> {
-    return await query<ItineraParamRow[]>(
+    return await query<ItineraParamRow>(
       'SELECT * FROM itinera_params ORDER BY `key`',
       []
     );

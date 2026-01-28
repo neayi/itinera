@@ -59,11 +59,8 @@ export async function PATCH(
   try {
     const { id } = await params;
     
-    console.error("=== PATCH System ID:", id);
-
     // Vérifier l'authentification
     const user = await getAuthUser(request);
-    console.error("=== User from auth:", JSON.stringify(user));
     
     if (!user) {
       console.error("=== No user authenticated, returning 401");
@@ -74,12 +71,10 @@ export async function PATCH(
     }
 
     // Vérifier que l'utilisateur est propriétaire du système
-    const systemRows = await query<any[]>(
+    const systemRows = await query<{ user_id: number }>(
       'SELECT user_id FROM systems WHERE id = ?',
       [id]
     );
-
-    console.error("=== System rows:", JSON.stringify(systemRows));
 
     if (systemRows.length === 0) {
       console.error("=== System not found, returning 404");
@@ -90,9 +85,7 @@ export async function PATCH(
     }
 
     const system = systemRows[0];
-    console.error("=== System user_id:", system.user_id, "Authenticated user_id:", user.userId);
-    console.error("=== Comparison:", system.user_id !== user.userId ? "DIFFERENT - will reject" : "SAME - will allow");
-    
+
     if (system.user_id !== user.userId) {
       console.error("=== User not owner, returning 403");
       return NextResponse.json(
@@ -100,9 +93,7 @@ export async function PATCH(
         { status: 403 }
       );
     }
-    
-    console.error("=== Authorization successful, proceeding with update");
-    
+
     const body = await request.json();
 
     // Mise à jour du champ JSON
@@ -110,6 +101,34 @@ export async function PATCH(
     // Le serveur ne fait plus que sauvegarder les données
     if (body.json) {
       await saveSystemTotals(id, body.json);
+    }
+
+    // Mise à jour des champs additionnels (name, gps_location, description)
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (body.name !== undefined) {
+      updates.push('name = ?');
+      values.push(body.name);
+    }
+
+    if (body.gps_location !== undefined) {
+      updates.push('gps_location = ?');
+      values.push(body.gps_location);
+    }
+
+    if (body.description !== undefined) {
+      updates.push('description = ?');
+      values.push(body.description);
+    }
+
+    if (updates.length > 0) {
+      updates.push('updated_at = NOW()');
+      values.push(id);
+      await query(
+        `UPDATE systems SET ${updates.join(', ')} WHERE id = ?`,
+        values
+      );
     }
 
     return NextResponse.json({ success: true });

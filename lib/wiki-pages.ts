@@ -18,13 +18,16 @@ interface WikiPageRow {
 
 interface WikiApiResult {
   query: {
-    results: Record<string, {
+    results: Array<Record<string, {
       fulltext: string;
       printouts: {
-        'Page ID': Array<{ fulltext: string }>;
-        'Modification date': Array<{ timestamp: string }>;
+        'Identifiant de page': number[];
+        'Date de modification': Array<{
+          timestamp: string;
+          raw: string;
+        }>;
       };
-    }>;
+    }>>;
   };
 }
 
@@ -33,8 +36,8 @@ interface WikiApiResult {
  */
 export class WikiPages {
   private static readonly REFRESH_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
-  private static readonly ASK_SPECIFICATIONS = '[[Est un élément de profil::Cahier des charges]]|?Page ID|?Modification date|limit=1000';
-  private static readonly ASK_SOILS = '[[Category:Types de sol]]|?Page ID|?Modification date|limit=1000';
+  private static readonly ASK_SPECIFICATIONS = '[[Est un élément de profil::Cahier des charges]]|?Page ID|limit=1000';
+  private static readonly ASK_SOILS = '[[Category:Types de sol]]|?Page ID|limit=1000';
 
   /**
    * Génère une chaîne de transaction aléatoire
@@ -47,7 +50,7 @@ export class WikiPages {
    * Construit l'URL de l'API wiki
    */
   private static getWikiUrl(locale: WikiLocale = 'fr'): string {
-    return `https://${locale}.tripleperformance.fr`;
+    return `https://${locale}.tripleperformance.ag`;
   }
 
   /**
@@ -65,13 +68,17 @@ export class WikiPages {
     });
 
     const url = `${this.getWikiUrl(locale)}/api.php?${params.toString()}`;
-    
+        
+    console.log('URL : ', url);
+
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Wiki API error: ${response.status} ${response.statusText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    return data;
   }
 
   /**
@@ -106,21 +113,31 @@ export class WikiPages {
         return;
       }
 
-      const results = Object.values(data.query.results);
+      // Les résultats sont un tableau d'objets où chaque objet a une clé = nom de page
+      const results = data.query.results;
       
-      for (const result of results) {
-        const pageName = result.fulltext;
-        const pageIdArray = result.printouts['Page ID'];
+      for (const resultObj of results) {
+        // Extraire le premier (et seul) objet de chaque élément du tableau
+        const pageData = Object.values(resultObj)[0] as any;
+        
+        if (!pageData) continue;
+        
+        const pageName = pageData.fulltext;
+        
+        console.log('Processing page:', pageName, JSON.stringify(pageData.printouts));
+
+        const pageIdArray = pageData.printouts['Identifiant de page'];
         
         if (!pageIdArray || pageIdArray.length === 0) {
           console.warn(`No Page ID for ${pageName}`);
           continue;
         }
 
-        const pageId = parseInt(pageIdArray[0].fulltext, 10);
+        // Le pageId est directement un nombre dans le tableau, pas un objet
+        const pageId = parseInt(pageIdArray[0], 10);
         
         if (isNaN(pageId)) {
-          console.warn(`Invalid Page ID for ${pageName}`);
+          console.warn(`Invalid Page ID for ${pageName}:`, pageIdArray[0]);
           continue;
         }
 
@@ -179,7 +196,7 @@ export class WikiPages {
   static async getSpecifications(locale: WikiLocale = 'fr'): Promise<WikiPageRow[]> {
     await this.refreshIfNeeded('specification', locale);
     
-    return await query<WikiPageRow[]>(
+    return await query<WikiPageRow>(
       'SELECT * FROM wiki_pages WHERE specification = 1 AND wiki_locale = ? ORDER BY page_name',
       [locale]
     );
@@ -191,7 +208,7 @@ export class WikiPages {
   static async getSoils(locale: WikiLocale = 'fr'): Promise<WikiPageRow[]> {
     await this.refreshIfNeeded('soil', locale);
     
-    return await query<WikiPageRow[]>(
+    return await query<WikiPageRow>(
       'SELECT * FROM wiki_pages WHERE soil = 1 AND wiki_locale = ? ORDER BY page_name',
       [locale]
     );
@@ -216,7 +233,7 @@ export class WikiPages {
     pageId: number,
     locale: WikiLocale = 'fr'
   ): Promise<WikiPageRow | null> {
-    const results = await query<WikiPageRow[]>(
+    const results = await query<WikiPageRow>(
       'SELECT * FROM wiki_pages WHERE page_id = ? AND wiki_locale = ? LIMIT 1',
       [pageId, locale]
     );

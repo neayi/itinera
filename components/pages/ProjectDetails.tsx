@@ -6,6 +6,7 @@ import { InterventionsTable } from '@/components/InterventionsTable';
 import { AIAssistant } from '@/components/ai-assistant';
 import CalculationAlert from '@/components/ai-assistant/CalculationAlert';
 import { ItineraireTechnique, ItineraireTechniqueRef } from '@/components/ItineraireTechnique';
+import { SystemSettingsModal, SystemSettings } from '@/components/settings';
 import { useDebouncedSave, SaveStatus } from '@/lib/hooks/useDebouncedSave';
 import { calculateSystemTotals } from '@/lib/calculate-system-totals';
 import { useAuth } from '@/lib/auth';
@@ -47,6 +48,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
   const [batchProcessLogId, setBatchProcessLogId] = useState<number | null>(null);
   const batchProcessLogIdRef = useRef<number | null>(null);
   const [calculationAlert, setCalculationAlert] = useState<{ type: 'success' | 'error' | 'info'; title: string; message: string } | null>(null);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   // Setup debounced save with 10 second delay
   const { saveStatus, triggerSave, forceSave } = useDebouncedSave({
@@ -146,6 +148,38 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
 
     return () => clearTimeout(timeoutId);
   }, [isAIAssistantOpen]);
+
+  const handleSaveSettings = async (settings: SystemSettings) => {
+    // Update system data with new settings
+    const updatedData = {
+      ...systemData,
+      title: settings.title,
+      soilType: settings.soilType,
+      specifications: settings.specifications,
+      irrigation: settings.irrigation,
+      description: settings.description,
+    };
+
+    // Update state
+    setSystemData(updatedData);
+    setSystemName(settings.title);
+    setGpsLocation(settings.gpsLocation);
+
+    // Save to database - both JSON and table columns
+    await fetch(`/api/systems/${projectId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        json: updatedData,
+        name: settings.title,
+        gps_location: settings.gpsLocation,
+        description: settings.description,
+      }),
+    });
+
+    // Force save immediately
+    forceSave();
+  };
 
   const handleCalculateIndicator = async () => {
     if (!aiAssistantFocusedCell) return;
@@ -453,7 +487,10 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
                 <Download className="size-4" />
                 Exporter (.xsls)
               </button>
-              <button className="group flex items-center gap-0 hover:gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-all duration-300 text-sm">
+              <button 
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="group flex items-center gap-0 hover:gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-all duration-300 text-sm"
+              >
                 <Settings className="size-4" />
                 <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap group-hover:ml-1">
                   Réglages
@@ -534,6 +571,25 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
           onClose={() => setCalculationAlert(null)}
         />
       )}
+
+      {/* Settings Modal */}
+      <SystemSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        systemId={projectId}
+        currentSettings={{
+          title: systemData?.title || systemName,
+          address: gpsLocation || '',
+          gpsLocation: gpsLocation || '',
+          surface: projectSurface,
+          soilType: systemData?.soilType || '',
+          specifications: systemData?.specifications || [],
+          irrigation: systemData?.irrigation || false,
+          description: systemData?.description || '',
+        }}
+        onSave={handleSaveSettings}
+      />
     </div>
   );
 }
+
