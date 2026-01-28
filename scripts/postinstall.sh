@@ -9,6 +9,7 @@ echo "📦 Running post-install setup..."
 # Create directories if they don't exist
 mkdir -p public/fonts
 mkdir -p public/js
+mkdir -p public/css
 
 # Copy Material Symbols font
 echo "  → Copying Material Symbols font..."
@@ -21,9 +22,10 @@ fi
 
 # Copy itineraire-technique chart-render.js
 echo "  → Copying itineraire-technique scripts..."
-if [ -f "node_modules/@osfarm/itineraire-technique/js/*.js" ]; then
+if [ -f "node_modules/@osfarm/itineraire-technique/js/chart-render.js" ]; then
   cp node_modules/@osfarm/itineraire-technique/js/*.js public/js/
   cp node_modules/@osfarm/itineraire-technique/css/*.css public/css/
+  cp node_modules/@osfarm/itineraire-technique/editor.html public/editor.html
   echo "    ✓ chart-render.js copied"
 else
   echo "    ⚠ chart-render.js not found, skipping"

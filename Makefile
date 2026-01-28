@@ -36,8 +36,8 @@ dev: ## Lance le serveur de développement local
 
 prod: build up ## Build et lance en production
 
-shell-next: ## Ouvre un shell dans le conteneur Next.js
-	docker exec -it itinera-nextjs sh
+shell-itinera: ## Ouvre un shell dans le conteneur Next.js
+	docker exec -it itinera-dev sh
 
 shell-mysql: ## Ouvre un shell MySQL
 	docker exec -it itinera-mysql mysql -u itinera_user -p

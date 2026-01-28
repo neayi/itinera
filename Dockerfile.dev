@@ -1,12 +1,13 @@
 # Dockerfile for development
 FROM node:22-alpine
 
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat bash
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and scripts needed for postinstall
 COPY package.json package-lock.json* ./
+COPY scripts ./scripts
 
 # Install dependencies
 RUN npm install
