@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query, queryOne } from '@/lib/db';
 import { SystemWithFarm } from '@/lib/types';
 import { saveSystemTotals } from '@/lib/persist-system';
+import { getAuthUser } from '@/app/api/auth/me/route';
 
 export async function GET(
   request: Request,
@@ -52,11 +53,56 @@ export async function GET(
 }
 
 export async function PATCH(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    
+    console.error("=== PATCH System ID:", id);
+
+    // Vérifier l'authentification
+    const user = await getAuthUser(request);
+    console.error("=== User from auth:", JSON.stringify(user));
+    
+    if (!user) {
+      console.error("=== No user authenticated, returning 401");
+      return NextResponse.json(
+        { error: 'Unauthorized: Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Vérifier que l'utilisateur est propriétaire du système
+    const systemRows = await query<any[]>(
+      'SELECT user_id FROM systems WHERE id = ?',
+      [id]
+    );
+
+    console.error("=== System rows:", JSON.stringify(systemRows));
+
+    if (systemRows.length === 0) {
+      console.error("=== System not found, returning 404");
+      return NextResponse.json(
+        { error: 'System not found' },
+        { status: 404 }
+      );
+    }
+
+    const system = systemRows[0];
+    console.error("=== System user_id:", system.user_id, "Authenticated user_id:", user.userId);
+    console.error("=== Comparison:", system.user_id !== user.userId ? "DIFFERENT - will reject" : "SAME - will allow");
+    
+    if (system.user_id !== user.userId) {
+      console.error("=== User not owner, returning 403");
+      return NextResponse.json(
+        { error: 'Forbidden: You are not the owner of this system' },
+        { status: 403 }
+      );
+    }
+    
+    console.error("=== Authorization successful, proceeding with update");
+    
     const body = await request.json();
 
     // Mise à jour du champ JSON

@@ -12,13 +12,18 @@ COPY scripts ./scripts
 # Install dependencies
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copy only config files that are needed
+COPY next.config.js ./
+COPY tsconfig.json ./
+COPY postcss.config.js ./
+COPY tailwind.config.js ./
+COPY next-env.d.ts ./
+
+# DON'T copy source code - it will be mounted via volumes
+# This allows hot reload to work properly
 
 # Expose port
 EXPOSE 3000
 
-# Run development server without Turbopack (better Docker file watching with Webpack)
-# Use standard "next dev" which defaults to Webpack in Next.js 15+
-# Note: Webpack's polling (configured in next.config.js) works better in Docker
+# Run development server
 CMD ["npm", "run", "dev"]

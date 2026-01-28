@@ -29,6 +29,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
   const [systemName, setSystemName] = useState<string>('');
   const [farmerName, setFarmerName] = useState<string>('');
   const [farmName, setFarmName] = useState<string>('');
+  const [town, setTown] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [gpsLocation, setGpsLocation] = useState<string | null>(null);
@@ -106,6 +107,7 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         setSystemName(system.name || 'Libellé du système');
         setFarmerName(system.farmer_name || "Nom de l'agriculteur");
         setFarmName(system.farm_name || 'Nom de la ferme');
+        setTown(system.town || '');
         setGpsLocation(system.gps_location || null);
       })
       .catch(error => {
@@ -435,18 +437,17 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
                 </h1>
                 <p className="text-gray-600">
                   {isLoading ? 'Chargement des informations...' : `${farmerName} • ${farmName}`}
-                  <br />15 ha • Bio • Toulouse (31) • Sol argileux
+                  <br />15 ha • Bio • {town} • Sol argileux
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-colors text-sm">
+              <button 
+                onClick={() => window.open(`/editor.html?itinera=${projectId}`, '_blank')}
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-colors text-sm"
+              >
                 <ChevronsRight className="size-4" />
-                Modifier l&apos;itinéraire technique
-              </button>
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-colors text-sm">
-                <FolderOpen className="size-4" />
-                Charger une rotation
+                Modifier le système
               </button>
               <button className="flex items-center gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-[#5a8560] transition-colors text-sm">
                 <Download className="size-4" />
@@ -456,12 +457,6 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
                 <Settings className="size-4" />
                 <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap group-hover:ml-1">
                   Réglages
-                </span>
-              </button>
-              <button className="group flex items-center gap-0 hover:gap-2 px-3 py-1.5 bg-[#6b9571] text-white rounded hover:bg-red-600 transition-all duration-300 text-sm">
-                <Trash2 className="size-4" />
-                <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap group-hover:ml-1">
-                  Tout effacer
                 </span>
               </button>
               {!isAIAssistantOpen && (

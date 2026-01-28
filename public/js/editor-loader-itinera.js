@@ -110,16 +110,17 @@ class ItineraLoader extends DefaultLoader {
                 json: self.tikaeditorInstance.system
             })
         });
+        const toast = $('#liveToast');
+
+        // Update the time and message
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        toast.find('small').text(`${hours}:${minutes}`);
 
         if (response.ok) {
             // Successfully saved - show a toast
-            const toast = $('#liveToast');
 
-            // Update the time and message
-            const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            toast.find('small').text(`${hours}:${minutes}`);
             toast.find('.toast-body').text('Sauvegardé dans Itinéra !');
 
             const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toast);
@@ -127,8 +128,11 @@ class ItineraLoader extends DefaultLoader {
             
         } else {
             // Error saving
-            const errorModal = new bootstrap.Modal(document.getElementById('saveErrorModal'));
-            errorModal.show();
+
+            toast.find('.toast-body').text("Erreur lors de la sauvegarde dans Itinéra.\n" + response.statusText);
+
+            const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toast);
+            toastBootstrap.show();
         }
     }
 
