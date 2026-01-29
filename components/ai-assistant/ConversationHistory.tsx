@@ -1,6 +1,6 @@
 'use client';
 
-import { ConversationMessage } from '@/lib/types';
+import { ConversationMessage } from '@/shared/ai/ai.dto';
 
 interface ConversationHistoryProps {
   messages: ConversationMessage[];

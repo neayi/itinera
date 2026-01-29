@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useReducer, useCallback } from 'react';
 import { ChevronDown, ChevronUp, Columns, Plus, BarChart3, Settings, RefreshCw, Sparkles } from 'lucide-react';
-import { InterventionData } from '@/lib/types';
+import { InterventionDataDTO } from '@/shared/legacy/legacy.dto';
 import { InterventionsDataTable } from '@/components/interventions-table';
 import { SystemIndicators } from '@/components/SystemIndicators';
 import { getRotationDurationYears } from '@/lib/calculate-rotation-duration';
@@ -9,7 +9,7 @@ import 'react-json-view-lite/dist/index.css';
 import { VisibilityState } from '@tanstack/react-table';
 
 interface InterventionsTableProps {
-  interventions?: InterventionData[];
+  interventions?: InterventionDataDTO[];
   updateIntervention?: (id: string, field: string, value: any) => void;
   surface?: number; // en hectares
   startYear?: number;

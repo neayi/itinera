@@ -79,7 +79,7 @@ import { type } from '@/lib/types'
 
 #### Base de données
 - Configuration MySQL avec pool de connexions
-- Routes API REST (`/api/health`, `/api/itineraries`)
+- Routes API REST (`/api/health`, `/api/systems`)
 - Helpers de requêtes dans `lib/db.ts`
 
 #### Environnement

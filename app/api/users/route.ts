@@ -1,14 +1,21 @@
-import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import { User } from '@/lib/types';
+import { NextRequest, NextResponse } from 'next/server';
+import { UserService, MySQLUserRepository } from '@/lib/domain/user';
+import { getAuthUser } from '@/app/api/auth/me/route';
 
-export async function GET() {
+const userService = new UserService(new MySQLUserRepository());
+
+export async function GET(request: NextRequest) {
   try {
-    const users = await query<User>(`
-      SELECT * FROM users
-      ORDER BY created_at DESC
-    `);
+    // Vérification de l'authentification
+    const authUser = await getAuthUser(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
+    const users = await userService.getAllUsers();
     return NextResponse.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -19,25 +26,30 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, email } = body;
+    // Vérification de l'authentification
+    const authUser = await getAuthUser(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-    const result = await query(`
-      INSERT INTO users (name, email)
-      VALUES (?, ?)
-    `, [name, email]);
+    const body = await request.json();
+    const user = await userService.createUser(body);
 
     return NextResponse.json(
-      { message: 'User created successfully', result },
+      { message: 'User created successfully', user },
       { status: 201 }
     );
   } catch (error) {
     console.error('Error creating user:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
     return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
+      { error: errorMessage },
+      { status: 400 }
     );
   }
 }

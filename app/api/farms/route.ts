@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { Farm } from '@/lib/types';
+import { FarmDTO } from '@/shared/farm/farm.dto';
 
 export async function GET() {
   try {
-    const farms = await query<Farm>(`
+    const farms = await query<FarmDTO>(`
       SELECT * FROM farms
       ORDER BY updated_at DESC
     `);
@@ -22,12 +22,12 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, farmer_name, gps_location, town } = body;
+    const { name, farmer_name } = body;
 
     const result = await query(`
-      INSERT INTO farms (name, farmer_name, gps_location, town)
-      VALUES (?, ?, ?, ?)
-    `, [name, farmer_name, gps_location, town]);
+      INSERT INTO farms (name, farmer_name)
+      VALUES (?, ?)
+    `, [name, farmer_name]);
 
     return NextResponse.json(
       { message: 'Farm created successfully', result },

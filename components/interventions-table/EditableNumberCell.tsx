@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { calculateSystemTotals } from '@/lib/calculate-system-totals';
-import type { ValueStatus, ConfidenceLevel } from '@/lib/types';
+import type { ValueStatus, ConfidenceLevel } from '@/shared/ai/ai.dto';
 import { IndicatorFactory, type FieldKey } from '@/lib/ai/indicators';
 
 /**

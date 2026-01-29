@@ -29,7 +29,7 @@ make prod     # Build et lance en production
 
 - **Application**: http://localhost:3000
 - **API Health**: http://localhost:3000/api/health
-- **API Itineraries**: http://localhost:3000/api/itineraries
+- **API Systems**: http://localhost:3000/api/systems
 - **MySQL**: localhost:3306
 
 ## 🔑 Credentials par défaut
@@ -132,7 +132,7 @@ curl http://localhost:3000/api/health
 curl http://localhost:3000/api/health | jq
 
 # Lister les itinéraires
-curl http://localhost:3000/api/itineraries
+curl http://localhost:3000/api/systems
 ```
 
 ### Vérifier MySQL

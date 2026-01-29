@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import { SystemWithFarm } from '@/lib/types';
+import { SystemWithFarmDTO } from '@/shared/system-with-farm/system-with-farm.dto';
+import { getUserSystemsWithFarms } from '@/lib/read/systemWithFarm.read';
+import { SystemService, MySQLSystemRepository } from '@/lib/domain/system';
 import { getAuthUser } from '@/app/api/auth/me/route';
+
+const systemService = new SystemService(new MySQLSystemRepository());
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,28 +17,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const systems = await query<SystemWithFarm>(`
-      SELECT
-        s.id,
-        s.farm_id,
-        s.user_id,
-        s.name,
-        s.description,
-        s.system_type,
-        s.productions,
-        s.eiq,
-        s.gross_margin,
-        s.duration,
-        s.created_at,
-        s.updated_at,
-        f.name as farm_name,
-        f.farmer_name,
-        f.town
-      FROM systems s
-      LEFT JOIN farms f ON s.farm_id = f.id
-      WHERE s.user_id = ?
-      ORDER BY s.updated_at DESC
-    `, [user.userId]);
+    const systems = await getUserSystemsWithFarms(user.userId);
 
     return NextResponse.json(systems);
   } catch (error) {
@@ -59,23 +41,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      farm_id,
-      name,
-      description,
-      system_type,
-      productions,
-      gps_location,
-      json
-    } = body;
-
-    const result = await query(`
-      INSERT INTO systems (farm_id, user_id, name, description, system_type, productions, gps_location, json)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `, [farm_id, user.userId, name, description, system_type, productions, gps_location, JSON.stringify(json)]);
+    
+    // Utiliser le service pour créer le système
+    const systemId = await systemService.createSystem({
+      ...body,
+      user_id: user.userId
+    });
 
     return NextResponse.json(
-      { message: 'System created successfully', result },
+      { message: 'System created successfully', id: systemId },
       { status: 201 }
     );
   } catch (error) {

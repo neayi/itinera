@@ -44,6 +44,7 @@ services:
       - ./app:/app/app
       - ./components:/app/components
       - ./lib:/app/lib
+      - ./shared:/app/shared
       - ./public:/app/public
       - ./styles:/app/styles
       - ./next.config.js:/app/next.config.js

@@ -56,22 +56,111 @@ itinera/
 │   ├── pages/                   # Composants de page
 │   ├── ui/                      # Composants UI shadcn/ui
 │   └── ...
-├── lib/                         # Utilitaires
+├── lib/                         # Utilitaires et couche métier
+│   ├── domain/                  # Domain-Driven Design
+│   │   ├── system/              # Domaine System
+│   │   │   ├── system.entity.ts      # Entité métier
+│   │   │   ├── system.repository.ts  # Interface repository
+│   │   │   ├── system.repository.mysql.ts  # Implémentation MySQL
+│   │   │   └── system.service.ts     # Service métier
+│   │   ├── user/                # Domaine User
+│   │   ├── farm/                # Domaine Farm
+│   │   ├── wiki-pages/          # Domaine WikiPages
+│   │   └── itinera-params/      # Domaine ItineraParams
+│   ├── read/                    # Opérations de lecture avec jointures
+│   │   └── systemWithFarm.read.ts  # Jointures System + Farm
 │   ├── db.ts                    # Connexion base de données
-│   ├── types.ts                 # Types TypeScript
+│   └── ...
+├── shared/                      # DTOs partagés (API contracts)
+│   ├── system/
+│   │   └── system.dto.ts        # DTO System (table systems uniquement)
+│   ├── system-with-farm/
+│   │   └── system-with-farm.dto.ts  # DTO avec jointure
+│   ├── user/
+│   │   └── user.dto.ts
+│   ├── farm/
+│   │   └── farm.dto.ts
 │   └── ...
 ├── init-db/                     # Scripts SQL d'initialisation
 └── public/                      # Assets statiques
 ```
+
+### Architecture Domain-Driven Design (DDD)
+
+**Principe :** Chaque domaine gère **une seule table SQL**.
+
+**Structure d'un domaine** (`lib/domain/{entity}/`) :
+1. **`{entity}.entity.ts`** : Entité métier avec validations
+2. **`{entity}.repository.ts`** : Interface repository (contrat)
+3. **`{entity}.repository.mysql.ts`** : Implémentation MySQL
+4. **`{entity}.service.ts`** : Service métier (orchestration)
+
+**Séparation des responsabilités :**
+- **Entity** : Modèle du domaine avec règles métier
+- **Repository** : Accès aux données, retourne des **Entities**
+- **Service** : Orchestration métier, retourne des **DTOs**
+- **DTO** : Contrat d'API (dans `shared/`)
+
+**Opérations avec jointures :**
+- Les repositories ne font **pas de jointures**
+- Les jointures sont dans `lib/read/` pour les opérations en lecture seule
+- Exemple : `getSystemWithFarm()` combine `systems` + `farms`
+
+### DTOs (Data Transfer Objects)
+
+**Principe :** Un seul DTO par entité, pas de `CreateDTO`/`UpdateDTO`.
+
+**Pattern :**
+```typescript
+// Un seul DTO représentant la table
+export interface SystemDTO {
+  id: string;
+  farm_id: number | null;
+  user_id: number;
+  name: string;
+  // ... tous les champs de la table
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Pour les créations : Omit des champs auto-générés
+async createSystem(
+  data: Omit<SystemDTO, 'id' | 'created_at' | 'updated_at' | 'eiq' | 'gross_margin' | 'duration'>
+): Promise<string>
+
+// Pour les mises à jour : Partial
+async updateSystem(
+  systemId: string,
+  data: Partial<SystemDTO>
+): Promise<void>
+```
+
+**DTOs avec jointures :**
+- Dans `shared/{entity}-with-{other}/`
+- Exemple : `SystemWithFarmDTO` contient `farm_name`, `farmer_name`
+- Utilisés uniquement en lecture
 
 ## Base de données
 
 **Type :** MySQL
 
 **Tables principales :**
-- `systems` : Systèmes de culture (JSON dans colonne `json`)
-- `farms` : Exploitations agricoles
+- `systems` : Systèmes de culture (JSON dans colonne `json`, localisation GPS)
+- `farms` : Exploitations agricoles (nom, agriculteur)
 - `users` : Utilisateurs
+- `itinera_params` : Paramètres de l'application
+- `wiki_pages` : Pages wiki
+
+**Principe DDD :** Une table = un domaine dans `lib/domain/{table}/`
+
+### Localisation géographique
+
+Les données de localisation sont stockées **uniquement dans la table `systems`** :
+- `gps_location` : POINT MySQL (latitude, longitude)
+- `dept_no` : Numéro de département
+- `town` : Nom de la commune
+
+La table `farms` ne contient **pas** de données de localisation (seulement `name`, `farmer_name`).
 
 ### Structure JSON des systèmes
 
@@ -107,6 +196,26 @@ Les données des systèmes de culture sont stockées dans un champ JSON avec cet
 **Important :** Les valeurs numériques des interventions sont stockées dans un tableau `values[]` de paires clé/valeur.
 
 ## Conventions de code
+
+### Architecture et patterns
+
+**Domain-Driven Design :**
+- Un domaine par table SQL dans `lib/domain/{entity}/`
+- Fichiers : `entity.ts`, `repository.ts`, `repository.mysql.ts`, `service.ts`
+- Les repositories retournent des **Entities** (pas de DTOs)
+- Les services convertissent les Entities en **DTOs** avec `toDTO()`
+- Les jointures SQL sont dans `lib/read/` (lecture seule)
+
+**DTOs (Data Transfer Objects) :**
+- Un seul DTO par entité dans `shared/{entity}/{entity}.dto.ts`
+- ❌ **Ne pas créer** de `CreateDTO` ou `UpdateDTO`
+- ✅ **Utiliser** `Omit<DTO, 'id' | 'created_at' | 'updated_at'>` pour les créations
+- ✅ **Utiliser** `Partial<DTO>` pour les mises à jour
+- Les DTOs avec jointures sont dans `shared/{entity}-with-{other}/`
+
+**Gestion des champs NULL vs undefined :**
+- Les DTOs utilisent `| null` pour les champs SQL nullable
+- Les services convertissent `null` en `undefined` avant d'appeler les repositories
 
 ### Style
 

@@ -1,7 +1,7 @@
-import { InterventionData } from '../types';
+import { InterventionDataDTO } from '@/shared/legacy/legacy.dto';
 
 // Données d'interventions pour la "Originale"
-export const originaleInterventions: InterventionData[] = [
+export const originaleInterventions: InterventionDataDTO[] = [
   // 1 - Orge + Lupin
   {
     id: '1',

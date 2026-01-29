@@ -1,10 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
-import { RotationData, InterventionData } from '@/lib/types';
+import { RotationDataDTO, InterventionDataDTO } from '@/shared/legacy/legacy.dto';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TimelineProps {
-  rotationData: RotationData[];
-  interventions: InterventionData[];
+  rotationData: RotationDataDTO[];
+  interventions: InterventionDataDTO[];
 }
 
 export function Timeline({ rotationData, interventions }: TimelineProps) {
@@ -46,7 +46,7 @@ export function Timeline({ rotationData, interventions }: TimelineProps) {
     }
     acc[intervention.category].push(intervention);
     return acc;
-  }, {} as Record<string, InterventionData[]>);
+  }, {} as Record<string, InterventionDataDTO[]>);
 
   return (
     <div className="relative">

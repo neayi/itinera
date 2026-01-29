@@ -1,7 +1,7 @@
-import { InterventionData } from '../types';
+import { InterventionDataDTO } from '@/shared/legacy/legacy.dto';
 
 // Données d'interventions pour la "Variante 1" - Rotation de test
-export const variant1Interventions: InterventionData[] = [
+export const variant1Interventions: InterventionDataDTO[] = [
   // 1 - Blé + féverole
   {
     id: 'v1-1',

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ConversationMessage } from '@/lib/types';
+import { ConversationMessage } from '@/shared/ai/ai.dto';
 import { IndicatorFactory } from '@/lib/ai/indicators';
 import ConversationHistory from './ConversationHistory';
 import MessageInput from './MessageInput';

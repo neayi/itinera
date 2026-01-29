@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { queryOne, query } from '@/lib/db';
 import { indicatorCalculator } from '@/lib/ai/indicator-calculator';
-import { System } from '@/lib/types';
+import { SystemDTO } from '@/shared/system/system.dto';
 
 // Force dynamic rendering to avoid build-time evaluation
 export const dynamic = 'force-dynamic';
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     // Fetch system data
-    const system = await queryOne<System>(
+    const system = await queryOne<SystemDTO>(
       'SELECT * FROM systems WHERE id = ?',
       [systemId]
     );
