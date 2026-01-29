@@ -123,7 +123,7 @@ export function SystemSettingsModal({
           )}
         </div>
 
-        <div className="modal-footer">
+        <div className="modal-footer mt-3">
           <button
             className="btn-secondary"
             onClick={handleCancel}

@@ -3,6 +3,8 @@ export interface SystemSettings {
   title: string;
   address: string;
   gpsLocation: string;
+  deptNo: string;
+  town: string;
   surface: number;
   soilType: string;
   

@@ -150,10 +150,11 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
   }, [isAIAssistantOpen]);
 
   const handleSaveSettings = async (settings: SystemSettings) => {
-    // Update system data with new settings
+    // Update system data with new settings including address
     const updatedData = {
       ...systemData,
       title: settings.title,
+      address: settings.address,
       soilType: settings.soilType,
       specifications: settings.specifications,
       irrigation: settings.irrigation,
@@ -165,20 +166,35 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
     setSystemName(settings.title);
     setGpsLocation(settings.gpsLocation);
 
-    // Save to database - both JSON and table columns
+    // Parse GPS coordinates for POINT format
+    let gpsPoint = null;
+    if (settings.gpsLocation) {
+      const parts = settings.gpsLocation.split(',').map(s => s.trim());
+      if (parts.length === 2) {
+        const lat = parseFloat(parts[0]);
+        const lng = parseFloat(parts[1]);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          gpsPoint = { lat, lng };
+        }
+      }
+    }
+
+    // Save to database via debounced save - both JSON and table columns
     await fetch(`/api/systems/${projectId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         json: updatedData,
         name: settings.title,
-        gps_location: settings.gpsLocation,
+        gps_location: gpsPoint,
+        dept_no: settings.deptNo,
+        town: settings.town,
         description: settings.description,
       }),
     });
 
-    // Force save immediately
-    forceSave();
+    // Trigger debounced save for JSON data
+    triggerSave(updatedData);
   };
 
   const handleCalculateIndicator = async () => {
@@ -579,8 +595,10 @@ export function ProjectDetails({ projectId, onBack, variant = 'Originale' }: Pro
         systemId={projectId}
         currentSettings={{
           title: systemData?.title || systemName,
-          address: gpsLocation || '',
+          address: systemData?.address || '',
           gpsLocation: gpsLocation || '',
+          deptNo: '',
+          town: town || '',
           surface: projectSurface,
           soilType: systemData?.soilType || '',
           specifications: systemData?.specifications || [],

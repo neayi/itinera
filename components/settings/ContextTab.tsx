@@ -40,15 +40,40 @@ export function ContextTab({ settings, onUpdate, soils, isLoading }: ContextTabP
 
     setIsCalculatingGPS(true);
     try {
-      // Using Nominatim OpenStreetMap API
+      // Using Nominatim OpenStreetMap API with addressdetails
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(settings.address)}&format=json&limit=1`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(settings.address)}&format=json&addressdetails=1&limit=1`
       );
       const data = await response.json();
 
       if (data && data.length > 0) {
-        const { lat, lon } = data[0];
-        handleFieldChange('gpsLocation', `${lat}, ${lon}`);
+        const result = data[0];
+        const { lat, lon, address } = result;
+        
+        // Extract department number from postcode (first 2 or 3 characters)
+        let deptNo = '';
+        if (address.postcode) {
+          const postcode = address.postcode.replace(/\s/g, '');
+          // Handle Corsica (2A, 2B) and DOM-TOM
+          if (postcode.startsWith('20')) {
+            deptNo = postcode.substring(0, 2) + (postcode[2] === '0' ? 'A' : 'B');
+          } else if (postcode.length === 5) {
+            deptNo = postcode.substring(0, 2);
+          } else {
+            deptNo = postcode.substring(0, 3);
+          }
+        }
+        
+        // Get town/city name
+        const town = address.city || address.town || address.village || address.municipality || '';
+        
+        // Update all fields
+        onUpdate({
+          ...settings,
+          gpsLocation: `${lat}, ${lon}`,
+          deptNo,
+          town
+        });
       } else {
         alert('Adresse introuvable');
       }

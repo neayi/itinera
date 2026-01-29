@@ -20,7 +20,13 @@ export async function GET(
         s.description,
         s.system_type,
         s.productions,
-        COALESCE(s.gps_location, f.gps_location) as gps_location,
+        CASE 
+          WHEN s.gps_location IS NOT NULL THEN CONCAT(ST_Y(s.gps_location), ', ', ST_X(s.gps_location))
+          WHEN f.gps_location IS NOT NULL THEN f.gps_location
+          ELSE NULL
+        END as gps_location,
+        s.dept_no,
+        s.town,
         s.json,
         s.eiq,
         s.gross_margin,
@@ -29,7 +35,7 @@ export async function GET(
         s.updated_at,
         f.name as farm_name,
         f.farmer_name,
-        f.town
+        f.town as farm_town
       FROM systems s
       LEFT JOIN farms f ON s.farm_id = f.id
       WHERE s.id = ?
@@ -103,7 +109,7 @@ export async function PATCH(
       await saveSystemTotals(id, body.json);
     }
 
-    // Mise à jour des champs additionnels (name, gps_location, description)
+    // Mise à jour des champs additionnels (name, gps_location, description, dept_no, town)
     const updates: string[] = [];
     const values: any[] = [];
 
@@ -113,8 +119,23 @@ export async function PATCH(
     }
 
     if (body.gps_location !== undefined) {
-      updates.push('gps_location = ?');
-      values.push(body.gps_location);
+      if (body.gps_location === null) {
+        updates.push('gps_location = NULL');
+      } else if (typeof body.gps_location === 'object' && body.gps_location.lat && body.gps_location.lng) {
+        // Convert {lat, lng} to POINT(lng, lat) - note: MySQL POINT uses (longitude, latitude) order
+        updates.push('gps_location = POINT(?, ?)');
+        values.push(body.gps_location.lng, body.gps_location.lat);
+      }
+    }
+
+    if (body.dept_no !== undefined) {
+      updates.push('dept_no = ?');
+      values.push(body.dept_no);
+    }
+
+    if (body.town !== undefined) {
+      updates.push('town = ?');
+      values.push(body.town);
     }
 
     if (body.description !== undefined) {

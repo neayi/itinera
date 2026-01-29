@@ -33,28 +33,38 @@ CREATE TABLE farms (
 
 -- Systems table (combines itineraries, parcelles, and rotation data)
 CREATE TABLE systems (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    farm_id INT NOT NULL,
-    user_id INT NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    system_type VARCHAR(100),
-    productions TEXT,
-    gps_location VARCHAR(255),
-    json JSON,
-    eiq DECIMAL(10,2) DEFAULT NULL COMMENT 'Environmental Impact Quotient',
-    gross_margin DECIMAL(10,2) DEFAULT NULL COMMENT 'Gross margin in euros',
-    duration INT DEFAULT NULL COMMENT 'Duration of the system in years',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_farm_id (farm_id),
-    INDEX idx_user_id (user_id),
-    INDEX idx_eiq (eiq),
-    INDEX idx_gross_margin (gross_margin),
-    INDEX idx_duration (duration),
-    FOREIGN KEY (farm_id) REFERENCES farms(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    `id` int NOT NULL,
+    `farm_id` int NOT NULL,
+    `user_id` int NOT NULL,
+    `name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+    `description` text COLLATE utf8mb4_general_ci,
+    `system_type` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+    `productions` text COLLATE utf8mb4_general_ci,
+    `json` json DEFAULT NULL,
+    `eiq` decimal(10,2) DEFAULT NULL COMMENT 'Environmental Impact Quotient calculé',
+    `gross_margin` decimal(10,2) DEFAULT NULL COMMENT 'Marge brute en euros',
+    `duration` int DEFAULT NULL COMMENT 'Durée du système en années',
+    `gps_location` point DEFAULT NULL,
+    `dept_no` varchar(5) COLLATE utf8mb4_general_ci DEFAULT NULL,
+    `town` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,  
+    `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+ALTER TABLE `systems`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_farm_id` (`farm_id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_eiq` (`eiq`),
+  ADD KEY `idx_gross_margin` (`gross_margin`),
+  ADD KEY `idx_duration` (`duration`);
+
+ALTER TABLE `systems`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  
+ALTER TABLE `systems`
+  ADD CONSTRAINT `systems_ibfk_1` FOREIGN KEY (`farm_id`) REFERENCES `farms` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `systems_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 -- Create ai_process_log table to track AI calculations
 CREATE TABLE IF NOT EXISTS ai_process_log (
